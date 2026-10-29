@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DPP Studio — Internal</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Don't Postpone Passion — internal design, 3D prototyping and tech pack studio.">
+<meta name="theme-color" content="#0d0c0a">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+
+<div id="gate">
+  <video id="gateFilm" src="https://tga1-dpp.github.io/DPP/teaser.mp4" muted loop playsinline autoplay preload="auto" aria-hidden="true" onerror="this.remove()"></video>
+  <div class="g-inner">
+    <div class="g-mark" data-mark></div>
+    <h1>DPP Studio</h1>
+    <p id="gateMsg">Internal. The design room for Don't Postpone Passion.</p>
+    <form class="pin" id="gateForm" autocomplete="off">
+      <input id="gatePin" type="password" inputmode="numeric" maxlength="8" placeholder="····" aria-label="Studio PIN" autofocus>
+      <button class="btn primary" type="submit">Enter</button>
+    </form>
+    <div class="g-err" id="gateErr"></div>
+    <div class="g-foot"><span class="cap">Don't Postpone Passion</span><span class="cap" id="gateYear"></span></div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand"><span data-mark></span><b>DPP</b><i>Studio</i></div>
+  <nav class="tabs" id="tabs">
+    <button data-view="library" class="on"><span>01</span>Library</button>
+    <button data-view="studio"><span>02</span>3D Studio</button>
+    <button data-view="artwork"><span>03</span>Artwork</button>
+    <button data-view="capture"><span>04</span>Capture</button>
+    <button data-view="techpack"><span>05</span>Tech Pack</button>
+  </nav>
+  <div class="ctx" id="ctx"></div>
+  <button class="iconbtn" id="btnSettings" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+</header>
+
+<main>
+  <!-- 01 LIBRARY -->
+  <section class="view on" id="view-library">
+    <div class="lib-head">
+      <div>
+        <h1>The Library<sup id="libCount">0</sup></h1>
+        <p class="tag">Every piece from first sketch to factory. Tees, fleece and the numbered wood watch line.</p>
+      </div>
+      <div class="stats" id="libStats"></div>
+    </div>
+    <div class="lib-bar">
+      <div class="seg" id="libFilter">
+        <button data-f="all" class="on">All</button><button data-f="tee">Tees</button><button data-f="longsleeve">L/S</button><button data-f="crewneck">Crew</button><button data-f="hoodie">Hoodies</button><button data-f="watch">Watches</button>
+      </div>
+      <select class="in" id="libStatus" style="width:150px"><option value="">All statuses</option></select>
+      <input class="in" id="libSearch" placeholder="Search name, style no, drop…">
+      <button class="btn" id="btnPrompt">Image prompt</button>
+      <button class="btn primary" id="btnNew">New design</button>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- 02 STUDIO -->
+  <section class="view" id="view-studio">
+    <aside class="side" id="studioLeft"></aside>
+    <div class="center">
+      <div class="stage" id="stage">
+        <div class="loading" id="stageLoading">Loading 3D engine</div>
+        <div class="stage-tools">
+          <div class="seg" id="viewPresets"><button data-v="front">Front</button><button data-v="three">3/4</button><button data-v="side">Side</button><button data-v="back">Back</button></div>
+          <div class="seg"><button id="btnSpin">Turntable</button></div>
+          <div style="flex:1"></div>
+          <div class="seg" id="bgPresets"><button data-bg="#121527" class="on">Studio</button><button data-bg="#EEF1F9">Pale</button><button data-bg="#8d8a84">Concrete</button></div>
+        </div>
+        <div class="stage-foot"><div class="big" id="stageLabel"></div><span class="cap">Drag to orbit · scroll to zoom · right-drag to pan</span></div>
+      </div>
+    </div>
+    <aside class="side right" id="studioRight"></aside>
+  </section>
+
+  <!-- 03 ARTWORK -->
+  <section class="view" id="view-artwork">
+    <aside class="side" id="artLeft"></aside>
+    <div class="center">
+      <div class="art-bar">
+        <div class="seg" id="artSide"><button data-side="front" class="on">Front</button><button data-side="back">Back</button></div>
+        <span class="cap" id="artZone">Print zone 14 × 14 in · 1 in grid</span>
+        <span class="sp"></span>
+        <button class="btn sm" id="artUndo" title="Undo (Ctrl+Z)">Undo</button>
+        <button class="btn sm" id="artRedo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+        <button class="btn sm" id="artPng">Export PNG</button>
+        <button class="btn sm primary" id="artTo3d">View on 3D</button>
+      </div>
+      <div class="art-wrap"><canvas id="artCanvas" width="1024" height="1024"></canvas></div>
+    </div>
+    <aside class="side right" id="artRight"></aside>
+  </section>
+
+  <!-- 04 CAPTURE -->
+  <section class="view" id="view-capture">
+    <aside class="side" id="capLeft"></aside>
+    <div class="center" id="capCenter">
+      <div class="drop" id="capDrop">
+        <div data-mark style="width:96px;margin:0 auto;color:var(--line-2)"></div>
+        <h3>Photo to blank</h3>
+        <p>Drop a photo, a screenshot or a reference. Paste straight from the clipboard with <kbd>Ctrl</kbd> + <kbd>V</kbd>. The studio cuts the background, pulls the palette and builds a blank or lifts the graphic.</p>
+        <button class="btn primary" id="capPick">Choose image</button>
+      </div>
+      <div class="cap-wrap hidden" id="capWrap"><canvas id="capCanvas"></canvas></div>
+    </div>
+    <aside class="side right" id="capRight"></aside>
+  </section>
+
+  <!-- 05 TECH PACK -->
+  <section class="view" id="view-techpack">
+    <div class="tp-bar">
+      <span class="cap">Manufacturer tech pack · Letter landscape</span>
+      <span class="sp"></span>
+      <button class="btn sm" id="tpRenders">Refresh 3D renders</button>
+      <button class="btn sm" id="tpCsv">BOM + spec CSV</button>
+      <button class="btn sm" id="tpJson">Export JSON</button>
+      <button class="btn sm primary" id="tpPrint">Print / Save PDF</button>
+    </div>
+    <div class="tp-scroll" id="tpScroll"></div>
+  </section>
+</main>
+
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="toasts" aria-live="polite"></div>
+<input type="file" id="fileImg" accept="image/*" hidden>
+<input type="file" id="fileJson" accept="application/json,.json" hidden>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
