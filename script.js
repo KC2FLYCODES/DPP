@@ -7,6 +7,7 @@ import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* =========================================================================
    0. Utilities
@@ -320,6 +321,22 @@ const Assets = {
     return null;
   },
   async ready(ids) { await Promise.all(ids.map(async id => { const src = await this.get(id); if (!src) return; let i = this.imgs.get(id); if (!i) { i = new Image(); this.imgs.set(id, i); } if (!i.complete || !i.naturalWidth) { i.src = src; await i.decode().catch(() => { }); } })); },
+};
+// Garment meshes: per-design upload (garment.model asset id) or studio default at assets/models/<category>.glb
+const Models = {
+  cache: new Map(), // key -> THREE.Object3D | null (null = not available)
+  key(d) { return d.garment.model ? 'asset:' + d.garment.model : 'file:' + d.category; },
+  peek(d) { return this.cache.get(this.key(d)); },
+  async load(d) {
+    const k = this.key(d); if (this.cache.has(k)) return this.cache.get(k);
+    this.cache.set(k, null); // prevents duplicate loads; replaced on success
+    try {
+      const src = d.garment.model ? await Assets.get(d.garment.model) : `assets/models/${d.category}.glb`;
+      if (!src) return null;
+      const gltf = await new GLTFLoader().loadAsync(src);
+      this.cache.set(k, gltf.scene); return gltf.scene;
+    } catch { return null; } // no default model for this silhouette — procedural fallback
+  },
 };
 const Settings = {
   key: 'dpp.settings',
@@ -955,7 +972,41 @@ const Studio = {
       ...(surf ? { color: '#ffffff', sheenColor: new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .3), map: surf.map, ...(surf.alpha ? { alphaMap: surf.alpha, alphaTest: .5 } : {}) } : {}) });
   },
   add(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); return m; },
+  // Real garment meshes (CLO / Marvelous / marketplace GLB) take priority over the procedural fallback.
   buildGarment(d) {
+    const model = Models.peek(d);
+    if (model === undefined) Models.load(d).then(() => { if (S.current === d && S.view === 'studio') this.build(); });
+    if (model) return this.buildFromModel(d, model);
+    return this.buildProcedural(d);
+  },
+  buildFromModel(d, gltfScene) {
+    const g = d.garment, fit = FITS[g.fit] || FITS.boxy;
+    const fin = g.finish || 'none', dis = g.distress || 'none', washed = fin !== 'none' || dis !== 'none';
+    const surf = washed ? TEX.surface(g.color, fin, dis) : null;
+    const obj = gltfScene.clone(true); obj.rotation.y = (g.modelRot || 0) * Math.PI / 180;
+    const holder = new THREE.Group(); holder.add(obj); this.root.add(holder);
+    // normalise: garment height ≈ body length from HPS at this fit, centred, hem at -h/2
+    holder.updateMatrixWorld(true);
+    let box = new THREE.Box3().setFromObject(obj), sz = box.getSize(new THREE.Vector3());
+    const s = (fit.h + .3) / sz.y; obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(obj); const c = box.getCenter(new THREE.Vector3());
+    obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y += (-fit.h / 2) - box.min.y; holder.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(obj);
+    let biggest = null, most = -1;
+    obj.traverse(o => {
+      if (!o.isMesh) return;
+      const orig = Array.isArray(o.material) ? o.material[0] : o.material;
+      const m = this.fabricMat(g.color, g.fabric, false, 30, 18, surf);
+      if (orig?.normalMap) { m.normalMap = orig.normalMap; m.normalScale = orig.normalScale?.clone() || new THREE.Vector2(1, 1); m.bumpScale *= .35; } // keep baked folds
+      if (orig?.aoMap) { m.aoMap = orig.aoMap; m.aoMapIntensity = 1; }
+      o.material = m; o.castShadow = o.receiveShadow = true;
+      const n = o.geometry.attributes.position.count; if (n > most) { most = n; biggest = o; }
+    });
+    this.torso = biggest;
+    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z * .92, h: fit.h, rise: box.max.y - fit.h / 2 - .06, neckR: .34 };
+    this.updateDecals();
+  },
+  buildProcedural(d) {
     const g = d.garment, cat = d.category, fit = FITS[g.fit] || FITS.boxy;
     const fleece = cat === 'hoodie' || cat === 'crewneck', long = cat !== 'tee';
     const P = this.P = { w: fit.w, d: fit.w * .42, h: fit.h, flare: .02, neckR: cat === 'hoodie' ? .36 : .34, neckDrop: fleece ? .08 : .17, rise: .3 };
@@ -1267,7 +1318,10 @@ const Panels = {
         <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${['tee', 'longsleeve', 'crewneck', 'hoodie'].map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
         <div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>
         <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).map(([k, v]) => [k, v.label]))}</div>
-        <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div></div>
+        <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
+        <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
+          <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
+          ${g.model || Models.peek(d) ? `<div style="margin-top:8px">${this.select('garment.modelRot', 'Facing', g.modelRot || 0, [[0, 'As exported'], [90, 'Rotate 90°'], [180, 'Rotate 180°'], [270, 'Rotate 270°']])}</div>` : ''}</div></div>
         <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}
           <div class="grid2" style="margin-top:12px"><div class="fld"><label>Rib / trim</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim}"><button class="btn sm" data-copy="garment.trim">= Body</button></div></div>
           <div class="fld"><label>Stitch</label><div class="row"><input type="color" data-bind="garment.stitch" value="${g.stitch}"><button class="btn sm" data-copy="garment.stitch">= Body</button></div></div></div></div>
@@ -1292,6 +1346,19 @@ const Panels = {
     if (d.refs.length) Promise.all(d.refs.map(id => Assets.get(id))).then(srcs => { const g = $('#refGrid'); if (g) g.innerHTML = srcs.filter(Boolean).map(s => `<img src="${s}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:3px;border:1px solid var(--line)">`).join(''); });
     $('#sRenders').onclick = () => Studio.captureRenders();
     $('#sPrompt').onclick = () => promptModal(d);
+    const up = $('#mdlUp');
+    if (up) up.onclick = () => {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.glb,model/gltf-binary';
+      inp.onchange = async () => {
+        const f = inp.files[0]; if (!f) return;
+        if (f.size > 40e6) return toast('Model over 40 MB — decimate it first', true);
+        d.garment.model = await Assets.put(await fileToDataURL(f), f.name); touch();
+        await Models.load(d); if (!Models.peek(d)) { d.garment.model = ''; touch(); return toast('Could not read that GLB', true); }
+        Studio.build(); this.studio(); toast('Model loaded: ' + f.name);
+      };
+      inp.click();
+    };
+    const rm = $('#mdlRm'); if (rm) rm.onclick = () => { d.garment.model = ''; touch(); Studio.build(); this.studio(); };
     $$('[data-preset]', L).forEach(b => b.onclick = () => { const [s, i] = b.dataset.preset.split(':'); Object.assign(d.place[s], PLACE_PRESETS[s][i][1]); touch(); Studio.updateDecals(); this.studio(); });
     $('#sPng').onclick = () => Studio.exportPNG();
     $('#sGlb').onclick = () => Studio.exportGLB();
@@ -2017,7 +2084,7 @@ async function importJSON(text) {
   Art.thumbsDirty(); Library.render(); toast(`Imported ${n} design${n === 1 ? '' : 's'}`);
 }
 async function exportDesign() {
-  const d = S.current, ids = new Set([...d.refs, ...['front', 'back'].flatMap(s => d.artwork[s].filter(l => l.asset).map(l => l.asset))]);
+  const d = S.current, ids = new Set([...d.refs, ...(d.garment?.model ? [d.garment.model] : []), ...['front', 'back'].flatMap(s => d.artwork[s].filter(l => l.asset).map(l => l.asset))]);
   const assets = (await Promise.all([...ids].map(id => DB.get('assets', id)))).filter(Boolean);
   download(`${d.styleNo}.json`, JSON.stringify({ app: 'dpp-studio', v: 1, design: d, assets }), 'application/json');
 }
