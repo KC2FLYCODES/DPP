@@ -812,7 +812,7 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
+    garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
     watch: { ...WATCH_DEFAULT },
     place: cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: { front: [], back: [] },
@@ -869,13 +869,14 @@ const MODEL_NO_NORMAL = ['pants'];
 const Models = {
   cache: new Map(), // key -> THREE.Object3D | null (null = not available); absent while loading
   pending: new Map(),
-  key(d) { return d.garment.model ? 'asset:' + d.garment.model : 'file:' + d.category; },
+  file(d) { return d.category === 'socks' && d.garment.sockStyle === 'noshow' ? 'socks-noshow' : d.category; },
+  key(d) { return d.garment.model ? 'asset:' + d.garment.model : 'file:' + this.file(d); },
   peek(d) { return this.cache.get(this.key(d)); },
   load(d) {
     const k = this.key(d); if (this.cache.has(k)) return Promise.resolve(this.cache.get(k));
     if (!this.pending.has(k)) this.pending.set(k, (async () => {
       try {
-        const src = d.garment.model ? await Assets.get(d.garment.model) : `assets/models/${d.category}.glb`;
+        const src = d.garment.model ? await Assets.get(d.garment.model) : `assets/models/${this.file(d)}.glb`;
         this.cache.set(k, src ? (await new GLTFLoader().loadAsync(src)).scene : null);
       } catch { this.cache.set(k, null); } // no default model for this silhouette — procedural fallback
       this.pending.delete(k); return this.cache.get(k);
@@ -1559,9 +1560,9 @@ const Studio = {
     // calibrate: HPS→hem equals the tech-pack body length, so prints land at true inches
     const pv = code => num((d.pom.rows.find(r => r.code === code) || {}).base);
     const A = (d.category === 'socks' ? (pv('S2') || 7) + 1.5 : (pv('A') || fit.h * 10)) / 10, hpsFrac = num(g.modelHps) || (g.model ? .96 : (MODEL_CAL[d.category] || .96));
-    const s = A / (hpsFrac * sz.y); obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
+    const s = d.category === 'socks' && !g.model ? ((pv('S1') || 9) / 10) / sz.z : A / (hpsFrac * sz.y); obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(obj); const c = box.getCenter(new THREE.Vector3());
-    obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y += (-A / 2) - box.min.y; holder.updateMatrixWorld(true);
+    obj.position.x -= c.x; obj.position.z -= c.z; const H = d.category === 'socks' ? box.max.y - box.min.y : A; obj.position.y += (-H / 2) - box.min.y; holder.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(obj);
     let biggest = null, most = -1; this.modelMeshes = [];
     obj.traverse(o => {
@@ -1575,9 +1576,44 @@ const Studio = {
       const n = o.geometry.attributes.position.count; if (n > most) { most = n; biggest = o; }
     });
     this.torso = biggest;
-    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: A, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
+    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: H, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
     if ((d.category === 'pants' || d.category === 'shorts') && g.doubleWB === '1') this.addSecondWaistband(d, box);
+    if (d.category === 'socks' && !g.model) this.paintSockZones(d, box);
     this.updateDecals();
+  },
+  // Sock zones painted in the shader by world position: heel cup, toe, cuff band, athletic stripes.
+  // Works on any sock mesh (feet point +z) and layers over the body colour or a fabric pattern.
+  paintSockZones(d, box) {
+    const g = d.garment, pv = c => num((d.pom.rows.find(r => r.code === c) || {}).base), noshow = g.sockStyle === 'noshow';
+    const foot = box.max.z - box.min.z, heelD = (pv('S6') || 2.25) / 10, rib = (pv('S4') || 1.5) / 10, n = noshow ? 0 : clamp(Math.round(num(g.stripes)), 0, 4);
+    const top = box.max.y, sw = .045, gap = .045, y1 = top - (noshow ? .05 : rib) - .03, y0 = y1 - (n * sw + (n - 1) * gap);
+    const U = {
+      uAccent: { value: new THREE.Color(g.stitch) }, uCuff: { value: new THREE.Color(g.trim) }, uStripe: { value: new THREE.Color(g.stripeCol || '#B98A4A') },
+      uAccentOn: { value: g.sockAccent === '1' ? 1 : 0 }, uCuffOn: { value: g.sockCuff === '1' ? 1 : 0 },
+      uToeZ: { value: box.max.z - Math.min(.2, foot * .2) }, uHeelZ: { value: box.min.z + Math.min(heelD * 1.5, foot * .34) }, uHeelY: { value: box.min.y + Math.min(heelD * 1.25, (top - box.min.y) * .6) },
+      uMinZ: { value: box.min.z }, uMinY: { value: box.min.y }, uCuffY: { value: top - (noshow ? .05 : rib) }, uStripeN: { value: n }, uStripeY0: { value: y0 }, uStripeY1: { value: y1 },
+    };
+    this.modelMeshes.forEach(m => {
+      const mat = m.material; mat.customProgramCacheKey = () => 'sockzones';
+      mat.onBeforeCompile = sh => {
+        Object.assign(sh.uniforms, U);
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp; uniform vec3 uAccent, uCuff, uStripe; uniform float uAccentOn, uCuffOn, uToeZ, uHeelZ, uHeelY, uCuffY, uStripeN, uStripeY0, uStripeY1, uMinZ, uMinY;')
+          .replace('#include <map_fragment>', `#include <map_fragment>
+            float e = 0.012;
+            float toe = smoothstep(uToeZ - e, uToeZ + e, vWp.z);
+            float hr = length(vec2((vWp.z - uMinZ) / (uHeelZ - uMinZ), (vWp.y - uMinY) / (uHeelY - uMinY)));
+            float heel = 1.0 - smoothstep(1.0 - 0.06, 1.0 + 0.06, hr); // rounded heel cup
+            toe *= 1.0 - smoothstep(uCuffY - 0.02, uCuffY, vWp.y);
+            diffuseColor.rgb = mix(diffuseColor.rgb, uAccent, uAccentOn * max(toe, heel));
+            diffuseColor.rgb = mix(diffuseColor.rgb, uCuff, uCuffOn * smoothstep(uCuffY - 0.004, uCuffY + 0.004, vWp.y));
+            if (uStripeN > 0.5 && vWp.y > uStripeY0 && vWp.y < uStripeY1) {
+              float t = (vWp.y - uStripeY0) / (uStripeY1 - uStripeY0) * (uStripeN * 2.0 - 1.0);
+              if (mod(floor(t), 2.0) < 0.5) diffuseColor.rgb = uStripe;
+            }`);
+      };
+      mat.needsUpdate = true;
+    });
   },
   // Double waistband: a second band traced from the model's own waist line, sitting above the main band
   addSecondWaistband(d, box) {
@@ -1942,7 +1978,9 @@ const Panels = {
       const g = d.garment;
       L.innerHTML = `<div class="sec"><h4><em>A</em>Piece</h4>
         <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${(isTop(d.category) ? TOPS : isBottom(d.category) ? BOTTOMS : [d.category]).map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
-        <div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>
+        ${d.category === 'socks' ? `<div class="fld" style="margin-top:10px"><label>Style</label><div class="seg" data-segbind="garment.sockStyle">${[['crew', 'Crew'], ['noshow', 'No-show']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.sockStyle || 'crew') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+          <div class="grid2" style="margin-top:10px">${this.select('garment.sockAccent', 'Contrast heel & toe', g.sockAccent ?? '1', [['1', 'Yes'], ['', 'No']])}${g.sockStyle === 'noshow' ? '' : this.select('garment.sockCuff', 'Contrast cuff', g.sockCuff || '', [['1', 'Yes'], ['', 'No']])}</div>
+          ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
         <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).map(([k, v]) => [k, v.label]))}</div>
         <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
@@ -2025,7 +2063,7 @@ const rebuildSoon = debounce(() => Studio.build(), 120);
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$|^garment\.(pattern|doubleWB|wb2Pattern)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -2494,7 +2532,7 @@ const TechPack = {
         ['Movement', W.movement], ['Crystal / WR', `${W.crystal} · ${W.wr}`],
         ['Strap', STRAPS[W.strap] + (W.strap === 'woodlinks' ? `: ${WOODS[W.strapWood].label} / ${WOODS[W.strapAccent].label}` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ' · ' + sw(W.strapColor) : '')],
         ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)]]; })()
-      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`]];
+      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? [['Waistband 2', `Stacked above main band · ${frac(num(g.wb2H) || 1.75)}" · ${g.wb2Pattern === 'plaid' ? 'plaid' : g.wb2Color}`]] : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`]];
     return {
       title: 'Materials & BOM', body: `<div class="tp-grid" style="grid-template-columns:1fr 2.2fr">
         <div><h3>Specification <em>from 3D Studio</em></h3><div class="tp-kv">${spec.map(([k, v]) => `<label>${k}</label><div>${v}</div>`).join('')}</div>
@@ -2629,9 +2667,9 @@ function promptSpec(d) {
     const bez = W.shape !== 'round' ? '' : { diver: `, unidirectional diver bezel with ${colorName(W.bezelColor)} 60-minute insert`, gmt: `, 24-hour GMT bezel split ${colorName(W.bezelColor)} and ${colorName(W.bezelColor2)}`, tachy: `, ${colorName(W.bezelColor)} tachymeter bezel`, fluted: ', fluted polished bezel', gem: ', fully gem-set iced-out bezel', none: ', slim bezel-less case' }[W.bezelStyle] || '';
     return `a ${W.dia} mm ${CASE_SHAPES[W.shape].toLowerCase()} wristwatch in ${mat}${bez}${W.crownGuards ? ', crown guards' : ''}; ${colorName(W.dial)} (${W.dial}) ${dialTxt}, ${NUMERALS[W.numerals].toLowerCase()}, ${HANDS[W.hands].toLowerCase()} hands in ${colorName(W.index)}, ${colorName(W.accent)} seconds hand${W.date !== 'none' ? `, date window at ${W.date} o'clock` : ''}; ${strapTxt}. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" on the dial. Sapphire crystal with crisp reflections, precise machining, realistic metal finishing`;
   }
-  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie' }[d.category];
+  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks' }[d.category];
   const f = FABRICS[g.fabric], fit = FITS[g.fit].label.toLowerCase();
-  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband' }[d.category];
+  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
   const parts = [`a ${fit}-fit ${noun} in ${colorName(g.color)} (${g.color.toUpperCase()}), ${f.label.split('·')[0].trim().toLowerCase()} (${f.gsm} gsm, ${f.comp.toLowerCase()})`, build];
   if (g.trim.toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(g.trim)} rib trim`);
   if (FINISHES[g.finish]?.phrase) parts.push(FINISHES[g.finish].phrase);
