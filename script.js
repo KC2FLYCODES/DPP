@@ -110,10 +110,14 @@ const CATS = {
   shorts: { label: 'Shorts', code: 'SH', msrp: null },
   boxers: { label: 'Boxers', code: 'BX', msrp: null },
   socks: { label: 'Socks', code: 'SK', msrp: null },
+  scarf: { label: 'Scarf', code: 'SC', msrp: null },
+  duffle: { label: 'Duffle', code: 'DF', msrp: null },
+  balaclava: { label: 'Balaclava', code: 'BL', msrp: null },
   watch: { label: 'Watch', code: 'WT', msrp: 221 }, // The Teranga, Drop 001 — price per draft site
 };
 const STATUSES = ['Concept', 'Sampling', 'Revision', 'Approved', 'Production'];
-const TECHNIQUES = ['Screen print', 'Puff print', 'Discharge', 'DTG', 'Flat embroidery', '3D puff embroidery', 'Tonal embroidery', 'Chenille patch', 'Woven patch', 'Heat transfer'];
+const TECHNIQUES = ['Screen print', 'Puff print', 'Discharge', 'DTG', 'Flat embroidery', '3D puff embroidery', 'Tonal embroidery', 'Chenille patch', 'Woven patch', 'Heat transfer', 'Deboss (pressed)', 'Emboss (raised)', 'Foil stamp'];
+const pressMode = t => /Deboss/.test(t) ? 'deboss' : /Emboss/.test(t) ? 'emboss' : /Foil stamp/.test(t) ? 'foil' : null;
 const isStitch = t => /embroider|chenille|patch/i.test(t || '');
 const FINISHES = {
   none: { label: 'Clean · no wash', phrase: '' },
@@ -146,6 +150,11 @@ const FABRICS = {
   canvas: { label: 'Duck canvas · 12 oz', gsm: 407, comp: '100% cotton duck, plain weave', rough: .9, sheen: .1, bump: 1.2, weave: 'canvas', k: 2, for: 'bottom' },
   ripstop: { label: 'Cotton/nylon ripstop', gsm: 200, comp: '50% cotton / 50% nylon ripstop', rough: .7, sheen: .25, bump: .9, weave: 'ripstop', k: 1, for: 'bottom' },
   nylon: { label: 'Nylon taslan shell', gsm: 120, comp: '100% nylon taslan, DWR finish', rough: .42, sheen: .2, bump: .3, weave: 'nylon', k: 2, for: 'bottom' },
+  pebble: { label: 'Pebble-grain leather · 1.4 mm', gsm: 0, comp: 'Full-grain cowhide, pebble embossed, chrome-tanned', rough: .55, sheen: .12, bump: 1.1, coat: .15, leather: 1, for: 'bag' },
+  smooth: { label: 'Smooth full-grain leather', gsm: 0, comp: 'Full-grain cowhide, aniline finish', rough: .36, sheen: .1, bump: .25, coat: .35, leather: 1, for: 'bag' },
+  suede: { label: 'Suede', gsm: 0, comp: 'Split cowhide suede, brushed', rough: .97, sheen: .9, bump: .5, leather: 1, for: 'bag' },
+  waxcanvas: { label: 'Waxed canvas · 16 oz', gsm: 542, comp: '100% cotton duck, paraffin-wax finish', rough: .62, sheen: .15, bump: 1.2, weave: 'canvas', k: 2, for: 'bag' },
+  ballistic: { label: 'Ballistic nylon · 1680D', gsm: 400, comp: '1680D ballistic nylon, PU-coated back', rough: .5, sheen: .25, bump: 1.4, weave: 'canvas', k: 3, for: 'bag' },
   linen: { label: 'Linen · 7 oz', gsm: 237, comp: '100% European linen', rough: .88, sheen: .15, bump: 1, weave: 'linen', tint: 1, k: 1.2, for: 'bottom' },
   modal: { label: 'Micro modal · 190 gsm', gsm: 190, comp: '92% modal / 8% elastane', rough: .55, sheen: .7, bump: .3, for: 'boxers' },
   sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9, for: 'socks' },
@@ -168,8 +177,11 @@ const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Miyota 
    ========================================================================= */
 const TOPS = ['tee', 'longsleeve', 'crewneck', 'hoodie'], BOTTOMS = ['pants', 'shorts', 'boxers'];
 const isTop = c => TOPS.includes(c), isBottom = c => BOTTOMS.includes(c);
-const PATTERNS = { solid: 'Solid', plaid: 'Plaid / tartan', gingham: 'Gingham check', pinstripe: 'Pinstripe' };
+const PATTERNS = { solid: 'Solid', plaid: 'Plaid / tartan', gingham: 'Gingham check', pinstripe: 'Pinstripe', camo: 'Woodland camo' };
+const ACCESSORIES = ['scarf', 'balaclava', 'duffle'], isAcc = c => ACCESSORIES.includes(c);
 function bottomsPOM(cat) {
+  if (cat === 'duffle') return { unit: 'in', sizes: ['Mini', 'Weekender', 'Large'], base: 'Weekender', rows: [row({ code: 'A', desc: 'Length, end panel to end panel', tol: .25, base: 22, grade: 4 }), row({ code: 'B', desc: 'Height at centre, base to zip', tol: .25, base: 11, grade: 2 }), row({ code: 'C', desc: 'Depth (end panel width)', tol: .25, base: 10.5, grade: 2 }), row({ code: 'D', desc: 'Handle drop, zip to top of handle', tol: .25, base: 8.5, grade: .5 }), row({ code: 'E', desc: 'Handle strap width', tol: .0625, base: 1.5, grade: 0 }), row({ code: 'F', desc: 'Shoulder strap length, adjustable max', tol: .5, base: 52, grade: 0 }), row({ code: 'G', desc: 'Shoulder strap width', tol: .0625, base: 1.25, grade: 0 }), row({ code: 'H', desc: 'Zip opening length', tol: .25, base: 20, grade: 4 })] };  if (cat === 'scarf') return { unit: 'in', sizes: ['OS'], base: 'OS', rows: [row({ code: 'A', desc: 'Drape height as styled (3D reference)', tol: .5, base: 16, grade: 0 }), row({ code: 'S1', desc: 'Length, end to end', tol: 1, base: 70, grade: 0 }), row({ code: 'S2', desc: 'Width', tol: .5, base: 12, grade: 0 }), row({ code: 'S3', desc: 'Hood depth (wrap style)', tol: .5, base: 13, grade: 0 }), row({ code: 'S4', desc: 'Edge finish width', tol: .0625, base: .25, grade: 0 })] };
+  if (cat === 'balaclava') return { unit: 'in', sizes: ['S/M', 'L/XL'], base: 'S/M', rows: [row({ code: 'A', desc: 'Total height, crown to hem', tol: .5, base: 13, grade: .5 }), row({ code: 'B1', desc: 'Head ½, relaxed', tol: .25, base: 10, grade: .5 }), row({ code: 'E1', desc: 'Eye opening width', tol: .25, base: 6.5, grade: .25 }), row({ code: 'E2', desc: 'Eye opening height', tol: .125, base: 2.5, grade: 0 }), row({ code: 'N1', desc: 'Neck ½, relaxed', tol: .25, base: 6.5, grade: .25 }), row({ code: 'H1', desc: 'Hem width ½ (bib)', tol: .5, base: 9, grade: .5 })] };
   if (cat === 'socks') return {
     unit: 'in', sizes: ['S', 'M', 'L'], base: 'M', rows: [
       row({ code: 'S1', desc: 'Foot length, heel to toe (relaxed)', tol: .25, base: 9, grade: .75 }),
@@ -190,6 +202,8 @@ function bottomsPOM(cat) {
   return { unit: 'in', sizes: S, base, rows: rows.map(([code, desc, tol, b, gr]) => row({ code, desc, tol, base: b, grade: gr })) };
 }
 function bottomsBOM(cat) {
+  if (cat === 'duffle') return [row({ component: 'Shell', material: 'Per fabric choice (pebble / smooth full-grain / suede / waxed canvas / ballistic)', supplier: '', spec: '1.4 mm, chrome-tanned', qty: 14, uom: 'sq ft', cost: 0 }), row({ component: 'Trim leather', material: 'Smooth full-grain, edge-painted', supplier: '', spec: 'Handles, straps, piping, tag', qty: 5, uom: 'sq ft', cost: 0 }), row({ component: 'Lining', material: 'Cotton twill, printed DPP jacquard', supplier: '', spec: 'With slip + zip pocket', qty: 1.25, uom: 'yd', cost: 0 }), row({ component: 'Zipper', material: '#8 metal, two-way', supplier: '', spec: '20 in, finish per hardware', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'D-rings', material: 'Solid brass, plated per hardware', supplier: '', spec: '1.5 in', qty: 6, uom: 'pc', cost: 0 }), row({ component: 'Snap hooks', material: 'Swivel snap hook', supplier: '', spec: '1.25 in', qty: 2, uom: 'pc', cost: 0 }), row({ component: 'Rivets / feet', material: 'Double-cap rivets, base studs', supplier: '', spec: '', qty: 12, uom: 'pc', cost: 0 }), row({ component: 'Shoulder pad', material: 'Leather over foam, non-slip back', supplier: '', spec: '6 × 2 in', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Logo stamp', material: 'Brass deboss die / foil', supplier: '', spec: 'From artwork file', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Cotton dust bag + tissue', supplier: '', spec: '', qty: 1, uom: 'pc', cost: 0 })];  if (cat === 'scarf') return [row({ component: 'Body', material: 'Per fabric choice (jersey / brushed knit / wool blend)', supplier: '', spec: 'Cut on grain', qty: 2, uom: 'yd', cost: 0 }), row({ component: 'Edge finish', material: 'Rolled hem / overlock', supplier: '', spec: 'Per S4', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Woven label', material: 'Damask, DPP mark', supplier: '', spec: 'Corner', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Recycled sleeve', supplier: '', spec: 'Folded 10 × 10 in', qty: 1, uom: 'pc', cost: 0 })];
+  if (cat === 'balaclava') return [row({ component: 'Body', material: 'Rib knit 95% cotton / 5% spandex or merino', supplier: '', spec: 'Per fabric choice', qty: .4, uom: 'yd', cost: 0 }), row({ component: 'Eye binding', material: 'Self-fabric binding 3/8 in', supplier: '', spec: 'Clean finish', qty: .4, uom: 'yd', cost: 0 }), row({ component: 'Woven label', material: 'Damask, DPP mark', supplier: '', spec: 'Back neck / side', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Header card + polybag', supplier: '', spec: '', qty: 1, uom: 'pc', cost: 0 })];
   const lbl = [row({ component: 'Main label', material: 'Woven damask', supplier: '', spec: 'DPP mark, inside back waistband', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Care / content label', material: 'Printed satin', supplier: '', spec: 'Left side seam', qty: 1, uom: 'pc', cost: 0 })];
   if (cat === 'socks') return [
     row({ component: 'Body yarn', material: '80% combed cotton / 17% nylon / 3% spandex', supplier: '', spec: '200-needle, terry footbed', qty: 1, uom: 'pr', cost: 0 }),
@@ -216,6 +230,8 @@ function bottomsBOM(cat) {
   return b;
 }
 function bottomsConstruction(cat) {
+  if (cat === 'duffle') return [row({ area: 'Body', method: 'Turned construction, piped end panels', spi: '8', notes: 'Bonded nylon thread #138.' }), row({ area: 'Handles', method: 'Rolled over cord core, hand-stitched closure', spi: '7', notes: 'Riveted through D-ring tabs.' }), row({ area: 'Handle straps', method: 'Edge-painted, topstitched, wrap under base', spi: '8', notes: 'Load-bearing; reinforce at base.' }), row({ area: 'Logo', method: 'Heat deboss / emboss / foil stamp', spi: '', notes: 'Die from artwork; test on offcut first.' }), row({ area: 'Base', method: 'Board stiffener + 4 metal feet', spi: '', notes: '' })];  if (cat === 'scarf') return [row({ area: 'Edges', method: 'Rolled hem or 3-thread overlock', spi: '14', notes: 'Hood seam if wrap style.' }), row({ area: 'Finish', method: 'Garment wash, press', spi: '', notes: '' })];
+  if (cat === 'balaclava') return [row({ area: 'Crown / back', method: 'Flatlock seams', spi: '14', notes: 'No ridge against the head.' }), row({ area: 'Eye opening', method: 'Self binding, coverstitch', spi: '12', notes: 'Per E1/E2.' }), row({ area: 'Hem', method: 'Coverstitch 3/4 in', spi: '12', notes: '' })];
   if (cat === 'socks') return [row({ area: 'Knit', method: '200-needle circular knit, terry sole', spi: '', notes: 'Y-heel.' }), row({ area: 'Toe', method: 'Hand-linked', spi: '', notes: 'Seamless feel.' }), row({ area: 'Cuff', method: '1×1 rib, spandex plated', spi: '', notes: 'No dig-in.' }), row({ area: 'Finish', method: 'Boarding + pairing', spi: '', notes: 'Pair numbers match header card.' })];
   if (cat === 'boxers') return [row({ area: 'Seams', method: 'Flatlock 4-needle', spi: '14', notes: 'No chafe.' }), row({ area: 'Waistband', method: 'Elastic attached 3-needle coverstitch', spi: '12', notes: '' }), row({ area: 'Leg hem', method: 'Coverstitch 3/4"', spi: '12', notes: '' })];
   return [
@@ -230,6 +246,11 @@ function bottomsConstruction(cat) {
 function bottomsFlat(d, side, stroke) {
   const g = d.garment, fill = g.color, front = side === 'front';
   let s = `<svg viewBox="0 -40 400 480" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round">`;
+  if (d.category === 'balaclava') return s + `<path d="M200 10 C120 10 90 80 92 170 C94 250 110 300 100 380 L300 380 C290 300 306 250 308 170 C310 80 280 10 200 10Z" fill="${fill}"/>` + (front ? `<path d="M140 150 C160 128 240 128 260 150 C250 178 150 178 140 150Z" fill="#1a1a1a"/><path d="M140 150 C160 128 240 128 260 150 C250 178 150 178 140 150Z" stroke-dasharray="3 2.5"/>` : '<path d="M200 14 V376" stroke-dasharray="3 2.5"/>') + '<path d="M104 360 H296" stroke-dasharray="3 2.5"/></svg>';
+  if (d.category === 'duffle') { const t = g.trim && g.trim !== '#EEF1F9' ? g.trim : shade(fill, -.06);
+    return s + (front ? `<path d="M150 200 C150 90 250 90 250 200" stroke="${t}" stroke-width="9" fill="none"/><path d="M150 200 C150 90 250 90 250 200" fill="none"/><path d="M40 230 C40 190 70 175 110 172 L290 172 C330 175 360 190 360 230 L360 360 C360 375 350 382 335 382 L65 382 C50 382 40 375 40 360Z" fill="${fill}"/><path d="M48 232 C48 196 74 183 110 180 L290 180 C326 183 352 196 352 232" stroke-dasharray="3 2.5"/><rect x="138" y="172" width="22" height="210" fill="${t}"/><rect x="240" y="172" width="22" height="210" fill="${t}"/><path d="M141 176 V378 M157 176 V378 M243 176 V378 M259 176 V378" stroke-dasharray="3 2.5"/><circle cx="149" cy="196" r="5"/><circle cx="251" cy="196" r="5"/><path d="M262 214 l36 18 v52 l-36 0Z" fill="${t}"/><path d="M40 250 C10 300 60 420 200 430 C340 420 390 300 360 250" fill="none" stroke-width="2.2"/>`
+      : `<path d="M90 120 C90 70 310 70 310 120 L310 360 C310 375 300 382 285 382 L115 382 C100 382 90 375 90 360Z" fill="${fill}"/><path d="M100 128 C100 84 300 84 300 128 L300 356 C300 368 292 372 282 372 L118 372 C108 372 100 368 100 356Z" stroke-dasharray="3 2.5"/><path d="M200 60 V100" stroke-width="2.4"/><circle cx="200" cy="200" r="8"/><text x="200" y="420" text-anchor="middle" font-size="12" fill="${stroke}" stroke="none">END PANEL</text>`) + '</svg>'; }
+  if (d.category === 'scarf') return s + `<path d="M120 30 C160 0 240 0 280 30 L300 200 C260 240 140 240 100 200Z" fill="${fill}"/><path d="M150 200 L130 420 L190 420 L200 230Z" fill="${shade(fill, -.06)}"/><path d="M250 200 L270 420 L210 420 L200 230Z" fill="${fill}"/><path d="M130 412 H190 M210 412 H270" stroke-dasharray="3 2.5"/></svg>`;
   if (d.category === 'socks') {
     s += `<path d="M150 0 L150 250 C150 300 130 330 120 360 C110 395 140 410 180 405 L320 395 C350 392 352 360 330 350 L230 330 C215 320 212 300 214 250 L214 0 Z" fill="${fill}"/>`;
     s += `<path d="M150 46 L214 46" stroke-dasharray="3 2.5"/>${[8, 16, 24, 32, 40].map(y => `<path d="M${150 + 6} ${y} V${y + 0}"/>`).join('')}`;
@@ -251,7 +272,7 @@ function bottomsFlat(d, side, stroke) {
    ========================================================================= */
 const row = o => ({ id: uid('r'), ...o });
 function presetPOM(cat) {
-  if (isBottom(cat) || cat === 'socks') return bottomsPOM(cat);
+  if (isBottom(cat) || cat === 'socks' || isAcc(cat)) return bottomsPOM(cat);
   if (cat === 'watch') return {
     unit: 'mm', sizes: ['SPEC'], base: 'SPEC', rows: [
       row({ code: 'W1', desc: 'Case diameter (excl. crown)', tol: .2, base: 42, grade: 0 }),
@@ -313,7 +334,7 @@ function presetPOM(cat) {
   };
 }
 function presetBOM(cat) {
-  if (isBottom(cat) || cat === 'socks') return bottomsBOM(cat);
+  if (isBottom(cat) || cat === 'socks' || isAcc(cat)) return bottomsBOM(cat);
   if (cat === 'watch') return [
     row({ component: 'Case', material: 'Per spec — shape, material, finish on Materials page', supplier: '', spec: 'Finish per colorway', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Movement', material: 'Per spec sheet', supplier: '', spec: 'See movement field', qty: 1, uom: 'pc', cost: 0 }),
@@ -345,7 +366,7 @@ function presetBOM(cat) {
   return b;
 }
 function presetConstruction(cat) {
-  if (isBottom(cat) || cat === 'socks') return bottomsConstruction(cat);
+  if (isBottom(cat) || cat === 'socks' || isAcc(cat)) return bottomsConstruction(cat);
   if (cat === 'watch') return [
     row({ area: 'Case', method: 'CNC turned solid wood, steel inner container press-fit', spi: '', notes: 'Grain runs 12–6. No visible knots or filler.' }),
     row({ area: 'Finish', method: 'Natural oil + matte lacquer, 3 coats', spi: '', notes: 'Splash resistant only — 3 ATM max.' }),
@@ -375,11 +396,11 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
+    garment: { color: cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', trim: cat === 'duffle' ? '' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
     watch: { ...WATCH_DEFAULT },
-    place: cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
-    artwork: { front: [], back: [] },
-    colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : '#EEF1F9', pantone: '', notes: '' })],
+    place: cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
+    artwork: cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
+    colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', pantone: '', notes: '' })],
     bom: presetBOM(cat), pom: presetPOM(cat), construction: presetConstruction(cat),
     labels: isW ? 'Dial: DPP mark at 12, edition N° at 6.\nCaseback: N° ___ / 150 and engraving text.\nCertificate card numbered to match caseback.'
       : 'Main label: woven DPP mark, centered back neck, 1/2" below seam.\nCare label: left side seam, 4" above hem.\nHang tag: drop name + unit number, attached via safety pin through main label.',
@@ -423,16 +444,19 @@ const Assets = {
   async ready(ids) { await Promise.all(ids.map(async id => { const src = await this.get(id); if (!src) return; let i = this.imgs.get(id); if (!i) { i = new Image(); this.imgs.set(id, i); } if (!i.complete || !i.naturalWidth) { i.src = src; await i.decode().catch(() => { }); } })); },
 };
 // HPS height as a fraction of each default model's height (hooded models sit lower)
-const MODEL_CAL = { tee: .965, longsleeve: .965, crewneck: .965, hoodie: .74, pants: 1, shorts: 1, boxers: 1, socks: 1 };
+const MODEL_CAL = { tee: .965, longsleeve: .965, crewneck: .965, hoodie: .74, pants: 1, shorts: 1, boxers: 1, socks: 1, scarf: 1, balaclava: 1 };
 // default files that bundle a body or a second garment: keep only these node names
 const MODEL_KEEP = { shorts: ['Object_6'], pants: ['Object_573'] };
 // default models whose normal maps carry baked-in logos — use geometry folds only
 const MODEL_NO_NORMAL = ['pants'];
+// default facing fixes (degrees) for models exported facing sideways
+const MODEL_ROT = { balaclava: -90 };
+const HEAD_LIFT = .05; // model heads sit slightly above our dial so the hands clear inside the case
 // Garment meshes: per-design upload (garment.model asset id) or studio default at assets/models/<category>.glb
 const Models = {
   cache: new Map(), // key -> THREE.Object3D | null (null = not available); absent while loading
   pending: new Map(),
-  file(d) { return d.category === 'socks' && d.garment.sockStyle === 'noshow' ? 'socks-noshow' : d.category; },
+  file(d) { const g = d.garment; return d.category === 'socks' && g.sockStyle === 'noshow' ? 'socks-noshow' : d.category === 'pants' && g.pantStyle === 'slim' ? 'pants-slim' : d.category; },
   key(d) { return d.garment.model ? 'asset:' + d.garment.model : 'file:' + this.file(d); },
   peek(d) { return this.cache.get(this.key(d)); },
   load(d) {
@@ -499,7 +523,7 @@ const FLAT = {
 };
 FLAT.hoodie = FLAT.crewneck;
 function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null } = {}) {
-  if (isBottom(d.category) || d.category === 'socks') return bottomsFlat(d, side, stroke);
+  if (isBottom(d.category) || d.category === 'socks' || isAcc(d.category)) return bottomsFlat(d, side, stroke);
   if (d.category === 'watch') return watchFlat(d, side, stroke);
   const g = d.garment, F = FLAT[d.category], fill = g.color, dark = shade(fill, -.18), sw = 1.6;
   const front = side === 'front';
@@ -584,7 +608,8 @@ function watchFlat(d, side, stroke) {
 const Library = {
   render() {
     const q = $('#libSearch').value.trim().toLowerCase(), st = $('#libStatus').value;
-    const list = S.designs.filter(d => (S.filter === 'all' || d.category === S.filter) && (!st || d.status === st)
+    const grp = d => S.filter === 'all' || d.category === S.filter || (S.filter === 'tops' && isTop(d.category)) || (S.filter === 'bottoms' && isBottom(d.category)) || (S.filter === 'acc' && (isAcc(d.category) || d.category === 'socks'));
+    const list = S.designs.filter(d => grp(d) && (!st || d.status === st)
       && (!q || [d.name, d.styleNo, d.drop, d.season, d.factory].join(' ').toLowerCase().includes(q))).sort((a, b) => b.updated - a.updated);
     $('#libCount').textContent = S.designs.length;
     const c = s => S.designs.filter(d => d.status === s).length;
@@ -636,6 +661,19 @@ const TEX = {
   canvas(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return c; },
   // draw in a logical size, store at 2x pixels (sharp dials / inserts up close)
   canvasHi(size, draw) { return this.canvas(size * 2, size * 2, (x) => { x.scale(2, 2); draw(x, size, size); }); },
+  // stamped logos: the art only supplies the shape; colour comes from the material (darker + burnished when pressed, gold foil)
+  press(art, base, mode) { const N = art.width, mk = () => { const c = document.createElement('canvas'); c.width = c.height = N; return c; }, solid = (src, col) => { const c = mk(), x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, N, N); return c; };
+    const mask = solid(art, '#fff'), map = mk(), m = map.getContext('2d'); m.fillStyle = base; m.fillRect(0, 0, N, N); m.drawImage(solid(art, mode === 'foil' ? '#C9A24A' : shade(base, mode === 'deboss' ? -.22 : .04)), 0, 0);
+    const alpha = mk(), a = alpha.getContext('2d'); a.fillStyle = '#000'; a.fillRect(0, 0, N, N); a.filter = 'blur(9px)'; for (let i = 0; i < 4; i++) a.drawImage(mask, 0, 0); a.filter = 'none'; a.drawImage(mask, 0, 0);
+    const bump = mk(), b = bump.getContext('2d'); b.fillStyle = mode === 'emboss' ? '#000' : '#fff'; b.fillRect(0, 0, N, N); b.filter = 'blur(2.5px)'; b.drawImage(solid(art, mode === 'emboss' ? '#fff' : '#000'), 0, 0);
+    let metal = null; if (mode === 'foil') { metal = mk(); const t = metal.getContext('2d'); t.fillStyle = '#000'; t.fillRect(0, 0, N, N); t.drawImage(mask, 0, 0); metal = new THREE.CanvasTexture(metal); }
+    const map3 = new THREE.CanvasTexture(map); map3.colorSpace = THREE.SRGBColorSpace; map3.anisotropy = 16;
+    return { mode, map: map3, alpha: new THREE.CanvasTexture(alpha), bump: new THREE.CanvasTexture(bump), metal }; },
+  // leather grain: pebble = packed soft cells, smooth = faint pores, suede = fine nap
+  grain(kind) { const key = 'grain_' + kind; if (this[key]) return this[key]; const N = 512, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d');
+    x.fillStyle = '#808080'; x.fillRect(0, 0, N, N); const cnt = kind === 'pebble' ? 5200 : kind === 'suede' ? 30000 : 2200, r0 = kind === 'pebble' ? 3.2 : kind === 'suede' ? .7 : .9;
+    for (let i = 0; i < cnt; i++) { const px = Math.random() * N, py = Math.random() * N, r = r0 * (.6 + Math.random() * .8), v = kind === 'pebble' ? 150 + Math.random() * 60 : 60 + Math.random() * 50; const gr = x.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, `rgb(${v},${v},${v})`); gr.addColorStop(1, 'rgba(128,128,128,0)'); x.fillStyle = gr; [-N, 0, N].forEach(ox => [-N, 0, N].forEach(oy => { if (Math.abs(px + ox - N / 2) < N / 2 + r && Math.abs(py + oy - N / 2) < N / 2 + r) { x.beginPath(); x.arc(px + ox, py + oy, r, 0, 7); x.fill(); } })); }
+    return (this[key] = new THREE.CanvasTexture(c)); },
   repeat(t, x, y) { const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWrapping; c.repeat.set(x, y); c.needsUpdate = true; return c; },
   knit(kind) {
     const k = 'knit' + kind; if (this._c[k]) return this._c[k];
@@ -724,6 +762,9 @@ const TEX = {
       } else if (kind === 'gingham') {
         const n = 8, s = w / n; x.globalAlpha = .5; x.fillStyle = c2; for (let i = 0; i < n; i += 2) { x.fillRect(i * s, 0, s, h); x.fillRect(0, i * s, w, s); }
       } else if (kind === 'pinstripe') { x.fillStyle = c3; for (let i = 0; i < w; i += 32) x.fillRect(i, 0, 2.5, h); }
+      else if (kind === 'camo') { // woodland: 3 blob layers over the ground colour
+        [[c2, .52], [shade(c1, -.45), .6], [c3, .66]].forEach(([col, th]) => { const f = this.clouds(w, h, [3, 6, 12, 24]), im = x.getImageData(0, 0, w, h), [r, g2, b] = hexToRgb(col); for (let i = 0; i < f.length; i++) if (f[i] > th) { im.data[i * 4] = r; im.data[i * 4 + 1] = g2; im.data[i * 4 + 2] = b; } x.putImageData(im, 0, 0); });
+      }
       x.globalAlpha = 1;
     });
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16;
@@ -1157,6 +1198,7 @@ const Studio = {
   add(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); return m; },
   // Real garment meshes (CLO / Marvelous / marketplace GLB) take priority over the procedural fallback.
   buildGarment(d) {
+    if (d.category === 'duffle') return this.buildDuffle(d);
     const model = Models.peek(d);
     if (model === undefined) { Models.load(d).then(() => { if (S.current === d && S.view === 'studio') { this.build(); Panels.studio(); } }); if (isBottom(d.category)) return; } // bottoms have no fallback shape: wait for the model
     if (model) return this.buildFromModel(d, model);
@@ -1166,10 +1208,10 @@ const Studio = {
     const g = d.garment, fit = FITS[g.fit] || FITS.boxy;
     const fin = g.finish || 'none', dis = g.distress || 'none', washed = fin !== 'none' || dis !== 'none';
     const surf = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : washed ? TEX.surface(g.color, fin, dis) : null;
-    const obj = SkeletonUtils.clone(gltfScene); obj.rotation.y = (g.modelRot || 0) * Math.PI / 180;
+    const obj = SkeletonUtils.clone(gltfScene); obj.rotation.y = (num(g.modelRot) || (g.model ? 0 : MODEL_ROT[Models.file(d)] || 0)) * Math.PI / 180;
     // bake rigged (skinned) meshes into static geometry so measuring, decals and the waist trace see the posed shape
     obj.updateMatrixWorld(true); { const sk = []; obj.traverse(o => { if (o.isSkinnedMesh) sk.push(o); }); sk.forEach(o => { const geo = o.geometry.clone(), p = geo.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); o.applyBoneTransform(i, v); p.setXYZ(i, v.x, v.y, v.z); } geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight'); geo.computeVertexNormals(); geo.computeBoundingBox(); geo.computeBoundingSphere(); const m = new THREE.Mesh(geo, o.material); m.name = o.name; m.position.copy(o.position); m.quaternion.copy(o.quaternion); m.scale.copy(o.scale); o.parent.add(m); o.parent.remove(m === o ? null : o); }); }
-    const keep = !g.model && MODEL_KEEP[d.category]; if (keep) { const drop = []; obj.traverse(o => { if (o.isMesh && !keep.includes(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o)); }
+    const keep = !g.model && MODEL_KEEP[Models.file(d)]; if (keep) { const drop = []; obj.traverse(o => { if (o.isMesh && !keep.includes(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o)); }
     const holder = new THREE.Group(); holder.add(obj); this.root.add(holder);
     // normalise: garment height ≈ body length from HPS at this fit, centred, hem at -h/2
     holder.updateMatrixWorld(true);
@@ -1186,7 +1228,7 @@ const Studio = {
       if (!o.isMesh) return;
       const orig = Array.isArray(o.material) ? o.material[0] : o.material;
       const m = this.fabricMat(g.color, g.fabric, false, 30, 18, surf);
-      if (orig?.normalMap && !(MODEL_NO_NORMAL.includes(d.category) && !g.model)) { m.normalMap = orig.normalMap; m.normalScale = orig.normalScale?.clone() || new THREE.Vector2(1, 1); m.bumpScale *= .35; } // keep baked folds
+      if (orig?.normalMap && !(MODEL_NO_NORMAL.includes(Models.file(d)) && !g.model)) { m.normalMap = orig.normalMap; m.normalScale = orig.normalScale?.clone() || new THREE.Vector2(1, 1); m.bumpScale *= .35; } // keep baked folds
       if (orig?.aoMap) { m.aoMap = orig.aoMap; m.aoMapIntensity = 1; }
       if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); // trimmed defaults ship without normals
       o.material = m; o.castShadow = o.receiveShadow = true; this.modelMeshes.push(o);
@@ -1353,7 +1395,7 @@ const Studio = {
       const cy = hps - (P.top + 7 * P.s) / 10, x = (side === 'front' ? 1 : -1) * P.dx / 10;
       let art = Art.composite(d, side, 1024); if (isStitch(P.tech)) art = stitchify(art, P.tech, d.garment.color);
       const tex = new THREE.CanvasTexture(art); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 16;
-      const puff = /Puff|embroider|Chenille|patch/i.test(P.tech);
+      const puff = /Puff|embroider|Chenille|patch/i.test(P.tech), press = pressMode(P.tech) && TEX.press(art, d.garment.color, pressMode(P.tech));
       // real models: aim at the actual fabric surface; procedural: known front plane
       let pos = new THREE.Vector3(x, cy, side === 'front' ? this.P.d : -this.P.d), target = this.torso, depth = .95;
       const sideways = this.P.side, dirS = side === 'front' ? 1 : -1, yaw = sideways ? dirS * Math.PI / 2 : null;
@@ -1368,14 +1410,96 @@ const Studio = {
         const m = this.detailDecal(pos, new THREE.Vector3(size, size, depth), tex, THREE.MathUtils.degToRad(side === 'front' ? -P.r : P.r), side === 'back', puff && (/3D puff|Chenille/i.test(P.tech) ? 6 : /Puff print/.test(P.tech) ? 4 : 2.2), tg, yaw);
         if (!m.geometry.attributes.position?.count) { this.root.remove(m); m.geometry.dispose(); m.material.dispose(); return; }
         if (P.tech === 'Discharge') m.material.opacity = .82;
+        if (press) { m.material.dispose(); m.material = new THREE.MeshPhysicalMaterial({ map: press.map, alphaMap: press.alpha, bumpMap: press.bump, bumpScale: 5, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: (FABRICS[d.garment.fabric]?.rough ?? .5) * (press.mode === 'deboss' ? .8 : 1), clearcoat: FABRICS[d.garment.fabric]?.coat || 0, ...(press.metal ? { metalness: 1, metalnessMap: press.metal } : {}) }); }
         this.decals.push(m);
       });
     });
   },
+  /* ---------- duffle (hard good: procedural like the watch, prints like a garment) ---------- */
+  // 1 unit = 10 in. Barrel weekender: superellipse section with a flatter base, piped end panels, wrap-under handle straps.
+  buildDuffle(d) {
+    const g = d.garment, fab = FABRICS[g.fabric] ? g.fabric : 'pebble', f = FABRICS[fab];
+    const L = { mini: 1.6, weekender: 2.2, large: 2.6 }[g.bagSize] || 2.2, H = L * .5, D = L * .48;
+    const leather = f.leather;
+    const surf = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null;
+    const shell = leather ? new THREE.MeshPhysicalMaterial({ color: g.color, roughness: f.rough, sheen: f.sheen, sheenRoughness: .6, sheenColor: new THREE.Color(g.color).lerp(new THREE.Color('#ffffff'), .2), clearcoat: f.coat || 0, clearcoatRoughness: .5, bumpMap: TEX.repeat(TEX.grain(fab), 5, 3), bumpScale: f.bump, side: THREE.DoubleSide, ...(surf ? { color: '#ffffff', map: surf.map } : {}) })
+      : this.fabricMat(g.color, fab, false, 22, 14, surf);
+    const trim = leather ? shell.clone() : new THREE.MeshPhysicalMaterial({ color: shade(g.color, -.08), roughness: .5, sheen: .2, bumpMap: TEX.repeat(TEX.grain('smooth'), 3, 1), bumpScale: .3 });
+    trim.map = null; trim.color.set(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color);
+    const HW = { gunmetal: ['#5b5f66', .32], steel: ['#d2d4d8', .22], gold: ['#c9a24a', .26], black: ['#26272b', .45] }[g.hardware || 'gunmetal'];
+    const metal = new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] });
+    const add = (geo, mat) => this.add(geo, mat);
+    // cross-section (y up, z toward camera); v = 0 sits under the bag so the UV seam hides
+    const sec = (v, s = 1) => { const a = v - Math.PI / 2, c = Math.cos(a), sn = Math.sin(a), n = sn < 0 ? 4.2 : 2.3;
+      const y = H / 2 * Math.sign(sn) * Math.abs(sn) ** (2 / n), z = D / 2 * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - .14 * Math.max(0, sn));
+      return [y * s, z * s]; };
+    const taper = u => 1 - .08 * Math.abs(2 * u - 1) ** 5, end = taper(0);
+    const body = add(new ParametricGeometry((u, v, t) => { const [y, z] = sec(v * Math.PI * 2, taper(u)); t.set((u - .5) * L, y, z); }, 96, 96), shell);
+    [-1, 1].forEach(sx => {
+      const cap = add(new ParametricGeometry((r, v, t) => { const [y, z] = sec(v * Math.PI * 2, end * r); t.set(sx * (L / 2 + .045 * (1 - r * r)), y, z); }, 24, 96), trim);
+      const ring = []; for (let i = 0; i < 96; i++) { const [y, z] = sec(i / 96 * Math.PI * 2, end * 1.004); ring.push(new THREE.Vector3(sx * L / 2, y, z)); }
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ring, true), 192, .017, 8, true), trim); // piping
+      // shoulder-strap D-ring + snap hook on each end panel
+      const dr = add(new THREE.TorusGeometry(.055, .011, 10, 28, Math.PI * 1.15), metal); dr.position.set(sx * (L / 2 + .05), H * .18, 0); dr.rotation.set(0, sx * Math.PI / 2, Math.PI * .43);
+      const hook = add(new RoundedBoxGeometry(.03, .16, .06, 2, .01), metal); hook.position.set(sx * (L / 2 + .085), H * .05, .02); hook.rotation.z = sx * .35;
+      cap.castShadow = true;
+    });
+    // flat band helper: centres + outward normals + width axis → box-section strap
+    const band = (pts, nrm, ax, w, t, mat) => {
+      const pos = [], idx = [], n = pts.length;
+      pts.forEach((p, i) => { const o = nrm[i].clone().multiplyScalar(t / 2), a = ax[i].clone().multiplyScalar(w / 2);
+        [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(([sa, so]) => { const q = p.clone().addScaledVector(a, sa).addScaledVector(o, so); pos.push(q.x, q.y, q.z); }); });
+      for (let i = 0; i < n - 1; i++) for (let k = 0; k < 4; k++) { const a = i * 4 + k, b = i * 4 + (k + 1) % 4, c = a + 4, e = b + 4; idx.push(a, c, b, b, c, e); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals(); return add(geo, mat);
+    };
+    // handle straps wrap under the bag; they stop short of the zip
+    const xs = L * .19, gap = .42, top = [];
+    [-1, 1].forEach(sx => {
+      const pts = [], nrm = [], ax = [], u = .5 + sx * xs / L;
+      for (let i = 0; i <= 120; i++) { const v = Math.PI + gap + i / 120 * (Math.PI * 2 - gap * 2), [y, z] = sec(v, taper(u)), [y2, z2] = sec(v + .01, taper(u));
+        const tg = new THREE.Vector3(0, y2 - y, z2 - z).normalize(), nn = new THREE.Vector3(0, -tg.z, tg.y); // outward (curve runs counter-clockwise seen from +x)
+        if (nn.y * y + nn.z * z < 0) nn.negate(); pts.push(new THREE.Vector3(sx * xs, y, z).addScaledVector(nn, .014)); nrm.push(nn); ax.push(new THREE.Vector3(1, 0, 0)); }
+      band(pts, nrm, ax, .15, .022, trim);
+      top.push(pts[0], pts[pts.length - 1]);
+    });
+    // zip track + pull along the crown
+    { const pts = [], nrm = [], ax = []; for (let i = 0; i <= 60; i++) { const u = .04 + i / 60 * .92, [y] = sec(Math.PI, taper(u)); pts.push(new THREE.Vector3((u - .5) * L, y + .006, 0)); nrm.push(new THREE.Vector3(0, 1, 0)); ax.push(new THREE.Vector3(0, 0, 1)); }
+      band(pts, nrm, ax, .09, .012, new THREE.MeshStandardMaterial({ color: '#1b1c20', roughness: .7 }));
+      band(pts, nrm, ax, .03, .02, metal);
+      const pull = add(new RoundedBoxGeometry(.05, .016, .16, 2, .008), metal); pull.position.set(L * .3, H / 2 + .02, .06); pull.rotation.x = -.4;
+      const pt = add(new RoundedBoxGeometry(.06, .012, .22, 2, .006), trim); pt.position.set(L * .3, H / 2 + .015, .2); pt.rotation.x = -.6; }
+    // rolled handles: front and back arches meet under a snap wrap
+    const apexY = H / 2 + H * .64;
+    [[top[0], top[2]], [top[1], top[3]]].forEach(([a, b]) => {
+      const zs = Math.sign(a.z), mid = new THREE.Vector3(0, apexY, zs * .045);
+      const curve = new THREE.CatmullRomCurve3([a.clone().add(new THREE.Vector3(0, -.02, 0)), a.clone().add(new THREE.Vector3(0, .16, -zs * .03)), new THREE.Vector3(a.x * .78, apexY - .22, zs * .1), mid, new THREE.Vector3(b.x * .78, apexY - .22, zs * .1), b.clone().add(new THREE.Vector3(0, .16, -zs * .03)), b.clone().add(new THREE.Vector3(0, -.02, 0))]);
+      add(new THREE.TubeGeometry(curve, 120, .036, 14, false), trim);
+      [a, b].forEach(p => { const ring = add(new THREE.TorusGeometry(.05, .011, 10, 24), metal); ring.position.copy(p).add(new THREE.Vector3(0, .05, 0)); ring.rotation.y = Math.PI / 2;
+        [-1, 1].forEach(k => { const rv = add(new THREE.CylinderGeometry(.014, .014, .012, 16), metal); rv.position.copy(p).add(new THREE.Vector3(0, -.05 - k * .045, 0)).addScaledVector(new THREE.Vector3(0, p.y, p.z).normalize(), .013); rv.lookAt(rv.position.clone().add(new THREE.Vector3(0, p.y, p.z))); rv.rotateX(Math.PI / 2); }); });
+    });
+    { const wrap = add(new THREE.CapsuleGeometry(.06, H * .42, 6, 16), trim); wrap.position.set(0, apexY, 0); wrap.rotation.z = Math.PI / 2; wrap.scale.set(1, 1, 1.25);
+      const snap = add(new THREE.CylinderGeometry(.026, .026, .012, 24), metal); snap.position.set(0, apexY + .066, 0); }
+    // shoulder strap: ring to ring, draped across the front with a pad
+    { const c = new THREE.CatmullRomCurve3([[-1, .18, 0], [-1.09, -.08, .22], [-.85, -.5, .62], [-.3, -.66, .78], [.3, -.62, .8], [.85, -.45, .62], [1.09, -.06, .22], [1, .18, 0]].map(([x, y, z]) => new THREE.Vector3(x * (L / 2 + .06), y * H, z * D)));
+      const pts = c.getSpacedPoints(160), nrm = [], ax = []; pts.forEach((p, i) => { const tg = c.getTangentAt(i / 160), a = new THREE.Vector3().crossVectors(tg, new THREE.Vector3(0, 0, 1)).normalize(); ax.push(a); nrm.push(new THREE.Vector3().crossVectors(a, tg).normalize()); });
+      band(pts, nrm, ax, .13, .018, trim);
+      const k = 80, pad = add(new RoundedBoxGeometry(.6, .19, .045, 3, .02), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
+      const bk = add(new THREE.TorusGeometry(.07, .009, 6, 4), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .015); bk.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(118 / 160), ax[118].clone().negate(), nrm[118])); bk.rotateZ(Math.PI / 4); bk.scale.set(1.3, 1, 1); }
+    // luggage tag off the front-right handle ring
+    { const p = top[3], tag = add(new RoundedBoxGeometry(.24, .36, .025, 3, .012), trim); tag.position.set(p.x + .17, p.y - .32, p.z + .08); tag.rotation.set(-.12, .25, -.18);
+      const lp = add(new RoundedBoxGeometry(.045, .26, .014, 2, .006), trim); lp.position.set(p.x + .09, p.y - .07, p.z + .05); lp.rotation.z = .55; }
+    // base studs
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([a, b]) => { const s = add(new THREE.CylinderGeometry(.03, .034, .03, 20), metal); s.position.set(a * L * .36, -H / 2 - .005, b * D * .3); });
+    this.modelMeshes = [body]; this.torso = body;
+    this.P = { w: L / 4, d: D / 2, h: H, rise: 0, neckR: .3, side: false };
+    this.updateDecals();
+  },
   /* ---------- watch ---------- */
   buildWatch(d) {
     // Real proportions at 42 mm (1 unit ≈ 20 mm): case ≈ 10.5 mm tall, dial recessed under a machined bezel, domed sapphire
-    const W = watchSpec(d), sc = W.dia / 42, grp = new THREE.Group(); this.root.add(grp);
+    // model heads (debranded marketplace cases) replace only the case; dial, hands, crystal and straps stay ours
+    const head = W0 => W0.head && W0.head !== 'built' ? this.loadHead(W0.head) : null, hd = head(watchSpec(d));
+    const W = hd ? { ...watchSpec(d), shape: 'round', bezelStyle: 'none' } : watchSpec(d), sc = W.dia / 42, grp = new THREE.Group(); this.root.add(grp);
     const mk = (geo, mat, parent = grp) => { const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
     const V2 = a => a.map(([x, y]) => new THREE.Vector2(x, y));
     const caseMat = watchMat(W.caseMat, W.caseWood);
@@ -1386,7 +1510,10 @@ const Studio = {
     const G = WATCH_GEOM[W.shape] || WATCH_GEOM.round;
     const TOP = .17, DIAL_Y = .14, BZ_TOP = .255, CRY_Y = .262, MID = -.055;
     // case
-    if (W.shape === 'round') {
+    if (hd) {
+      const h = hd.clone(true), dark = new THREE.MeshStandardMaterial({ color: '#17181b', metalness: .4, roughness: .35 }), hm = cm.kind === 'metal' ? caseMat : steel;
+      h.scale.setScalar(G.dialR); h.position.y = DIAL_Y + HEAD_LIFT; h.traverse(o => { if (o.isMesh) { o.material = o.name.startsWith('dark') ? dark : hm; o.castShadow = o.receiveShadow = true; } }); grp.add(h);
+    } else if (W.shape === 'round') {
       mk(new THREE.LatheGeometry(V2([[0, -.28], [.6, -.28], [.64, -.272], [.67, -.25], [.69, -.238], [.84, -.234], [.92, -.222], [.985, -.18], [1.03, -.11], [1.048, -.03], [1.05, .04], [1.042, .1], [1.02, .14], [.99, .162], [.96, TOP], [.93, TOP], [.92, DIAL_Y], [.76, DIAL_Y]]), 160), caseMat);
     } else {
       // shaped case: a ring with the dial well cut through, closed underneath by a caseback
@@ -1406,7 +1533,7 @@ const Studio = {
     const dial = mk(dialGeo(), new THREE.MeshPhysicalMaterial({ map: dialTex, roughness: finish.rough, metalness: finish.metal, clearcoat: W.dialStyle === 'enamel' ? 1 : .2, envMapIntensity: .55, transparent: open, alphaTest: open ? .4 : 0, side: THREE.DoubleSide }));
     dial.rotation.x = -Math.PI / 2; dial.position.y = DIAL_Y;
     // rehaut: the angled chapter ring between dial and crystal (round cases)
-    if (W.shape === 'round' || W.shape === 'cushion') mk(new THREE.LatheGeometry(V2([[dialR - .005, DIAL_Y + .002], [dialR + .05, TOP + .03]]), 160), new THREE.MeshStandardMaterial({ color: shade(W.dial, lum(W.dial) > .5 ? -.08 : .1), roughness: .6, metalness: .2, side: THREE.DoubleSide }));
+    if (!hd && (W.shape === 'round' || W.shape === 'cushion')) mk(new THREE.LatheGeometry(V2([[dialR - .005, DIAL_Y + .002], [dialR + .05, TOP + .03]]), 160), new THREE.MeshStandardMaterial({ color: shade(W.dial, lum(W.dial) > .5 ? -.08 : .1), roughness: .6, metalness: .2, side: THREE.DoubleSide }));
     this.balance = null;
     if (open) {
       const mv = new THREE.CanvasTexture(movementCanvas(W)); mv.colorSpace = THREE.SRGBColorSpace; mv.userData.own = true;
@@ -1429,7 +1556,7 @@ const Studio = {
     } else if (W.shape !== 'round') {
       const fr = new THREE.Shape(shapePts(W.shape, .98)); fr.holes.push(new THREE.Path(G.dialRect ? shapePts(W.shape, G.dialScale * 1.02).reverse() : circlePts(G.dialR + .02, 128)));
       const fg = new THREE.ExtrudeGeometry(fr, { depth: .035, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 4, curveSegments: 72 }); fg.rotateX(-Math.PI / 2); fg.translate(0, TOP + .01, 0); mk(fg, W.caseMat === 'wood' ? metal : polished);
-    } else if (W.bezelStyle !== 'none') {
+    } else if (W.bezelStyle !== 'none' && !hd) {
       // machined bezel: polished outer chamfer, flat top, inner step
       const bzMat = W.bezelStyle === 'gem' ? watchMat(W.caseMat === 'wood' ? 'steel' : W.caseMat) : W.bezelStyle === 'fluted' ? flutedMat(polished) : insert ? metal : polished;
       mk(new THREE.LatheGeometry(V2([[.965, TOP - .005], [.972, TOP + .03], [.968, TOP + .065], [.952, BZ_TOP], [.83, BZ_TOP + .003], [.812, BZ_TOP - .006], [.8, BZ_TOP - .025], [.8, TOP]]), 200), bzMat);
@@ -1450,23 +1577,32 @@ const Studio = {
     this.hands = { h: hand(.5 * hl, .065, W.index, DIAL_Y + .012, W.hands), m: hand(.75 * hl, .046, W.index, DIAL_Y + .026, W.hands === 'mercedes' ? 'sword' : W.hands), s: hand(.84 * hl, .012, W.accent, DIAL_Y + .04, 'baton') };
     mk(new THREE.CylinderGeometry(.03, .034, .05, 32), handMat(W.index)).position.y = DIAL_Y + .03;
     // domed sapphire crystal
-    const cR = insert ? .825 : W.shape === 'round' ? .81 : dialR, dome = .025, sR = (cR * cR + dome * dome) / (2 * dome);
+    const cR = hd ? dialR * 1.01 : insert ? .825 : W.shape === 'round' ? .81 : dialR, dome = .025, sR = (cR * cR + dome * dome) / (2 * dome);
     const cry = mk(W.shape === 'round' || W.shape === 'cushion' || W.shape === 'octagon' ? new THREE.SphereGeometry(sR, 128, 12, 0, Math.PI * 2, 0, Math.asin(cR / sR)) : dialGeo(),
       new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .04, ior: 1.77, roughness: 0, metalness: 0, clearcoat: 1, envMapIntensity: 1.6, transparent: true, opacity: 1 }));
-    if (W.shape === 'round' || W.shape === 'cushion' || W.shape === 'octagon') cry.position.y = CRY_Y + dome - sR; else { cry.rotation.x = -Math.PI / 2; cry.position.y = CRY_Y; }
+    if (hd) cry.position.y = DIAL_Y + HEAD_LIFT + (hd.userData.glass || 0) * dialR + .012 + dome - sR;
+    else if (W.shape === 'round' || W.shape === 'cushion' || W.shape === 'octagon') cry.position.y = CRY_Y + dome - sR; else { cry.rotation.x = -Math.PI / 2; cry.position.y = CRY_Y; }
     cry.castShadow = false;
     // knurled crown + stem + guards
     const crownMat = cm.kind === 'metal' ? metal : steel;
     const gear = new THREE.Shape(); for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2, r = i % 2 ? .08 : .088; i ? gear.lineTo(Math.cos(a) * r, Math.sin(a) * r) : gear.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
     const cg2 = new THREE.ExtrudeGeometry(gear, { depth: .11, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 3, curveSegments: 8 }); cg2.rotateY(Math.PI / 2);
+    if (!hd) {
     const crown = mk(cg2, crownMat); crown.position.set(G.halfX + .05, MID, 0);
     const stem = mk(new THREE.CylinderGeometry(.04, .04, .08, 24), crownMat); stem.rotation.z = Math.PI / 2; stem.position.set(G.halfX + .01, MID, 0);
     if (W.crownGuards) [-1, 1].forEach(s => { const gd = mk(new RoundedBoxGeometry(.13, .16, .08, 4, .035), caseMat); gd.position.set(G.halfX + .02, MID, s * .15); });
     // lugs (integrated octagon has none)
-    if (W.shape !== 'octagon') { const lg = lugGeo(); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(lg, caseMat); l.position.set(sx * .63, 0, sz * (G.halfZ - .34)); if (sz < 0) l.rotation.y = Math.PI; }); }
+    }
+    if (W.shape !== 'octagon' && !hd) { const lg = lugGeo(); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(lg, caseMat); l.position.set(sx * .63, 0, sz * (G.halfZ - .34)); if (sz < 0) l.rotation.y = Math.PI; }); }
     const bm = cm.kind === 'metal' ? metal : steel, bp = bm.clone(); bp.roughness = .17; bp.envMapIntensity = 1.35; // polished, not a perfect mirror
-    this.buildStrap(W, grp, mk, { metal: bm, polished: bp, steel }, G);
+    this.buildStrap(W, grp, mk, { metal: bm, polished: bp, steel }, hd ? { ...G, halfZ: (hd.userData.lugZ || 1.3) * dialR - .2 } : G);
     grp.scale.setScalar(sc); grp.rotation.x = .62;
+  },
+  loadHead(name) {
+    this.heads ??= {}; this.headWait ??= {};
+    if (this.heads[name]) return this.heads[name];
+    this.headWait[name] ??= new GLTFLoader().loadAsync(`assets/models/watch-${name}.glb`).then(g => { this.heads[name] = g.scene.children[0] || g.scene; this.heads[name].userData = { ...(g.scene.userData || {}), ...(g.scene.children[0]?.userData || {}) }; if (S.current?.category === 'watch' && S.view === 'studio') this.build(); }).catch(e => console.warn('watch head', name, e));
+    return null;
   },
   buildStrap(W, grp, mk, M, G) {
     const z0 = G.halfZ + .18, integ = W.shape === 'octagon';
@@ -1513,13 +1649,18 @@ const Studio = {
     if (!L) return;
     const mats = t === 'woodlinks' ? { A: watchMat('wood', W.strapWood), B: watchMat('wood', W.strapAccent) } : { P: M.polished, S: M.metal };
     const curve = new THREE.CatmullRomCurve3(base), len = curve.getLength(), n = Math.floor(len / L.pitch);
+    // link frame: width axis stays on x so neighbouring links never roll against each other (shortest-arc rotation drifts and bands the reflections)
+    const SIDE = new THREE.Vector3(1, 0, 0), frame = T => { const fz = T.clone().normalize(), fy = new THREE.Vector3().crossVectors(fz, SIDE).normalize(); return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(fy, fz), fy, fz)); };
     // machined links: flat tops, tight chamfer, rows nearly touching (wood links keep a softer edge)
-    const wood = t === 'woodlinks', geos = L.p.map(([, w]) => new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * (wood ? .95 : .99), wood ? 5 : 3, wood ? Math.min(.05, L.th * .35) : Math.min(.022, L.th * .18)));
-    [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), T); const e = mk(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
+    // crowned tops: tilt top-face normals outward so each link sweeps a gradient of the softbox instead of flipping light/dark row by row
+    const crown = (geo, kx = .32, kz = .2) => { geo.computeBoundingBox(); const bb = geo.boundingBox, hx = (bb.max.x - bb.min.x) / 2, hz = (bb.max.z - bb.min.z) / 2, P = geo.attributes.position, N = geo.attributes.normal, v = new THREE.Vector3();
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(N, i); if (Math.abs(v.y) < .6) continue; const sy = Math.sign(v.y); v.x += P.getX(i) / hx * kx; v.z += P.getZ(i) / hz * kz; v.y = sy; v.normalize(); N.setXYZ(i, v.x, v.y, v.z); } N.needsUpdate = true; return geo; };
+    const wood = t === 'woodlinks', geos = L.p.map(([, w]) => (g => wood ? g : crown(g))(new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * (wood ? .95 : .99), wood ? 5 : 3, wood ? Math.min(.05, L.th * .35) : Math.min(.022, L.th * .18))));
+    [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = frame(T); const e = mk(crown(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), .25, .35), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
     for (let i = 0; i < n; i++) {
-      const u = (i + .5) / n, p = curve.getPointAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u));
+      const u = (i + .5) / n, p = curve.getPointAt(u), q = frame(curve.getTangentAt(u));
       const taper = lerp(1, t === 'integrated' ? .84 : .88, 1 - Math.abs(u - .5) * 2);
-      if (Math.abs(u - .5) < .55 / n) { const c = mk(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
+      if (Math.abs(u - .5) < .55 / n) { const c = mk(crown(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), .25, .5), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
       const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
       L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } }); // jubilee: staggered centre links
     }
@@ -1583,6 +1724,7 @@ const Panels = {
           <p class="hint" style="margin-top:8px">Starting points. Every field below stays editable.</p></div>
         <div class="sec"><h4><em>B</em>Case</h4>
           <div class="fld"><label>Shape</label><div class="seg" data-segbind="watch.shape">${Object.entries(CASE_SHAPES).map(([k, v]) => `<button data-v="${k}" style="padding:7px 2px;font-size:10.5px" class="${k === W.shape ? 'on' : ''}">${v === 'Rectangle' ? 'Rect' : v}</button>`).join('')}</div></div>
+          <div class="fld" style="margin-top:10px"><label>Case build<b>${W.head === 'sport' ? 'Modelled head' : 'Parametric'}</b></label><div class="seg" data-segbind="watch.head">${[['built', 'Parametric (any shape)'], ['sport', 'Sport · modelled']].map(([k, v]) => `<button data-v="${k}" class="${k === (W.head || 'built') ? 'on' : ''}">${v}</button>`).join('')}</div>${W.head === 'sport' ? '<p class="hint" style="margin-top:6px">Round titanium sport case with long curved lugs. Shape and bezel style are fixed; metal, dial, hands and strap stay editable.</p>' : ''}</div>
           <div style="margin-top:10px">${this.select('watch.caseMat', 'Material', W.caseMat, kv(CASE_MATS))}</div>
           ${W.caseMat === 'wood' ? `<div class="grid2" style="margin-top:10px">${this.select('watch.caseWood', 'Species', W.caseWood, woods)}${this.select('watch.bezel', 'Bezel metal', W.bezel, kv(BEZELS))}</div>` : ''}
           <div style="margin-top:10px">${this.range('watch.dia', 'Case size', W.dia, 34, 46, 1, v => v + ' mm')}</div>
@@ -1608,8 +1750,11 @@ const Panels = {
         <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${(isTop(d.category) ? TOPS : isBottom(d.category) ? BOTTOMS : [d.category]).map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
         ${d.category === 'socks' ? `<div class="fld" style="margin-top:10px"><label>Style</label><div class="seg" data-segbind="garment.sockStyle">${[['crew', 'Crew'], ['noshow', 'No-show']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.sockStyle || 'crew') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
           <div class="grid2" style="margin-top:10px">${this.select('garment.sockAccent', 'Contrast heel & toe', g.sockAccent ?? '1', [['1', 'Yes'], ['', 'No']])}${g.sockStyle === 'noshow' ? '' : this.select('garment.sockCuff', 'Contrast cuff', g.sockCuff || '', [['1', 'Yes'], ['', 'No']])}</div>
-          ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
-        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).filter(([k, v]) => k === g.fabric || v.for === 'any' || v.for === (isTop(d.category) ? 'top' : d.category === 'socks' ? 'socks' : d.category === 'boxers' ? 'boxers' : 'bottom')).map(([k, v]) => [k, v.label]))}</div>
+          ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : d.category === 'duffle' ? `<div class="fld" style="margin-top:10px"><label>Size</label><div class="seg" data-segbind="garment.bagSize">${[['mini', 'Mini 16"'], ['weekender', 'Weekender 22"'], ['large', 'Large 26"']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.bagSize || 'weekender') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+          <div class="fld" style="margin-top:10px"><label>Hardware</label><div class="seg" data-segbind="garment.hardware">${[['gunmetal', 'Gunmetal'], ['steel', 'Steel'], ['gold', 'Brass'], ['black', 'Matte black']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.hardware || 'gunmetal') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+          <div class="fld" style="margin-top:10px"><label>Trim leather (handles, straps, piping)</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color}"><span class="mono">${(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color).toUpperCase()}</span></div></div>` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
+        ${d.category === 'pants' ? `<div class="fld" style="margin-top:10px"><label>Cut</label><div class="seg" data-segbind="garment.pantStyle">${[['straight', 'Straight'], ['slim', 'Slim']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.pantStyle || 'straight') ? 'on' : ''}">${v}</button>`).join('')}</div></div>` : ''}
+        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).filter(([k, v]) => k === g.fabric || (v.for === 'any' && d.category !== 'duffle') || v.for === (d.category === 'duffle' ? 'bag' : isTop(d.category) || isAcc(d.category) ? 'top' : d.category === 'socks' ? 'socks' : d.category === 'boxers' ? 'boxers' : 'bottom')).map(([k, v]) => [k, v.label]))}</div>
         <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
           <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
@@ -1691,7 +1836,7 @@ const rebuildSoon = debounce(() => Studio.build(), 120);
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle|pantStyle|bagSize|hardware)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -2295,9 +2440,9 @@ function promptSpec(d) {
     const bez = W.shape !== 'round' ? '' : { diver: `, unidirectional diver bezel with ${colorName(W.bezelColor)} 60-minute insert`, gmt: `, 24-hour GMT bezel split ${colorName(W.bezelColor)} and ${colorName(W.bezelColor2)}`, tachy: `, ${colorName(W.bezelColor)} tachymeter bezel`, fluted: ', fluted polished bezel', gem: ', fully gem-set iced-out bezel', none: ', slim bezel-less case' }[W.bezelStyle] || '';
     return `a ${W.dia} mm ${CASE_SHAPES[W.shape].toLowerCase()} wristwatch in ${mat}${bez}${W.crownGuards ? ', crown guards' : ''}; ${colorName(W.dial)} (${W.dial}) ${dialTxt}, ${NUMERALS[W.numerals].toLowerCase()}, ${HANDS[W.hands].toLowerCase()} hands in ${colorName(W.index)}, ${colorName(W.accent)} seconds hand${W.date !== 'none' ? `, date window at ${W.date} o'clock` : ''}; ${strapTxt}. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" on the dial. Sapphire crystal with crisp reflections, precise machining, realistic metal finishing`;
   }
-  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks' }[d.category];
+  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks', scarf: 'wrap scarf with hood', balaclava: 'knit balaclava', duffle: 'barrel weekender duffle bag' }[d.category];
   const f = FABRICS[g.fabric], fit = FITS[g.fit].label.toLowerCase();
-  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
+  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
   const parts = [`a ${fit}-fit ${noun} in ${colorName(g.color)} (${g.color.toUpperCase()}), ${f.label.split('·')[0].trim().toLowerCase()} (${f.gsm} gsm, ${f.comp.toLowerCase()})`, build];
   if (g.trim.toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(g.trim)} rib trim`);
   if (FINISHES[g.finish]?.phrase) parts.push(FINISHES[g.finish].phrase);

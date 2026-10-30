@@ -22,11 +22,14 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
-- **Bottoms:** pants (with a double-waistband option), shorts, boxers
+- **Bottoms:** pants in straight or slim cut (with a double-waistband option), shorts, boxer briefs
+- **Accessories:** hooded wrap scarf, balaclava
+- **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping.
+- **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
-- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 14 one-click style presets
+- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 14 one-click style presets. Under **Case build**, "Sport · modelled" swaps in a real modeled round sport case with long curved lugs. Dial, hands, metal and strap stay editable.
 
-Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe), washes and distressing work on any garment.
+Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe, woodland camo), washes and distressing work on any garment.
 
 ## 3D models
 The garment models live in `assets/models/` and are free Sketchfab models under CC BY 4.0. See [CREDITS.md](CREDITS.md); keep that file with the models.
