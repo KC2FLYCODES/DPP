@@ -23,7 +23,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
 - **Bottoms:** pants (with a double-waistband option), shorts, boxers
-- **Socks**
+- **Socks** (crew-sock 3D model; logos sit on the outer side of the leg)
 - **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 14 one-click style presets
 
 Fabric patterns (plaid, gingham, pinstripe), washes and distressing work on any garment.

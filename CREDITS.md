@@ -12,6 +12,7 @@ Downloaded from Sketchfab under **Creative Commons Attribution 4.0** (CC BY 4.0,
 | `assets/models/longsleeve.glb` | Male Basic longsleeve | Alexander Kurmanin (kurmanin) | https://sketchfab.com/3d-models/male-basic-longsleeve-5eb65aa464e245d7bc6f29c127fba9e3 |
 | `assets/models/pants.glb` | Male pants (Jeans) | Alexander Kurmanin (kurmanin) | https://sketchfab.com/3d-models/male-pants-jeans-6bee760f49614feb95baa459f40cf11b |
 | `assets/models/shorts.glb` | Male Tshirt and Shorts - Plain Texture | kane_sk06 (kanesk06) | https://sketchfab.com/3d-models/male-tshirt-and-shorts-plain-texture-06b9009696a64e1f87b5400ddbab1cdd |
+| `assets/models/socks.glb` | Socks mockup | Yorus01 | https://sketchfab.com/3d-models/socks-mockup-a994948bc5364da5a8b2dd0c1bb4142b |
 | `assets/models/boxers.glb` | Men's Boxer Briefs – Low Poly | Leo_3D (leo_3dcg) | https://sketchfab.com/3d-models/free-mens-boxer-briefs-low-poly-3d-model-05fc0011a9614a3c871e8a2c171b239b |
 
 ## Libraries and fonts

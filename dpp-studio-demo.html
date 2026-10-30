@@ -860,7 +860,7 @@ const Assets = {
   async ready(ids) { await Promise.all(ids.map(async id => { const src = await this.get(id); if (!src) return; let i = this.imgs.get(id); if (!i) { i = new Image(); this.imgs.set(id, i); } if (!i.complete || !i.naturalWidth) { i.src = src; await i.decode().catch(() => { }); } })); },
 };
 // HPS height as a fraction of each default model's height (hooded models sit lower)
-const MODEL_CAL = { tee: .965, longsleeve: .965, crewneck: .965, hoodie: .74, pants: 1, shorts: 1, boxers: 1 };
+const MODEL_CAL = { tee: .965, longsleeve: .965, crewneck: .965, hoodie: .74, pants: 1, shorts: 1, boxers: 1, socks: 1 };
 // default files that bundle a body or a second garment: keep only these node names
 const MODEL_KEEP = { shorts: ['Object_6'], pants: ['Object_573'] };
 // default models whose normal maps carry baked-in logos — use geometry folds only
@@ -1557,7 +1557,8 @@ const Studio = {
     holder.updateMatrixWorld(true);
     let box = new THREE.Box3().setFromObject(obj), sz = box.getSize(new THREE.Vector3());
     // calibrate: HPS→hem equals the tech-pack body length, so prints land at true inches
-    const A = ((d.pom.rows.find(r => r.code === 'A') || {}).base || fit.h * 10) / 10, hpsFrac = num(g.modelHps) || (g.model ? .96 : (MODEL_CAL[d.category] || .96));
+    const pv = code => num((d.pom.rows.find(r => r.code === code) || {}).base);
+    const A = (d.category === 'socks' ? (pv('S2') || 7) + 1.5 : (pv('A') || fit.h * 10)) / 10, hpsFrac = num(g.modelHps) || (g.model ? .96 : (MODEL_CAL[d.category] || .96));
     const s = A / (hpsFrac * sz.y); obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(obj); const c = box.getCenter(new THREE.Vector3());
     obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y += (-A / 2) - box.min.y; holder.updateMatrixWorld(true);
@@ -1574,7 +1575,7 @@ const Studio = {
       const n = o.geometry.attributes.position.count; if (n > most) { most = n; biggest = o; }
     });
     this.torso = biggest;
-    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: A, rise: 0, neckR: .34 };
+    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: A, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
     if ((d.category === 'pants' || d.category === 'shorts') && g.doubleWB === '1') this.addSecondWaistband(d, box);
     this.updateDecals();
   },
@@ -1703,7 +1704,12 @@ const Studio = {
       // real models: aim at the actual fabric surface; procedural: known front plane
       let pos = new THREE.Vector3(x, cy, side === 'front' ? this.P.d : -this.P.d), target = this.torso, depth = .95;
       const sideways = this.P.side, dirS = side === 'front' ? 1 : -1, yaw = sideways ? dirS * Math.PI / 2 : null;
-      if (this.modelMeshes?.length) { const rc = sideways ? new THREE.Raycaster(new THREE.Vector3(dirS * 20, cy, P.dx / 10), new THREE.Vector3(-dirS, 0, 0)) : new THREE.Raycaster(new THREE.Vector3(x, cy, side === 'front' ? 20 : -20), new THREE.Vector3(0, 0, side === 'front' ? -1 : 1)); const hit = rc.intersectObjects(this.modelMeshes, false)[0]; if (!hit) return; pos = hit.point; target = hit.object; depth = .5; }
+      let zc = 0;
+      if (sideways && this.modelMeshes?.length) { // find the leg's centre at this height (feet point forward, legs sit back)
+        const zs = []; for (let z = -1.2; z <= 1.2; z += .03) { const h = new THREE.Raycaster(new THREE.Vector3(dirS * 20, cy, z), new THREE.Vector3(-dirS, 0, 0)).intersectObjects(this.modelMeshes, false)[0]; if (h) zs.push(z); }
+        if (zs.length) zc = (zs[0] + zs[zs.length - 1]) / 2;
+      }
+      if (this.modelMeshes?.length) { const rc = sideways ? new THREE.Raycaster(new THREE.Vector3(dirS * 20, cy, zc + P.dx / 10), new THREE.Vector3(-dirS, 0, 0)) : new THREE.Raycaster(new THREE.Vector3(x, cy, side === 'front' ? 20 : -20), new THREE.Vector3(0, 0, side === 'front' ? -1 : 1)); const hit = rc.intersectObjects(this.modelMeshes, false)[0]; if (!hit) return; pos = hit.point; target = hit.object; depth = .5; }
       const m = this.detailDecal(pos, new THREE.Vector3(size, size, depth), tex, THREE.MathUtils.degToRad(side === 'front' ? -P.r : P.r), side === 'back', puff && (/3D puff|Chenille/i.test(P.tech) ? 6 : /Puff print/.test(P.tech) ? 4 : 2.2), target, yaw);
       if (P.tech === 'Discharge') m.material.opacity = .82;
       this.decals.push(m);
