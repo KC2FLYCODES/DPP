@@ -22,14 +22,24 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
-- **Bottoms:** pants in straight or slim cut (with a double-waistband option), shorts, boxer briefs
-- **Accessories:** hooded wrap scarf, balaclava
+- **Bottoms:** pants in straight or slim cut, shorts, boxer briefs. **Double waistband** (pants and shorts): a second band stacked above the main one, plaid by default. It follows the garment's own waist line, and its height, plaid colors or solid color are editable.
+- **Accessories:** hooded wrap scarf, balaclava (merino rib by default; polar fleece and chunky knit also available)
 - **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping.
 - **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
-- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 14 one-click style presets. Under **Case build**, "Sport · modelled" swaps in a real modeled round sport case with long curved lugs. Dial, hands, metal and strap stay editable.
+- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets.
+  - **Skeleton and open-heart** dials show a full 3D movement: a gear train that turns, a beating balance wheel, Geneva-striped bridges, jewels and blued screws. Dark cases get a black movement.
+  - **Case build** has three options:
+    - Parametric: any shape.
+    - "Sport · modelled": a real modeled round sport case.
+    - "Shock · resin": a chunky shock-resistant resin watch with a live LCD that shows the real time, in digital or ana-digi and positive or negative display. You can set the resin color and accent print.
 
-Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe, woodland camo), washes and distressing work on any garment.
+Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe, woodland camo) work on any garment.
+
+**Washes and distressing** are drawn at real scale across the whole garment, with no seams:
+- **Washes:** acid, mineral, stone, vintage fade and bleach splatter. Denim fades on the thighs and knees and gets whiskers either side of the fly.
+- **Light distressing:** abrasion where wear really happens, plus frayed raw edges at hems, cuffs and openings.
+- **Heavy distressing:** adds rips. On woven fabrics the white weft threads stay across the hole. On pants the rips sit at the knees and thighs.
 
 ## 3D models
 The garment models live in `assets/models/` and are free Sketchfab models under CC BY 4.0. See [CREDITS.md](CREDITS.md); keep that file with the models.
