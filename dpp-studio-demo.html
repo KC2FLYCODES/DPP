@@ -450,6 +450,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 /* =========================================================================
    0. Utilities
@@ -547,6 +548,10 @@ const CATS = {
   longsleeve: { label: 'Long Sleeve', code: 'LS', msrp: null },
   crewneck: { label: 'Crewneck', code: 'CR', msrp: null },
   hoodie: { label: 'Hoodie', code: 'HD', msrp: null },
+  pants: { label: 'Pants', code: 'PT', msrp: null },
+  shorts: { label: 'Shorts', code: 'SH', msrp: null },
+  boxers: { label: 'Boxers', code: 'BX', msrp: null },
+  socks: { label: 'Socks', code: 'SK', msrp: null },
   watch: { label: 'Watch', code: 'WT', msrp: 221 }, // The Teranga, Drop 001 — price per draft site
 };
 const STATUSES = ['Concept', 'Sampling', 'Revision', 'Approved', 'Production'];
@@ -577,6 +582,10 @@ const FABRICS = {
   heavy: { label: 'Heavyweight jersey · 300 gsm', gsm: 300, comp: '100% cotton, open-end, garment-dyed', rough: .93, sheen: .55, bump: .8 },
   fleece: { label: 'Loopback fleece · 420 gsm', gsm: 420, comp: '100% cotton French terry, loopback', rough: .97, sheen: .85, bump: .45 },
   waffle: { label: 'Waffle knit · 260 gsm', gsm: 260, comp: '100% cotton thermal waffle', rough: .95, sheen: .3, bump: 1.6 },
+  denim: { label: 'Rigid denim · 13.5 oz', gsm: 458, comp: '100% cotton, right-hand twill', rough: .9, sheen: .15, bump: 1.1 },
+  twill: { label: 'Cotton twill · 10 oz', gsm: 340, comp: '100% cotton twill', rough: .85, sheen: .2, bump: .7 },
+  modal: { label: 'Micro modal · 190 gsm', gsm: 190, comp: '92% modal / 8% elastane', rough: .55, sheen: .7, bump: .3 },
+  sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9 },
 };
 const FITS = { boxy: { label: 'Boxy', w: 1.14, h: 2.5, drop: .14 }, regular: { label: 'Regular', w: 1.0, h: 2.72, drop: 0 }, oversized: { label: 'Oversized', w: 1.24, h: 2.82, drop: .26 } };
 const WOODS = {
@@ -592,10 +601,94 @@ const BEZELS = { steel: { label: 'Brushed steel', c: '#bdbbb6', m: 1, r: .32 }, 
 const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Miyota 82S7 · open-heart automatic', 'Seiko NH35A · automatic', 'Seiko NH34 · GMT automatic', 'Seiko NH38 · skeleton automatic', 'Sellita SW200 · automatic', 'Seiko VK63 · meca-quartz chrono'];
 
 /* =========================================================================
+   2b. Bottoms, underwear, socks — specs, flats, fabric patterns
+   ========================================================================= */
+const TOPS = ['tee', 'longsleeve', 'crewneck', 'hoodie'], BOTTOMS = ['pants', 'shorts', 'boxers'];
+const isTop = c => TOPS.includes(c), isBottom = c => BOTTOMS.includes(c);
+const PATTERNS = { solid: 'Solid', plaid: 'Plaid / tartan', gingham: 'Gingham check', pinstripe: 'Pinstripe' };
+function bottomsPOM(cat) {
+  if (cat === 'socks') return {
+    unit: 'in', sizes: ['S', 'M', 'L'], base: 'M', rows: [
+      row({ code: 'S1', desc: 'Foot length, heel to toe (relaxed)', tol: .25, base: 9, grade: .75 }),
+      row({ code: 'S2', desc: 'Leg height, heel to top of cuff', tol: .25, base: 7, grade: .25 }),
+      row({ code: 'S3', desc: 'Top opening ½ (relaxed)', tol: .125, base: 3.75, grade: .125 }),
+      row({ code: 'S4', desc: 'Cuff rib height', tol: .125, base: 1.5, grade: 0 }),
+      row({ code: 'S5', desc: 'Foot width ½ (relaxed)', tol: .125, base: 3.25, grade: .125 }),
+      row({ code: 'S6', desc: 'Heel depth', tol: .125, base: 2.25, grade: .125 }),
+    ]
+  };
+  const S = cat === 'boxers' ? ['S', 'M', 'L', 'XL', '2XL'] : ['28', '30', '32', '34', '36', '38'], base = cat === 'boxers' ? 'M' : '32';
+  const g = cat === 'boxers' ? 1 : .5; // waist grade per size step
+  const rows = {
+    pants: [['A', 'Outseam, waist top to hem', .5, 41, .25], ['W1', 'Waist ½, relaxed', .25, 16, g], ['H1', 'Hip ½, 7" below waist', .5, 21.5, g], ['R1', 'Front rise incl. waistband', .25, 11.5, .125], ['R2', 'Back rise incl. waistband', .25, 15, .125], ['T1', 'Thigh ½, 1" below crotch', .25, 13, .375], ['K1', 'Knee ½, 14" below crotch', .25, 10.5, .25], ['O1', 'Leg opening ½', .25, 9, .25], ['I1', 'Inseam', .5, 30, 0], ['WB1', 'Waistband height', .0625, 1.5, 0]],
+    shorts: [['A', 'Outseam, waist top to hem', .25, 20, .25], ['W1', 'Waist ½, relaxed', .25, 16, g], ['H1', 'Hip ½', .5, 22, g], ['R1', 'Front rise incl. waistband', .25, 12, .125], ['R2', 'Back rise incl. waistband', .25, 15, .125], ['T1', 'Thigh ½, 1" below crotch', .25, 14, .375], ['O1', 'Leg opening ½', .25, 13, .25], ['I1', 'Inseam', .25, 7, 0], ['WB1', 'Waistband height', .0625, 1.75, 0]],
+    boxers: [['A', 'Side length, waist top to hem', .25, 12, .25], ['W1', 'Waist ½, relaxed', .25, 14.5, 1], ['H1', 'Hip ½', .5, 20, 1], ['R1', 'Front rise', .25, 10.5, .25], ['R2', 'Back rise', .25, 13, .25], ['I1', 'Inseam', .125, 4.5, 0], ['O1', 'Leg opening ½', .25, 12, .5], ['WB1', 'Elastic waistband height', .0625, 1.5, 0]],
+  }[cat];
+  return { unit: 'in', sizes: S, base, rows: rows.map(([code, desc, tol, b, gr]) => row({ code, desc, tol, base: b, grade: gr })) };
+}
+function bottomsBOM(cat) {
+  const lbl = [row({ component: 'Main label', material: 'Woven damask', supplier: '', spec: 'DPP mark, inside back waistband', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Care / content label', material: 'Printed satin', supplier: '', spec: 'Left side seam', qty: 1, uom: 'pc', cost: 0 })];
+  if (cat === 'socks') return [
+    row({ component: 'Body yarn', material: '80% combed cotton / 17% nylon / 3% spandex', supplier: '', spec: '200-needle, terry footbed', qty: 1, uom: 'pr', cost: 0 }),
+    row({ component: 'Cuff rib', material: '1×1 rib, spandex plated', supplier: '', spec: 'Per S4', qty: 1, uom: 'pr', cost: 0 }),
+    row({ component: 'Heel / toe', material: 'Nylon reinforced', supplier: '', spec: 'Accent color per colorway', qty: 1, uom: 'pr', cost: 0 }),
+    row({ component: 'Toe closure', material: 'Hand-linked seamless', supplier: '', spec: 'No bulky toe seam', qty: 1, uom: 'pr', cost: 0 }),
+    row({ component: 'Header card', material: 'Uncoated 400 gsm board', supplier: '', spec: 'Drop + pair number', qty: 1, uom: 'pc', cost: 0 }),
+  ];
+  if (cat === 'boxers') return [
+    row({ component: 'Body fabric', material: '92% micro modal / 8% elastane', supplier: '', spec: '190 gsm jersey', qty: .6, uom: 'yd', cost: 0 }),
+    row({ component: 'Waistband', material: 'Jacquard woven elastic', supplier: '', spec: 'Knit-in DPP text, per WB1', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Pouch lining', material: 'Same as body', supplier: '', spec: 'Double layer', qty: .1, uom: 'yd', cost: 0 }),
+    ...lbl.slice(1), row({ component: 'Packaging', material: 'Recycled box sleeve', supplier: '', spec: '1 or 3-pack', qty: 1, uom: 'pc', cost: 0 }),
+  ];
+  const shell = cat === 'pants' ? '13.5 oz rigid denim, 100% cotton' : 'Heavyweight cotton twill / fleece per colorway';
+  const b = [
+    row({ component: 'Shell fabric', material: shell, supplier: '', spec: 'Per colorway', qty: cat === 'pants' ? 1.6 : .9, uom: 'yd', cost: 0 }),
+    row({ component: 'Pocketing', material: 'Cotton twill 3.5 oz', supplier: '', spec: 'Front pockets', qty: .25, uom: 'yd', cost: 0 }),
+    row({ component: 'Fly', material: 'YKK metal zipper #4.5', supplier: '', spec: 'Or elastic + drawcord', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Shank button / rivets', material: 'Brass, DPP engraved', supplier: '', spec: '1 button + 6 rivets', qty: 1, uom: 'set', cost: 0 }),
+    row({ component: 'Thread', material: 'Tex 70 core-spun', supplier: '', spec: 'Contrast or tonal', qty: 1, uom: 'cone', cost: 0 }),
+    ...lbl,
+  ];
+  return b;
+}
+function bottomsConstruction(cat) {
+  if (cat === 'socks') return [row({ area: 'Knit', method: '200-needle circular knit, terry sole', spi: '', notes: 'Y-heel.' }), row({ area: 'Toe', method: 'Hand-linked', spi: '', notes: 'Seamless feel.' }), row({ area: 'Cuff', method: '1×1 rib, spandex plated', spi: '', notes: 'No dig-in.' }), row({ area: 'Finish', method: 'Boarding + pairing', spi: '', notes: 'Pair numbers match header card.' })];
+  if (cat === 'boxers') return [row({ area: 'Seams', method: 'Flatlock 4-needle', spi: '14', notes: 'No chafe.' }), row({ area: 'Waistband', method: 'Elastic attached 3-needle coverstitch', spi: '12', notes: '' }), row({ area: 'Leg hem', method: 'Coverstitch 3/4"', spi: '12', notes: '' })];
+  return [
+    row({ area: 'Out/inseam', method: '5-thread safety stitch, topstitched', spi: '10', notes: '' }),
+    row({ area: 'Waistband', method: 'Double-needle, belt loops ×5', spi: '10', notes: 'Double waistband: second band joined above main band, see WB2.' }),
+    row({ area: 'Fly', method: 'J-stitch, bartack at base', spi: '10', notes: '' }),
+    row({ area: 'Pockets', method: 'Bartacks at openings, rivets at stress points', spi: '', notes: '' }),
+    row({ area: 'Hem', method: 'Chainstitch 1" turn', spi: '10', notes: '' }),
+    row({ area: 'Wash', method: 'Rinse / enzyme per finish', spi: '', notes: 'Target shrinkage < 3%.' }),
+  ];
+}
+function bottomsFlat(d, side, stroke) {
+  const g = d.garment, fill = g.color, front = side === 'front';
+  let s = `<svg viewBox="0 -40 400 480" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round">`;
+  if (d.category === 'socks') {
+    s += `<path d="M150 0 L150 250 C150 300 130 330 120 360 C110 395 140 410 180 405 L320 395 C350 392 352 360 330 350 L230 330 C215 320 212 300 214 250 L214 0 Z" fill="${fill}"/>`;
+    s += `<path d="M150 46 L214 46" stroke-dasharray="3 2.5"/>${[8, 16, 24, 32, 40].map(y => `<path d="M${150 + 6} ${y} V${y + 0}"/>`).join('')}`;
+    s += `<path d="M120 360 C110 395 140 410 180 405 L182 360 C160 350 135 345 120 360Z" fill="${g.trim}"/><path d="M300 397 L320 395 C350 392 352 360 330 350 L300 345Z" fill="${g.trim}"/>`;
+    return s + '</svg>';
+  }
+  const short = d.category !== 'pants', box = d.category === 'boxers', hemY = box ? 230 : short ? 300 : 430;
+  const wb2 = (g.doubleWB === '1') && !box;
+  s += wb2 ? `<rect x="104" y="-6" width="192" height="26" fill="${g.wb2Pattern === 'plaid' ? g.plaid1 : g.wb2Color}"/>` : '';
+  s += `<path d="M110 20 L290 20 L${box ? 318 : 306} ${hemY} L${box ? 214 : 212} ${hemY} L200 ${box ? 150 : 170} L${box ? 186 : 188} ${hemY} L${box ? 82 : 94} ${hemY} Z" fill="${fill}"/>`;
+  s += `<path d="M110 48 L290 48"/>` + (box ? `<path d="M110 22 L290 22 M110 46 L290 46" stroke-dasharray="2 3"/>` : front ? `<path d="M200 48 L200 130" stroke-dasharray="3 2.5"/><path d="M118 48 C130 80 150 90 168 92 M282 48 C270 80 250 90 232 92"/>` : `<path d="M140 90 L180 86 L182 130 L144 134Z M260 90 L220 86 L218 130 L256 134Z"/><path d="M110 48 L200 74 L290 48"/>`);
+  if (!box) for (const x of [118, 158, 200, 242, 282]) s += `<rect x="${x - 3}" y="18" width="6" height="32" fill="${fill}"/>`;
+  s += `<path d="M${box ? 86 : 96} ${hemY - 10} L${box ? 186 : 188} ${hemY - 10} M${box ? 214 : 212} ${hemY - 10} L${box ? 314 : 304} ${hemY - 10}" stroke-dasharray="3 2.5"/>`;
+  return s + '</svg>';
+}
+
+/* =========================================================================
    3. Presets — starter specs. Values are industry starting points; confirm on fit sample.
    ========================================================================= */
 const row = o => ({ id: uid('r'), ...o });
 function presetPOM(cat) {
+  if (isBottom(cat) || cat === 'socks') return bottomsPOM(cat);
   if (cat === 'watch') return {
     unit: 'mm', sizes: ['SPEC'], base: 'SPEC', rows: [
       row({ code: 'W1', desc: 'Case diameter (excl. crown)', tol: .2, base: 42, grade: 0 }),
@@ -657,6 +750,7 @@ function presetPOM(cat) {
   };
 }
 function presetBOM(cat) {
+  if (isBottom(cat) || cat === 'socks') return bottomsBOM(cat);
   if (cat === 'watch') return [
     row({ component: 'Case', material: 'Per spec — shape, material, finish on Materials page', supplier: '', spec: 'Finish per colorway', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Movement', material: 'Per spec sheet', supplier: '', spec: 'See movement field', qty: 1, uom: 'pc', cost: 0 }),
@@ -688,6 +782,7 @@ function presetBOM(cat) {
   return b;
 }
 function presetConstruction(cat) {
+  if (isBottom(cat) || cat === 'socks') return bottomsConstruction(cat);
   if (cat === 'watch') return [
     row({ area: 'Case', method: 'CNC turned solid wood, steel inner container press-fit', spi: '', notes: 'Grain runs 12–6. No visible knots or filler.' }),
     row({ area: 'Finish', method: 'Natural oil + matte lacquer, 3 coats', spi: '', notes: 'Splash resistant only — 3 ATM max.' }),
@@ -717,9 +812,9 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: '#EEF1F9', fabric: cat === 'hoodie' || cat === 'crewneck' ? 'fleece' : 'heavy', fit: 'boxy', finish: 'none', distress: 'none' },
+    garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
     watch: { ...WATCH_DEFAULT },
-    place: { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
+    place: cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: { front: [], back: [] },
     colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : '#EEF1F9', pantone: '', notes: '' })],
     bom: presetBOM(cat), pom: presetPOM(cat), construction: presetConstruction(cat),
@@ -764,20 +859,28 @@ const Assets = {
   },
   async ready(ids) { await Promise.all(ids.map(async id => { const src = await this.get(id); if (!src) return; let i = this.imgs.get(id); if (!i) { i = new Image(); this.imgs.set(id, i); } if (!i.complete || !i.naturalWidth) { i.src = src; await i.decode().catch(() => { }); } })); },
 };
+// HPS height as a fraction of each default model's height (hooded models sit lower)
+const MODEL_CAL = { tee: .965, longsleeve: .965, crewneck: .965, hoodie: .74, pants: 1, shorts: 1, boxers: 1 };
+// default files that bundle a body or a second garment: keep only these node names
+const MODEL_KEEP = { shorts: ['Object_6'], pants: ['Object_573'] };
+// default models whose normal maps carry baked-in logos — use geometry folds only
+const MODEL_NO_NORMAL = ['pants'];
 // Garment meshes: per-design upload (garment.model asset id) or studio default at assets/models/<category>.glb
 const Models = {
-  cache: new Map(), // key -> THREE.Object3D | null (null = not available)
+  cache: new Map(), // key -> THREE.Object3D | null (null = not available); absent while loading
+  pending: new Map(),
   key(d) { return d.garment.model ? 'asset:' + d.garment.model : 'file:' + d.category; },
   peek(d) { return this.cache.get(this.key(d)); },
-  async load(d) {
-    const k = this.key(d); if (this.cache.has(k)) return this.cache.get(k);
-    this.cache.set(k, null); // prevents duplicate loads; replaced on success
-    try {
-      const src = d.garment.model ? await Assets.get(d.garment.model) : `assets/models/${d.category}.glb`;
-      if (!src) return null;
-      const gltf = await new GLTFLoader().loadAsync(src);
-      this.cache.set(k, gltf.scene); return gltf.scene;
-    } catch { return null; } // no default model for this silhouette — procedural fallback
+  load(d) {
+    const k = this.key(d); if (this.cache.has(k)) return Promise.resolve(this.cache.get(k));
+    if (!this.pending.has(k)) this.pending.set(k, (async () => {
+      try {
+        const src = d.garment.model ? await Assets.get(d.garment.model) : `assets/models/${d.category}.glb`;
+        this.cache.set(k, src ? (await new GLTFLoader().loadAsync(src)).scene : null);
+      } catch { this.cache.set(k, null); } // no default model for this silhouette — procedural fallback
+      this.pending.delete(k); return this.cache.get(k);
+    })());
+    return this.pending.get(k);
   },
 };
 const Settings = {
@@ -832,6 +935,7 @@ const FLAT = {
 };
 FLAT.hoodie = FLAT.crewneck;
 function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null } = {}) {
+  if (isBottom(d.category) || d.category === 'socks') return bottomsFlat(d, side, stroke);
   if (d.category === 'watch') return watchFlat(d, side, stroke);
   const g = d.garment, F = FLAT[d.category], fill = g.color, dark = shade(fill, -.18), sw = 1.6;
   const front = side === 'front';
@@ -1009,6 +1113,25 @@ const TEX = {
     if (this._c.carbon) return this._c.carbon;
     const c = this.canvas(512, 512, (x, w, h) => { x.fillStyle = '#141415'; x.fillRect(0, 0, w, h); for (let i = 0; i < 1400; i++) { const v = 30 + Math.random() * 70 | 0; x.fillStyle = `rgba(${v},${v},${v + 4},.75)`; x.save(); x.translate(Math.random() * w, Math.random() * h); x.rotate(Math.random() * 6.3); x.beginPath(); x.moveTo(0, 0); x.lineTo(6 + Math.random() * 26, Math.random() * 6); x.lineTo(Math.random() * 18, 4 + Math.random() * 14); x.fill(); x.restore(); } });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return (this._c.carbon = t);
+  },
+  // Woven / printed fabric patterns: plaid (tartan sett), gingham, pinstripe
+  pattern(kind, c1, c2, c3, scale = 1, small = false) {
+    const k = ['pat', kind, c1, c2, c3, scale, small].join(':'); if (this._c[k]) return this._c[k];
+    const cv = this.canvas(512, 512, (x, w, h) => {
+      x.fillStyle = c1; x.fillRect(0, 0, w, h);
+      if (kind === 'plaid') {
+        const sett = [[c1, 70], [c2, 14], [c1, 26], [c3, 8], [c1, 26], [c2, 14], [c1, 70], [shade(c1, -.35), 40], [c3, 4], [shade(c1, -.35), 40]];
+        const tot = sett.reduce((s, [, n]) => s + n, 0), sc = w / tot;
+        let o = 0; for (const [col, n] of sett) { x.fillStyle = col; x.fillRect(o * sc, 0, n * sc, h); o += n; }      // warp
+        o = 0; x.globalAlpha = .55; for (const [col, n] of sett) { x.fillStyle = col; x.fillRect(0, o * sc, w, n * sc); o += n; } // weft
+        x.globalAlpha = .1; x.strokeStyle = '#000'; x.lineWidth = 1; for (let i = -h; i < w; i += 4) { x.beginPath(); x.moveTo(i, h); x.lineTo(i + h, 0); x.stroke(); } // 2/2 twill
+      } else if (kind === 'gingham') {
+        const n = 8, s = w / n; x.globalAlpha = .5; x.fillStyle = c2; for (let i = 0; i < n; i += 2) { x.fillRect(i * s, 0, s, h); x.fillRect(0, i * s, w, s); }
+      } else if (kind === 'pinstripe') { x.fillStyle = c3; for (let i = 0; i < w; i += 32) x.fillRect(i, 0, 2.5, h); }
+      x.globalAlpha = 1;
+    });
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+    const r = small ? 1 / scale : 3 / scale; t.repeat.set(r, r); return (this._c[k] = t);
   },
   // cloud field 0..1 — layered upscaled random grids (cheap fbm)
   clouds(w, h, octaves = [6, 12, 24, 48, 96]) {
@@ -1382,7 +1505,7 @@ const Studio = {
   },
   clear() {
     this.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map && m.map.userData.own) m.map.dispose(); m.dispose(); }); } });
-    this.root.clear(); this.decals = []; this.dial = null; this.hands = null; this.torso = null;
+    this.root.clear(); this.decals = []; this.dial = null; this.hands = null; this.torso = null; this.modelMeshes = null;
   },
   build() {
     const d = S.current; if (!d || !this.ok) return;
@@ -1417,38 +1540,89 @@ const Studio = {
   // Real garment meshes (CLO / Marvelous / marketplace GLB) take priority over the procedural fallback.
   buildGarment(d) {
     const model = Models.peek(d);
-    if (model === undefined) Models.load(d).then(() => { if (S.current === d && S.view === 'studio') this.build(); });
+    if (model === undefined) { Models.load(d).then(() => { if (S.current === d && S.view === 'studio') { this.build(); Panels.studio(); } }); if (isBottom(d.category)) return; } // bottoms have no fallback shape: wait for the model
     if (model) return this.buildFromModel(d, model);
     return this.buildProcedural(d);
   },
   buildFromModel(d, gltfScene) {
     const g = d.garment, fit = FITS[g.fit] || FITS.boxy;
     const fin = g.finish || 'none', dis = g.distress || 'none', washed = fin !== 'none' || dis !== 'none';
-    const surf = washed ? TEX.surface(g.color, fin, dis) : null;
-    const obj = gltfScene.clone(true); obj.rotation.y = (g.modelRot || 0) * Math.PI / 180;
+    const surf = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : washed ? TEX.surface(g.color, fin, dis) : null;
+    const obj = SkeletonUtils.clone(gltfScene); obj.rotation.y = (g.modelRot || 0) * Math.PI / 180;
+    // bake rigged (skinned) meshes into static geometry so measuring, decals and the waist trace see the posed shape
+    obj.updateMatrixWorld(true); { const sk = []; obj.traverse(o => { if (o.isSkinnedMesh) sk.push(o); }); sk.forEach(o => { const geo = o.geometry.clone(), p = geo.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); o.applyBoneTransform(i, v); p.setXYZ(i, v.x, v.y, v.z); } geo.deleteAttribute('skinIndex'); geo.deleteAttribute('skinWeight'); geo.computeVertexNormals(); geo.computeBoundingBox(); geo.computeBoundingSphere(); const m = new THREE.Mesh(geo, o.material); m.name = o.name; m.position.copy(o.position); m.quaternion.copy(o.quaternion); m.scale.copy(o.scale); o.parent.add(m); o.parent.remove(m === o ? null : o); }); }
+    const keep = !g.model && MODEL_KEEP[d.category]; if (keep) { const drop = []; obj.traverse(o => { if (o.isMesh && !keep.includes(o.name)) drop.push(o); }); drop.forEach(o => o.parent.remove(o)); }
     const holder = new THREE.Group(); holder.add(obj); this.root.add(holder);
     // normalise: garment height ≈ body length from HPS at this fit, centred, hem at -h/2
     holder.updateMatrixWorld(true);
     let box = new THREE.Box3().setFromObject(obj), sz = box.getSize(new THREE.Vector3());
-    const s = (fit.h + .3) / sz.y; obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
+    // calibrate: HPS→hem equals the tech-pack body length, so prints land at true inches
+    const A = ((d.pom.rows.find(r => r.code === 'A') || {}).base || fit.h * 10) / 10, hpsFrac = num(g.modelHps) || (g.model ? .96 : (MODEL_CAL[d.category] || .96));
+    const s = A / (hpsFrac * sz.y); obj.scale.multiplyScalar(s); holder.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(obj); const c = box.getCenter(new THREE.Vector3());
-    obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y += (-fit.h / 2) - box.min.y; holder.updateMatrixWorld(true);
+    obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y += (-A / 2) - box.min.y; holder.updateMatrixWorld(true);
     box = new THREE.Box3().setFromObject(obj);
-    let biggest = null, most = -1;
+    let biggest = null, most = -1; this.modelMeshes = [];
     obj.traverse(o => {
       if (!o.isMesh) return;
       const orig = Array.isArray(o.material) ? o.material[0] : o.material;
       const m = this.fabricMat(g.color, g.fabric, false, 30, 18, surf);
-      if (orig?.normalMap) { m.normalMap = orig.normalMap; m.normalScale = orig.normalScale?.clone() || new THREE.Vector2(1, 1); m.bumpScale *= .35; } // keep baked folds
+      if (orig?.normalMap && !(MODEL_NO_NORMAL.includes(d.category) && !g.model)) { m.normalMap = orig.normalMap; m.normalScale = orig.normalScale?.clone() || new THREE.Vector2(1, 1); m.bumpScale *= .35; } // keep baked folds
       if (orig?.aoMap) { m.aoMap = orig.aoMap; m.aoMapIntensity = 1; }
-      o.material = m; o.castShadow = o.receiveShadow = true;
+      if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals(); // trimmed defaults ship without normals
+      o.material = m; o.castShadow = o.receiveShadow = true; this.modelMeshes.push(o);
       const n = o.geometry.attributes.position.count; if (n > most) { most = n; biggest = o; }
     });
     this.torso = biggest;
-    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z * .92, h: fit.h, rise: box.max.y - fit.h / 2 - .06, neckR: .34 };
+    this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: A, rise: 0, neckR: .34 };
+    if ((d.category === 'pants' || d.category === 'shorts') && g.doubleWB === '1') this.addSecondWaistband(d, box);
+    this.updateDecals();
+  },
+  // Double waistband: a second band traced from the model's own waist line, sitting above the main band
+  addSecondWaistband(d, box) {
+    const g = d.garment, top = box.max.y, bins = 72, R = new Float32Array(bins), cx = 0, v = new THREE.Vector3();
+    this.modelMeshes.forEach(m => { const p = m.geometry.attributes.position; m.updateMatrixWorld(true); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); if (v.y < top - .06) continue; const a = Math.atan2(v.z, v.x - cx), b = ((Math.round((a / (Math.PI * 2) + .5) * bins)) % bins + bins) % bins; R[b] = Math.max(R[b], Math.hypot(v.x - cx, v.z)); } });
+    for (let k = 0; k < 3; k++) for (let b = 0; b < bins; b++) if (!R[b]) R[b] = Math.max(R[(b + 1) % bins], R[(b + bins - 1) % bins]); // fill gaps
+    const sm = Array.from(R, (r, b) => (R[(b + bins - 1) % bins] + 2 * r + R[(b + 1) % bins]) / 4 * 1.012);
+    const h = num(g.wb2H || 1.75) / 10, y0 = top - .05, per = sm.reduce((s, r) => s + r, 0) / bins * Math.PI * 2;
+    const geo = new ParametricGeometry((u, w, t) => { const a = (u - .5) * Math.PI * 2, f = u * bins, i0 = Math.floor(f) % bins, i1 = (i0 + 1) % bins, r = lerp(sm[i0], sm[i1], f - Math.floor(f)) * lerp(1, .985, w); t.set(cx + Math.cos(a) * r, y0 + w * h, Math.sin(a) * r); }, bins * 2, 6);
+    const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * per * 2.2, uv.getY(i) * h * 2.2);
+    geo.computeVertexNormals();
+    const plaid = g.wb2Pattern === 'plaid', map = plaid ? TEX.pattern('plaid', g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1, true) : null;
+    const mat = this.fabricMat(plaid ? '#ffffff' : g.wb2Color, 'twill', false, 6, 2, map ? { map } : null);
+    const band = this.add(geo, mat); this.modelMeshes.push(band);
+    const seam = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: bins }, (_, b) => { const a = (b / bins - .5) * Math.PI * 2; return new THREE.Vector3(Math.cos(a) * sm[b] * 1.004, y0 + .004, Math.sin(a) * sm[b] * 1.004); }), true), 144, .006, 6, true);
+    this.add(seam, new THREE.MeshStandardMaterial({ color: shade(g.color, -.3), roughness: .8 }));
+  },
+  // Socks: a knit tube swept down the leg, round the heel and out to the toe
+  buildSock(d) {
+    const g = d.garment, v = c => num((d.pom.rows.find(r => r.code === c) || {}).base);
+    const FL = (v('S1') || 9) / 10, LH = (v('S2') || 7) / 10, cuff = (v('S4') || 1.5) / 10;
+    const pts = [[0, LH + .18, -.02], [0, LH * .55, -.02], [0, .2, -.03], [0, .07, .08], [0, .03, FL * .4], [0, .04, FL * .82], [0, .06, FL * .98]].map(p => new THREE.Vector3(...p));
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal'), X = new THREE.Vector3(1, 0, 0);
+    const sub = (a, b) => ({ getPointAt: t => curve.getPointAt(a + (b - a) * t), getTangentAt: t => curve.getTangentAt(a + (b - a) * t) });
+    const L = curve.getLength(), tc = cuff / L, tHeel = [.4, .58], tToe = .88;
+    const rad = t => t < .35 ? lerp(.19, .165, t / .35) : t < .5 ? lerp(.165, .14, (t - .35) / .15) : lerp(.135, .085, Math.pow((t - .5) / .5, 1.8));
+    const ratio = t => t < .42 ? 1 : lerp(1, 1.4, Math.min(1, (t - .42) / .18)); // foot is wider than tall
+    const pat = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null;
+    const body = this.fabricMat(g.color, 'sockknit', false, 12, 30, pat), rib = this.fabricMat(g.trim, 'sockknit', true, 10, 4), acc = this.fabricMat(g.stitch, 'sockknit', false, 12, 12);
+    const seg = (a, b, mat) => this.add(sweepGeo(sub(a, b), t => rad(a + (b - a) * t), 1, Math.max(8, Math.round((b - a) * 120)), 56, X, { ratioAt: t => ratio(a + (b - a) * t) }), mat);
+    // body map: heel cup on the back/sole side only (ring angle 0 = back of leg / sole), toe all round
+    if (!pat) {
+      const loc = t => (t - tc) / (1 - tc), H = 1024;
+      const cv = TEX.canvas(256, H, (x, w) => { x.fillStyle = g.color; x.fillRect(0, 0, w, H); x.fillStyle = g.stitch; const y0 = loc(tHeel[0]) * H, y1 = loc(tHeel[1]) * H; [[0, 1], [w, -1]].forEach(([cx]) => { x.beginPath(); x.ellipse(cx, (y0 + y1) / 2, w * .24, (y1 - y0) / 2, 0, 0, Math.PI * 2); x.fill(); }); x.fillRect(0, loc(tToe) * H, w, H); });
+      const mt = new THREE.CanvasTexture(cv); mt.colorSpace = THREE.SRGBColorSpace; mt.userData.own = true;
+      body.map = mt; body.color.set('#ffffff'); body.needsUpdate = true;
+    }
+    const main = [seg(0, tc, rib), seg(tc - .002, 1, body)];
+    const tip = this.add(new THREE.SphereGeometry(.1, 32, 16), acc); tip.position.copy(curve.getPointAt(1)); tip.scale.set(1.18, .95, .6);
+    this.torso = main[1]; this.modelMeshes = main;
+    this.P = { w: .2, d: .2, h: (LH + .18) * 2, rise: 0, neckR: .2, side: true };
     this.updateDecals();
   },
   buildProcedural(d) {
+    if (d.category === 'socks') return this.buildSock(d);
+    if (isBottom(d.category)) { toast('No 3D model for ' + CATS[d.category].label + ' yet — upload a GLB', true); return; }
     const g = d.garment, cat = d.category, fit = FITS[g.fit] || FITS.boxy;
     const fleece = cat === 'hoodie' || cat === 'crewneck', long = cat !== 'tee';
     const P = this.P = { w: fit.w, d: fit.w * .42, h: fit.h, flare: .02, neckR: cat === 'hoodie' ? .36 : .34, neckDrop: fleece ? .08 : .17, rise: .3 };
@@ -1510,9 +1684,9 @@ const Studio = {
     });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.own = true; return t;
   },
-  detailDecal(pos, size, tex, rotZ = 0, back = false, bump = false) {
-    this.torso.updateMatrixWorld(true);
-    const geo = new DecalGeometry(this.torso, pos, new THREE.Euler(0, back ? Math.PI : 0, rotZ), size);
+  detailDecal(pos, size, tex, rotZ = 0, back = false, bump = false, target = this.torso, yaw = null) {
+    target.updateMatrixWorld(true);
+    const geo = new DecalGeometry(target, pos, new THREE.Euler(0, yaw ?? (back ? Math.PI : 0), rotZ), size);
     const mat = new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: .85, sheen: .3, side: THREE.DoubleSide, ...(bump ? { bumpMap: tex, bumpScale: bump === true ? 3 : bump } : {}) });
     const m = new THREE.Mesh(geo, mat); m.receiveShadow = true; m.renderOrder = 2; this.root.add(m); return m;
   },
@@ -1526,7 +1700,11 @@ const Studio = {
       let art = Art.composite(d, side, 1024); if (isStitch(P.tech)) art = stitchify(art, P.tech, d.garment.color);
       const tex = new THREE.CanvasTexture(art); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
       const puff = /Puff|embroider|Chenille|patch/i.test(P.tech);
-      const m = this.detailDecal(new THREE.Vector3(x, cy, side === 'front' ? this.P.d : -this.P.d), new THREE.Vector3(size, size, .95), tex, THREE.MathUtils.degToRad(side === 'front' ? -P.r : P.r), side === 'back', puff && (/3D puff|Chenille/i.test(P.tech) ? 6 : /Puff print/.test(P.tech) ? 4 : 2.2));
+      // real models: aim at the actual fabric surface; procedural: known front plane
+      let pos = new THREE.Vector3(x, cy, side === 'front' ? this.P.d : -this.P.d), target = this.torso, depth = .95;
+      const sideways = this.P.side, dirS = side === 'front' ? 1 : -1, yaw = sideways ? dirS * Math.PI / 2 : null;
+      if (this.modelMeshes?.length) { const rc = sideways ? new THREE.Raycaster(new THREE.Vector3(dirS * 20, cy, P.dx / 10), new THREE.Vector3(-dirS, 0, 0)) : new THREE.Raycaster(new THREE.Vector3(x, cy, side === 'front' ? 20 : -20), new THREE.Vector3(0, 0, side === 'front' ? -1 : 1)); const hit = rc.intersectObjects(this.modelMeshes, false)[0]; if (!hit) return; pos = hit.point; target = hit.object; depth = .5; }
+      const m = this.detailDecal(pos, new THREE.Vector3(size, size, depth), tex, THREE.MathUtils.degToRad(side === 'front' ? -P.r : P.r), side === 'back', puff && (/3D puff|Chenille/i.test(P.tech) ? 6 : /Puff print/.test(P.tech) ? 4 : 2.2), target, yaw);
       if (P.tech === 'Discharge') m.material.opacity = .82;
       this.decals.push(m);
     });
@@ -1757,16 +1935,16 @@ const Panels = {
     } else {
       const g = d.garment;
       L.innerHTML = `<div class="sec"><h4><em>A</em>Piece</h4>
-        <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${['tee', 'longsleeve', 'crewneck', 'hoodie'].map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
+        <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${(isTop(d.category) ? TOPS : isBottom(d.category) ? BOTTOMS : [d.category]).map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
         <div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>
         <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).map(([k, v]) => [k, v.label]))}</div>
         <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
           <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
           ${g.model || Models.peek(d) ? `<div style="margin-top:8px">${this.select('garment.modelRot', 'Facing', g.modelRot || 0, [[0, 'As exported'], [90, 'Rotate 90°'], [180, 'Rotate 180°'], [270, 'Rotate 270°']])}</div>` : ''}</div></div>
-        <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}
-          <div class="grid2" style="margin-top:12px"><div class="fld"><label>Rib / trim</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim}"><button class="btn sm" data-copy="garment.trim">= Body</button></div></div>
-          <div class="fld"><label>Stitch</label><div class="row"><input type="color" data-bind="garment.stitch" value="${g.stitch}"><button class="btn sm" data-copy="garment.stitch">= Body</button></div></div></div></div>
+        <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}<div class="grid2" style="margin-top:10px">${this.select('garment.pattern', 'Fabric pattern', g.pattern || 'solid', Object.entries(PATTERNS))}${g.pattern && g.pattern !== 'solid' ? this.range('garment.plaidScale', 'Scale', num(g.plaidScale) || 1, .4, 3, .1) : ''}</div>${(g.pattern && g.pattern !== 'solid') || g.doubleWB === '1' ? `<div class="grid3" style="margin-top:8px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.plaid1" value="${g.plaid1 || '#14172B'}"></div><div class="fld"><label>Stripe</label><input type="color" data-bind="garment.plaid2" value="${g.plaid2 || '#B98A4A'}"></div><div class="fld"><label>Accent</label><input type="color" data-bind="garment.plaid3" value="${g.plaid3 || '#EEF1F9'}"></div></div>` : ''}${d.category === 'pants' || d.category === 'shorts' ? `<div class="grid2" style="margin-top:10px">${this.select('garment.doubleWB', 'Double waistband', g.doubleWB || '', [['', 'No'], ['1', 'Yes']])}${g.doubleWB === '1' ? this.select('garment.wb2Pattern', 'Band 2 fabric', g.wb2Pattern || 'plaid', [['plaid', 'Plaid'], ['solid', 'Solid']]) : ''}</div>${g.doubleWB === '1' ? `<div class="grid2" style="margin-top:8px">${this.range('garment.wb2H', 'Band 2 height', num(g.wb2H) || 1.75, .75, 4, .125, v => frac(v) + '"')}<div class="fld"><label>Band 2 solid</label><input type="color" data-bind="garment.wb2Color" value="${g.wb2Color || '#B98A4A'}"></div></div>` : ''}` : ''}
+          <div class="grid2" style="margin-top:12px"><div class="fld"><label>${d.category === 'socks' ? 'Cuff' : isBottom(d.category) ? 'Waistband / trim' : 'Rib / trim'}</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim}"><button class="btn sm" data-copy="garment.trim">= Body</button></div></div>
+          <div class="fld"><label>${d.category === 'socks' ? 'Heel / toe' : 'Stitch'}</label><div class="row"><input type="color" data-bind="garment.stitch" value="${g.stitch}"><button class="btn sm" data-copy="garment.stitch">= Body</button></div></div></div></div>
         ${['front', 'back'].map((s, i) => { const P = d.place[s]; return `<div class="sec"><h4><em>${'CD'[i]}</em>${s} print<span class="r cap">${d.artwork[s].length} layer${d.artwork[s].length === 1 ? '' : 's'}</span></h4>
           ${this.select(`place.${s}.tech`, 'Technique', P.tech, TECHNIQUES.map(t => [t, t]))}
           <div class="swatches" style="gap:4px">${PLACE_PRESETS[s].map(([n], i) => `<button class="btn sm" style="width:auto;height:auto;border-radius:3px" data-preset="${s}:${i}">${n}</button>`).join('')}</div>
@@ -1841,7 +2019,7 @@ const rebuildSoon = debounce(() => Studio.build(), 120);
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$|^garment\.(pattern|doubleWB|wb2Pattern)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -1853,7 +2031,14 @@ document.addEventListener('click', e => {
   const seg = e.target.closest('[data-segbind] button');
   if (seg && S.current) {
     const p = seg.parentElement.dataset.segbind; setPath(S.current, p, seg.dataset.v); touch();
-    if (p === 'category') { S.current.place.front.s = clamp(S.current.place.front.s, .2, 1.6); }
+    if (p === 'category') {
+      const d = S.current, cat = d.category; d.place.front.s = clamp(d.place.front.s, .2, 1.6);
+      // a different silhouette needs its own POM / BOM / construction when the measurement set differs
+      const pom = presetPOM(cat), codes = x => x.rows.map(r => r.code).join();
+      if (codes(pom) !== codes(d.pom)) { d.pom = pom; d.bom = presetBOM(cat); d.construction = presetConstruction(cat); toast(`Specs switched to the ${CATS[cat].label} template`); }
+      d.styleNo = d.styleNo.replace(/^DPP-[A-Z]{2}-/, `DPP-${CATS[cat].code}-`);
+      renderCtx();
+    }
     Studio.build(); Panels.studio();
   }
 });
@@ -2602,6 +2787,7 @@ function wire() {
   addEventListener('resize', () => Studio.ok && Studio.resize());
 }
 
+window.DPP = { Studio, S, Models }; // console debug handle (internal tool)
 (async function boot() {
   await Mark.init();
   await gate();
