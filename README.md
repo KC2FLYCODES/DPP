@@ -26,7 +26,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
 - **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 14 one-click style presets
 
-Fabric patterns (plaid, gingham, pinstripe), washes and distressing work on any garment.
+Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe), washes and distressing work on any garment.
 
 ## 3D models
 The garment models live in `assets/models/` and are free Sketchfab models under CC BY 4.0. See [CREDITS.md](CREDITS.md); keep that file with the models.

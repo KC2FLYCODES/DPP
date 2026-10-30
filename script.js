@@ -134,16 +134,21 @@ const PLACE_PRESETS = {
 };
 const COLOR_NAMES = [['off-white', '#EEF1F9'], ['white', '#FFFFFF'], ['cream', '#F3EEDF'], ['bone', '#E9E3D6'], ['heather grey', '#9D9B96'], ['charcoal', '#3A3A3C'], ['black', '#111111'], ['navy', '#14172B'], ['royal blue', '#2B4BA8'], ['sky blue', '#8FB8DE'], ['forest green', '#2B3A2F'], ['olive', '#59583A'], ['sage', '#9AA58A'], ['sand', '#C8B48A'], ['tan', '#B98A4A'], ['brown', '#5C3B26'], ['rust', '#9C4A2A'], ['clay', '#9C5A3C'], ['oxblood', '#5B1F20'], ['red', '#B3262B'], ['pink', '#E2A6B4'], ['orange', '#D9772B'], ['yellow', '#E3C24A'], ['purple', '#5B3E7A']];
 const colorName = hex => { const [r, g, b] = hexToRgb(hex); let best = COLOR_NAMES[0][0], bd = Infinity; COLOR_NAMES.forEach(([n, h]) => { const [R, G, B] = hexToRgb(h); const d = (r - R) ** 2 * .3 + (g - G) ** 2 * .59 + (b - B) ** 2 * .11; if (d < bd) { bd = d; best = n; } }); return best; };
-const SWATCHES = [['DPP Pale', '#EEF1F9'], ['DPP Ink', '#14172B'], ['DPP Deep', '#0A0B15'], ['DPP Gold', '#B98A4A'], ['White', '#FFFFFF'], ['Bone', '#E9E3D6'], ['Heather', '#9D9B96'], ['Clay', '#9C5A3C'], ['Olive', '#59583A'], ['Oxblood', '#5B1F20']];
+const SWATCHES = [['DPP Pale', '#EEF1F9'], ['DPP Ink', '#14172B'], ['DPP Deep', '#0A0B15'], ['DPP Gold', '#B98A4A'], ['White', '#FFFFFF'], ['Bone', '#E9E3D6'], ['Heather', '#9D9B96'], ['Khaki', '#B7A57A'], ['Indigo', '#283655'], ['Clay', '#9C5A3C'], ['Olive', '#59583A'], ['Oxblood', '#5B1F20']];
 const FABRICS = {
-  jersey: { label: 'Jersey · 220 gsm', gsm: 220, comp: '100% combed ring-spun cotton', rough: .88, sheen: .45, bump: .55 },
-  heavy: { label: 'Heavyweight jersey · 300 gsm', gsm: 300, comp: '100% cotton, open-end, garment-dyed', rough: .93, sheen: .55, bump: .8 },
-  fleece: { label: 'Loopback fleece · 420 gsm', gsm: 420, comp: '100% cotton French terry, loopback', rough: .97, sheen: .85, bump: .45 },
-  waffle: { label: 'Waffle knit · 260 gsm', gsm: 260, comp: '100% cotton thermal waffle', rough: .95, sheen: .3, bump: 1.6 },
-  denim: { label: 'Rigid denim · 13.5 oz', gsm: 458, comp: '100% cotton, right-hand twill', rough: .9, sheen: .15, bump: 1.1 },
-  twill: { label: 'Cotton twill · 10 oz', gsm: 340, comp: '100% cotton twill', rough: .85, sheen: .2, bump: .7 },
-  modal: { label: 'Micro modal · 190 gsm', gsm: 190, comp: '92% modal / 8% elastane', rough: .55, sheen: .7, bump: .3 },
-  sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9 },
+  jersey: { label: 'Jersey · 220 gsm', gsm: 220, comp: '100% combed ring-spun cotton', rough: .88, sheen: .45, bump: .55, for: 'any' },
+  heavy: { label: 'Heavyweight jersey · 300 gsm', gsm: 300, comp: '100% cotton, open-end, garment-dyed', rough: .93, sheen: .55, bump: .8, for: 'any' },
+  fleece: { label: 'Loopback fleece · 420 gsm', gsm: 420, comp: '100% cotton French terry, loopback', rough: .97, sheen: .85, bump: .45, for: 'any' },
+  waffle: { label: 'Waffle knit · 260 gsm', gsm: 260, comp: '100% cotton thermal waffle', rough: .95, sheen: .3, bump: 1.6, for: 'top' },
+  denim: { label: 'Rigid denim · 13.5 oz', gsm: 458, comp: '100% cotton, 3/1 right-hand twill, ring-spun', rough: .9, sheen: .12, bump: 1.4, weave: 'denim', tint: 1, k: 1.6, for: 'bottom' },
+  twill: { label: 'Khaki chino twill · 9 oz', gsm: 305, comp: '100% cotton 2/1 twill, peached', rough: .82, sheen: .2, bump: .9, weave: 'twill', k: 1.8, for: 'bottom' },
+  cord: { label: 'Corduroy · 8-wale', gsm: 340, comp: '100% cotton corduroy, 8 wales / in', rough: .78, sheen: .75, bump: 3, weave: 'cord', k: .65, for: 'bottom' },
+  canvas: { label: 'Duck canvas · 12 oz', gsm: 407, comp: '100% cotton duck, plain weave', rough: .9, sheen: .1, bump: 1.2, weave: 'canvas', k: 2, for: 'bottom' },
+  ripstop: { label: 'Cotton/nylon ripstop', gsm: 200, comp: '50% cotton / 50% nylon ripstop', rough: .7, sheen: .25, bump: .9, weave: 'ripstop', k: 1, for: 'bottom' },
+  nylon: { label: 'Nylon taslan shell', gsm: 120, comp: '100% nylon taslan, DWR finish', rough: .42, sheen: .2, bump: .3, weave: 'nylon', k: 2, for: 'bottom' },
+  linen: { label: 'Linen · 7 oz', gsm: 237, comp: '100% European linen', rough: .88, sheen: .15, bump: 1, weave: 'linen', tint: 1, k: 1.2, for: 'bottom' },
+  modal: { label: 'Micro modal · 190 gsm', gsm: 190, comp: '92% modal / 8% elastane', rough: .55, sheen: .7, bump: .3, for: 'boxers' },
+  sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9, for: 'socks' },
 };
 const FITS = { boxy: { label: 'Boxy', w: 1.14, h: 2.5, drop: .14 }, regular: { label: 'Regular', w: 1.0, h: 2.72, drop: 0 }, oversized: { label: 'Oversized', w: 1.24, h: 2.82, drop: .26 } };
 const WOODS = {
@@ -629,6 +634,8 @@ function newDesignShell(cat) { return { category: cat, edition: 150, garment: { 
 const TEX = {
   _c: {},
   canvas(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return c; },
+  // draw in a logical size, store at 2x pixels (sharp dials / inserts up close)
+  canvasHi(size, draw) { return this.canvas(size * 2, size * 2, (x) => { x.scale(2, 2); draw(x, size, size); }); },
   repeat(t, x, y) { const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWrapping; c.repeat.set(x, y); c.needsUpdate = true; return c; },
   knit(kind) {
     const k = 'knit' + kind; if (this._c[k]) return this._c[k];
@@ -666,12 +673,42 @@ const TEX = {
       for (let i = 0; i < p.length; i += 4) { const v = (Math.random() - .5) * 14; p[i] += v; p[i + 1] += v; p[i + 2] += v; }
       x.putImageData(im, 0, 0);
     });
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (this._c[k] = t);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16; return (this._c[k] = t);
   },
   carbon() {
     if (this._c.carbon) return this._c.carbon;
     const c = this.canvas(512, 512, (x, w, h) => { x.fillStyle = '#141415'; x.fillRect(0, 0, w, h); for (let i = 0; i < 1400; i++) { const v = 30 + Math.random() * 70 | 0; x.fillStyle = `rgba(${v},${v},${v + 4},.75)`; x.save(); x.translate(Math.random() * w, Math.random() * h); x.rotate(Math.random() * 6.3); x.beginPath(); x.moveTo(0, 0); x.lineTo(6 + Math.random() * 26, Math.random() * 6); x.lineTo(Math.random() * 18, 4 + Math.random() * 14); x.fill(); x.restore(); } });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return (this._c.carbon = t);
+  },
+  // Woven fabric surfaces (bump height maps): twill diagonals, denim slub, corduroy wales, duck canvas, ripstop grid, nylon, linen
+  weave(kind) {
+    const k = 'weave:' + kind; if (this._c[k]) return this._c[k];
+    const S = 256, c = this.canvas(S, S, (x) => {
+      const im = x.createImageData(S, S), p = im.data, col = Array.from({ length: S }, () => Math.random()), row = Array.from({ length: S }, () => Math.random());
+      for (let y = 0; y < S; y++) for (let i = 0; i < S; i++) {
+        const n = Math.random() * 16 - 8; let v = 128;
+        if (kind === 'twill') v = 128 + 70 * Math.sin(((i + y) % 6) / 6 * Math.PI * 2) + n;
+        else if (kind === 'denim') v = 128 + 80 * Math.sin(((i + y * 1.0) % 8) / 8 * Math.PI * 2) * (.75 + col[i] * .25) + (row[y] - .5) * 40 + n;
+        else if (kind === 'cord') { const w = (i % 32) / 32; v = 40 + 200 * Math.pow(Math.sin(w * Math.PI), .6) + n * 1.5; }
+        else if (kind === 'canvas') v = 128 + 70 * ((((i >> 2) + (y >> 2)) & 1) ? 1 : -1) * Math.sin((i % 4) / 4 * Math.PI) + n;
+        else if (kind === 'ripstop') v = 128 + 35 * ((((i >> 1) + (y >> 1)) & 1) ? 1 : -1) + ((i % 48 < 3 || y % 48 < 3) ? 90 : 0) + n;
+        else if (kind === 'nylon') v = 128 + n * .5 + 10 * Math.sin(y / 2);
+        else if (kind === 'linen') v = 128 + 50 * ((((i >> 1) + (y >> 1)) & 1) ? 1 : -1) * .6 + (col[i] - .5) * 90 + (row[y] - .5) * 70 + n;
+        const o = (y * S + i) * 4; p[o] = p[o + 1] = p[o + 2] = clamp(v, 0, 255); p[o + 3] = 255;
+      }
+      x.putImageData(im, 0, 0);
+    });
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16; return (this._c[k] = t);
+  },
+  // Yarn-colour variation (multiplies the base colour): denim slub/fading, linen irregular slubs
+  weaveTint(kind) {
+    const k = 'tint:' + kind; if (this._c[k]) return this._c[k];
+    const S = 512, c = this.canvas(S, S, (x) => {
+      x.fillStyle = '#fff'; x.fillRect(0, 0, S, S);
+      for (let i = 0; i < (kind === 'denim' ? 900 : 500); i++) { const g = 200 + Math.random() * 55 | 0; x.fillStyle = `rgba(${g},${g},${g},${kind === 'denim' ? .55 : .4})`; x.fillRect(Math.random() * S, Math.random() * S, 1 + Math.random() * 2, 6 + Math.random() * (kind === 'denim' ? 60 : 30)); }
+      if (kind === 'denim') { x.globalAlpha = .18; for (let i = 0; i < 160; i++) { x.fillStyle = '#ffffff'; x.fillRect(Math.random() * S, Math.random() * S, 1, 20 + Math.random() * 80); } }
+    });
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16; return (this._c[k] = t);
   },
   // Woven / printed fabric patterns: plaid (tartan sett), gingham, pinstripe
   pattern(kind, c1, c2, c3, scale = 1, small = false) {
@@ -689,7 +726,7 @@ const TEX = {
       } else if (kind === 'pinstripe') { x.fillStyle = c3; for (let i = 0; i < w; i += 32) x.fillRect(i, 0, 2.5, h); }
       x.globalAlpha = 1;
     });
-    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16;
     const r = small ? 1 / scale : 3 / scale; t.repeat.set(r, r); return (this._c[k] = t);
   },
   // cloud field 0..1 — layered upscaled random grids (cheap fbm)
@@ -753,7 +790,7 @@ const TEX = {
         }
       });
     }
-    const tm = new THREE.CanvasTexture(map); tm.colorSpace = THREE.SRGBColorSpace; tm.anisotropy = 8;
+    const tm = new THREE.CanvasTexture(map); tm.colorSpace = THREE.SRGBColorSpace; tm.anisotropy = 16;
     let ta = null; if (alpha && withAlpha) ta = new THREE.CanvasTexture(alpha);
     return (this._c[ck] = { map: tm, alpha: ta, canvas: map });
   },
@@ -851,6 +888,14 @@ function shapePts(shape, s = 1, n = 160) {
   if (out.length > 2 && out[0].distanceTo(out[out.length - 1]) < .006 * s) out.pop();
   return out;
 }
+// Curved watch lug: side profile swept outward and down from the case, extruded to lug width
+let _lug = null;
+function lugGeo() {
+  if (_lug) return _lug;
+  const s = new THREE.Shape(); s.moveTo(0, .2); s.bezierCurveTo(.22, .2, .4, .12, .52, -.04); s.bezierCurveTo(.56, -.1, .54, -.17, .47, -.17); s.bezierCurveTo(.36, -.12, .2, -.1, 0, -.16); s.closePath();
+  const g = new THREE.ExtrudeGeometry(s, { depth: .2, bevelEnabled: true, bevelThickness: .03, bevelSize: .03, bevelSegments: 5, curveSegments: 32 });
+  g.rotateY(-Math.PI / 2); g.translate(.1, 0, 0); g.computeVertexNormals(); return (_lug = g);
+}
 const circlePts = (r, n) => Array.from({ length: n }, (_, i) => new THREE.Vector2(Math.cos(-i / n * Math.PI * 2) * r, Math.sin(-i / n * Math.PI * 2) * r));
 const caseHex = W => W.caseMat === 'wood' ? (WOODS[W.caseWood] || WOODS.walnut).a : (CASE_MATS[W.caseMat] || CASE_MATS.steel).c;
 function watchMat(key, species, bz) {
@@ -879,9 +924,9 @@ function strapMat(type, c1, c2) {
       }
       if (type === 'nato') { x.fillStyle = c2; [[.46, .54], [.3, .34], [.66, .7]].forEach(([a, b]) => x.fillRect(a * w, 0, (b - a) * w, h)); for (let y = 0; y < h; y += 4) { x.fillStyle = 'rgba(0,0,0,.14)'; x.fillRect(0, y, w, 1.6); } for (let xx = 0; xx < w; xx += 3) { x.fillStyle = 'rgba(255,255,255,.05)'; x.fillRect(xx, 0, 1, h); } }
     });
-    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, tile ? 14 : 1); TEX._c[k] = t;
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, tile ? 14 : 1); TEX._c[k] = t;
   }
-  return new THREE.MeshPhysicalMaterial({ map: TEX._c[k], bumpMap: TEX._c[k], bumpScale: type === 'nato' ? 1.2 : 2.2, roughness: type === 'rubber' ? .78 : type === 'nato' ? .92 : .5, sheen: type === 'nato' ? .7 : .25, sheenColor: new THREE.Color(c1).lerp(new THREE.Color('#fff'), .4), clearcoat: type === 'leather' ? .3 : type === 'rubber' ? .1 : 0, clearcoatRoughness: .5 });
+  return new THREE.MeshPhysicalMaterial({ map: TEX._c[k], bumpMap: TEX._c[k], bumpScale: type === 'nato' ? .5 : .8, side: THREE.DoubleSide, roughness: type === 'rubber' ? .78 : type === 'nato' ? .92 : .5, sheen: type === 'nato' ? .7 : .25, sheenColor: new THREE.Color(c1).lerp(new THREE.Color('#fff'), .4), clearcoat: type === 'leather' ? .3 : type === 'rubber' ? .1 : 0, clearcoatRoughness: .5 });
 }
 function meshMat(metal) {
   if (!TEX._c.mesh) { const cv = TEX.canvas(128, 128, (x, w, h) => { x.fillStyle = '#808080'; x.fillRect(0, 0, w, h); x.strokeStyle = '#fff'; x.lineWidth = 2; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i - h, h); x.stroke(); } x.strokeStyle = '#000'; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i + 4, 0); x.lineTo(i + 4 - h, h); x.stroke(); } }); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 90); TEX._c.mesh = t; }
@@ -903,7 +948,7 @@ function handGeo(style, L, w) {
 }
 // Dial artwork. `fit` shrinks the layout for rectangular/tonneau dials.
 function dialCanvas(d, W, fit = 1) {
-  return TEX.canvas(1024, 1024, (x, w) => {
+  return TEX.canvasHi(1024, (x, w) => {
     const c = w / 2, R = c * fit, st = W.dialStyle, dial = W.dial, ink = W.index, skel = st === 'skeleton', heart = st === 'openheart';
     const chrono = st === 'panda' || st === 'rpanda';
     x.clearRect(0, 0, w, w);
@@ -954,7 +999,7 @@ function dialCanvas(d, W, fit = 1) {
 }
 // Bezel insert ring (planar UVs: outer radius = canvas edge)
 function insertCanvas(W) {
-  return TEX.canvas(1024, 1024, (x, w) => {
+  return TEX.canvasHi(1024, (x, w) => {
     const c = w / 2, rIn = c * .73 / .9, rMid = (c + rIn) / 2, ink = lum(W.bezelColor) > .5 ? '#111' : '#EEF1F9';
     const ring = (a0, a1, col) => { x.fillStyle = col; x.beginPath(); x.arc(c, c, c, a0, a1); x.arc(c, c, rIn, a1, a0, true); x.closePath(); x.fill(); };
     if (W.bezelStyle === 'gmt') { ring(Math.PI, Math.PI * 2, W.bezelColor); ring(0, Math.PI, W.bezelColor2); } else ring(0, Math.PI * 2, W.bezelColor);
@@ -968,7 +1013,7 @@ function insertCanvas(W) {
 }
 // Visible movement for skeleton / open-heart
 function movementCanvas(W) {
-  return TEX.canvas(1024, 1024, (x, w) => {
+  return TEX.canvasHi(1024, (x, w) => {
     const c = w / 2, gold = /gold|rose|bronze/.test(W.caseMat), base = gold ? '#9c8452' : '#4a4d52', bridge = gold ? '#cdb57a' : '#9a9da3';
     x.fillStyle = base; x.fillRect(0, 0, w, w);
     for (let yy = 0; yy < w; yy += 26) for (let xx = (yy / 26 % 2) * 13; xx < w; xx += 26) { const g = x.createRadialGradient(xx, yy, 2, xx, yy, 16); g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(1, 'rgba(0,0,0,.08)'); x.fillStyle = g; x.beginPath(); x.arc(xx, yy, 16, 0, Math.PI * 2); x.fill(); }
@@ -1030,7 +1075,7 @@ const Studio = {
   init() {
     const host = $('#stage');
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-    r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.outputColorSpace = THREE.SRGBColorSpace;
+    r.setPixelRatio(Math.min(Math.max(devicePixelRatio, 1.5), 2)); // supersample on 1x screens r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = .82;
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     host.prepend(r.domElement);
@@ -1038,7 +1083,7 @@ const Studio = {
     const pm = new THREE.PMREMGenerator(r); sc.environment = pm.fromScene(new RoomEnvironment(), .04).texture; sc.environmentIntensity = .55;
     const cam = this.camera = new THREE.PerspectiveCamera(30, 1, .1, 100); cam.position.set(0, .5, 10);
     const ctl = this.controls = new OrbitControls(cam, r.domElement); ctl.enableDamping = true; ctl.dampingFactor = .08; ctl.minDistance = 2.5; ctl.maxDistance = 18; ctl.autoRotateSpeed = 2.2;
-    const key = new THREE.DirectionalLight(0xfff6ec, 1.7); key.position.set(4, 7, 6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+    const key = new THREE.DirectionalLight(0xfff6ec, 1.7); key.position.set(4, 7, 6); key.castShadow = true; key.shadow.mapSize.set(4096, 4096); this.key = key;
     Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: .5, far: 30 }); key.shadow.bias = -.0005; key.shadow.radius = 6;
     const rim = new THREE.DirectionalLight(0xe2c792, 1.2); rim.position.set(-6, 3, -5);
     const fill = new THREE.HemisphereLight(0xffffff, 0x2a241c, .55);
@@ -1072,6 +1117,7 @@ const Studio = {
     if (d.category === 'watch') this.buildWatch(d); else this.buildGarment(d);
     this.root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(this.root); this.ground.position.y = box.min.y - .01;
+    { const sc = this.key.shadow.camera, rr = box.getSize(new THREE.Vector3()).length() * .62; Object.assign(sc, { left: -rr, right: rr, top: rr, bottom: -rr }); sc.updateProjectionMatrix(); this.key.shadow.radius = 3; } // tight shadow frustum = crisp shadows
     this.frame(box);
     $('#stageLabel').innerHTML = `${esc(d.name)}<span>${esc(d.styleNo)} · ${CATS[d.category].label}${d.category === 'watch' ? ' · ' + d.watch.dia + ' mm' : ' · ' + FITS[d.garment.fit].label}</span>`;
   },
@@ -1090,9 +1136,11 @@ const Studio = {
   },
   fabricMat(hex, fabric, rib, rx = 30, ry = 18, surf = null) {
     const f = FABRICS[fabric] || FABRICS.jersey;
-    const bump = TEX.repeat(rib ? TEX.rib() : TEX.knit(fabric === 'waffle' ? 'waffle' : fabric === 'fleece' ? 'fleece' : 'jersey'), rib ? rx * 3 : rx, rib ? 1 : ry);
+    const kk = f.k || 1; // woven fabrics carry their own texture scale
+    const bump = TEX.repeat(rib ? TEX.rib() : f.weave ? TEX.weave(f.weave) : TEX.knit(fabric === 'waffle' ? 'waffle' : fabric === 'fleece' ? 'fleece' : 'jersey'), rib ? rx * 3 : rx * kk, rib ? 1 : ry * kk);
     bump.userData.own = true;
-    return new THREE.MeshPhysicalMaterial({ color: hex, roughness: f.rough, sheen: f.sheen, sheenRoughness: .75, sheenColor: new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .3), side: THREE.DoubleSide, bumpMap: bump, bumpScale: (rib ? 1.4 : f.bump),
+    const tint = !rib && f.tint && !surf ? TEX.repeat(TEX.weaveTint(f.weave), rx * kk / 6, ry * kk / 6) : null; if (tint) tint.userData.own = true;
+    return new THREE.MeshPhysicalMaterial({ color: hex, roughness: f.rough, sheen: f.sheen, sheenRoughness: .75, sheenColor: new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .3), side: THREE.DoubleSide, bumpMap: bump, bumpScale: (rib ? 1.4 : f.bump), ...(tint ? { map: tint } : {}),
       ...(surf ? { color: '#ffffff', sheenColor: new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .3), map: surf.map, ...(surf.alpha ? { alphaMap: surf.alpha, alphaTest: .5 } : {}) } : {}) });
   },
   add(geo, mat, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; this.root.add(m); return m; },
@@ -1293,7 +1341,7 @@ const Studio = {
       const P = d.place[side], size = 1.4 * P.s, hps = this.P.h / 2 + this.P.rise;
       const cy = hps - (P.top + 7 * P.s) / 10, x = (side === 'front' ? 1 : -1) * P.dx / 10;
       let art = Art.composite(d, side, 1024); if (isStitch(P.tech)) art = stitchify(art, P.tech, d.garment.color);
-      const tex = new THREE.CanvasTexture(art); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+      const tex = new THREE.CanvasTexture(art); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 16;
       const puff = /Puff|embroider|Chenille|patch/i.test(P.tech);
       // real models: aim at the actual fabric surface; procedural: known front plane
       let pos = new THREE.Vector3(x, cy, side === 'front' ? this.P.d : -this.P.d), target = this.torso, depth = .95;
@@ -1336,7 +1384,7 @@ const Studio = {
     const dialShape = G.dialRect ? shapePts(W.shape, G.dialScale) : null;
     const dialGeo = () => { if (!dialShape) return new THREE.CircleGeometry(dialR, 128); const g = new THREE.ShapeGeometry(new THREE.Shape(dialShape), 64), p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) / dialR + 1) / 2, (p.getY(i) / dialR + 1) / 2); return g; };
     const open = W.dialStyle === 'skeleton' || W.dialStyle === 'openheart';
-    const dialTex = new THREE.CanvasTexture(dialCanvas(d, W, G.fit)); dialTex.colorSpace = THREE.SRGBColorSpace; dialTex.anisotropy = 8; dialTex.userData.own = true;
+    const dialTex = new THREE.CanvasTexture(dialCanvas(d, W, G.fit)); dialTex.colorSpace = THREE.SRGBColorSpace; dialTex.anisotropy = 16; dialTex.userData.own = true;
     const finish = DIAL_STYLES[W.dialStyle] || DIAL_STYLES.classic;
     const dial = mk(dialGeo(), new THREE.MeshPhysicalMaterial({ map: dialTex, roughness: finish.rough, metalness: finish.metal, clearcoat: W.dialStyle === 'enamel' ? 1 : .2, envMapIntensity: .55, transparent: open, alphaTest: open ? .4 : 0, side: THREE.DoubleSide }));
     dial.rotation.x = -Math.PI / 2; dial.position.y = .3;
@@ -1365,7 +1413,7 @@ const Studio = {
     } else if (W.bezelStyle !== 'none') {
       const edge = mk(new THREE.TorusGeometry(.925, .05, 20, 128), W.bezelStyle === 'gem' ? watchMat(W.caseMat === 'wood' ? 'steel' : W.caseMat) : metal); edge.rotation.x = Math.PI / 2; edge.position.y = bezY;
       if (insert) {
-        const it = new THREE.CanvasTexture(insertCanvas(W)); it.colorSpace = THREE.SRGBColorSpace; it.anisotropy = 8; it.userData.own = true;
+        const it = new THREE.CanvasTexture(insertCanvas(W)); it.colorSpace = THREE.SRGBColorSpace; it.anisotropy = 16; it.userData.own = true;
         const ring = mk(new THREE.RingGeometry(.73, .9, 128), new THREE.MeshPhysicalMaterial({ map: it, roughness: .25, metalness: .15, clearcoat: 1 })); ring.rotation.x = -Math.PI / 2; ring.position.y = .385;
       } else if (W.bezelStyle === 'fluted') {
         const fl = TEX.canvas(512, 512, (x) => { x.fillStyle = '#808080'; x.fillRect(0, 0, 512, 512); x.translate(256, 256); for (let i = 0; i < 120; i++) { x.rotate(Math.PI * 2 / 120); x.fillStyle = i % 2 ? '#fff' : '#000'; x.fillRect(-1.6, 180, 3.2, 80); } });
@@ -1396,7 +1444,7 @@ const Studio = {
     const stem = mk(new THREE.CylinderGeometry(.06, .06, .1, 16), crownMat); stem.rotation.z = Math.PI / 2; stem.position.set(G.halfX, 0, 0);
     if (W.crownGuards) [-1, 1].forEach(s => { const gd = mk(new RoundedBoxGeometry(.16, .2, .1, 3, .04), caseMat); gd.position.set(G.halfX + .04, 0, s * .17); });
     // lugs (integrated octagon has none)
-    if (W.shape !== 'octagon') [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(new RoundedBoxGeometry(.22, .26, .5, 4, .08), caseMat); l.position.set(sx * .63, -.06, sz * (G.halfZ - .04)); l.rotation.x = sz * .18; });
+    if (W.shape !== 'octagon') { const lg = lugGeo(); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(lg, caseMat); l.position.set(sx * .63, 0, sz * (G.halfZ - .34)); if (sz < 0) l.rotation.y = Math.PI; }); }
     const bm = cm.kind === 'metal' ? metal : steel, bp = bm.clone(); bp.roughness = Math.min(.1, bm.roughness);
     this.buildStrap(W, grp, mk, { metal: bm, polished: bp, steel }, G);
     grp.scale.setScalar(sc); grp.rotation.x = .62;
@@ -1408,7 +1456,7 @@ const Studio = {
     const t = W.strap, Q = (curve, u) => ({ p: curve.getPointAt(u), T: curve.getTangentAt(u), q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u)) });
     // flat strap with rounded edges; width tapers from lug width toward the buckle
     const pad = u => lerp(1.45, 1, 1 - Math.abs(u - .5) * 2); // padded: thicker at the lugs, slimmer at the buckle
-    const band = (curve, w0, thick, mat, closed = false) => mk(sweepGeo(curve, u => thick / 2 * pad(u), 1, closed ? 260 : 220, 48, X, { phase: Math.PI, sq: 5, ratioAt: u => lerp(w0, w0 * .82, 1 - Math.abs(u - .5) * 2) / (thick * pad(u)) }), mat);
+    const band = (curve, w0, thick, mat, closed = false) => mk(sweepGeo(curve, u => thick / 2 * pad(u), 1, closed ? 360 : 320, 72, X, { phase: Math.PI, sq: 5, ratioAt: u => lerp(w0, w0 * .82, 1 - Math.abs(u - .5) * 2) / (thick * pad(u)) }), mat);
     const widthAt = (w0, u) => lerp(w0, w0 * .82, 1 - Math.abs(u - .5) * 2);
     const loop = (curve, u, hw, hh, r, mat, lift = 0) => { // rounded-rect hoop around the strap (buckle frame, keepers)
       const { p, T } = Q(curve, u), N = new THREE.Vector3().crossVectors(X, T).normalize(), pts = [];
@@ -1439,18 +1487,19 @@ const Studio = {
     // link bracelets
     const L = {
       woodlinks: { pitch: .34, th: .17, lw: 1.02, p: [[0, .5, 'A'], [-.38, .24, 'B'], [.38, .24, 'B']] },
-      oyster: { pitch: .3, th: .14, lw: 1.02, p: [[0, .32, 'P'], [-.33, .3, 'S'], [.33, .3, 'S']] },
-      jubilee: { pitch: .2, th: .13, lw: 1.02, p: [[-.37, .22, 'S'], [.37, .22, 'S'], [-.12, .2, 'P'], [.12, .2, 'P']] },
-      integrated: { pitch: .26, th: .15, lw: integ ? 1.2 : 1.04, p: [[0, .16, 'P'], [-.3, .42, 'S'], [.3, .42, 'S']] },
+      oyster: { pitch: .3, th: .12, lw: 1.02, p: [[0, .32, 'P'], [-.33, .3, 'S'], [.33, .3, 'S']] },
+      jubilee: { pitch: .2, th: .11, lw: 1.02, p: [[-.375, .25, 'S'], [.375, .25, 'S'], [-.125, .22, 'P'], [.125, .22, 'P']] },
+      integrated: { pitch: .26, th: .13, lw: integ ? 1.2 : 1.04, p: [[0, .16, 'P'], [-.3, .42, 'S'], [.3, .42, 'S']] },
     }[t] || null;
     if (!L) return;
     const mats = t === 'woodlinks' ? { A: watchMat('wood', W.strapWood), B: watchMat('wood', W.strapAccent) } : { P: M.polished, S: M.metal };
     const curve = new THREE.CatmullRomCurve3(base), len = curve.getLength(), n = Math.floor(len / L.pitch);
-    const geos = L.p.map(([, w]) => new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * .95, 3, Math.min(.045, L.th * .3)));
+    // machined links: flat tops, tight chamfer, rows nearly touching (wood links keep a softer edge)
+    const wood = t === 'woodlinks', geos = L.p.map(([, w]) => new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * (wood ? .95 : .99), wood ? 5 : 3, wood ? Math.min(.05, L.th * .35) : Math.min(.022, L.th * .18)));
     [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), T); const e = mk(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
     for (let i = 0; i < n; i++) {
       const u = (i + .5) / n, p = curve.getPointAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u));
-      const taper = lerp(1, t === 'integrated' ? .72 : .8, 1 - Math.abs(u - .5) * 2);
+      const taper = lerp(1, t === 'integrated' ? .84 : .88, 1 - Math.abs(u - .5) * 2);
       if (Math.abs(u - .5) < .55 / n) { const c = mk(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
       const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
       L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } }); // jubilee: staggered centre links
@@ -1467,9 +1516,11 @@ const Studio = {
   /* ---------- output ---------- */
   snap(view, size = 1200) {
     const r = this.renderer, cam = this.camera, prev = { v: this.lastView, p: cam.position.clone(), a: cam.aspect, w: r.domElement.width / r.getPixelRatio(), h: r.domElement.height / r.getPixelRatio(), pr: r.getPixelRatio() };
-    r.setPixelRatio(1); r.setSize(size, size, false); cam.aspect = 1; cam.updateProjectionMatrix();
+    const SS = 2; r.setPixelRatio(1); r.setSize(size * SS, size * SS, false); cam.aspect = 1; cam.updateProjectionMatrix();
     if (view) this.view(view);
-    r.render(this.scene, cam); const url = r.domElement.toDataURL('image/jpeg', .9);
+    r.render(this.scene, cam);
+    const out = TEX.canvas(size, size, (x) => { x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(r.domElement, 0, 0, size, size); }); // 2x supersample
+    const url = out.toDataURL('image/jpeg', .93);
     r.setPixelRatio(prev.pr); r.setSize(prev.w, prev.h, false); cam.aspect = prev.a; cam.updateProjectionMatrix();
     if (view) { this.view(prev.v); cam.position.copy(prev.p); this.controls.update(); }
     return url;
@@ -1480,8 +1531,8 @@ const Studio = {
     const bg = this.scene.background.clone(); this.scene.background.set('#efebe3');
     this.tickHands();
     const isW = d.category === 'watch';
-    d.renders = { front: this.snap('front', 900), back: this.snap(isW ? 'three' : 'back', 900), three: this.snap('three', 900) };
-    this.scene.background.copy(bg); d.thumb = this.snap('three', 480);
+    d.renders = { front: this.snap('front', 1400), back: this.snap(isW ? 'three' : 'back', 1400), three: this.snap('three', 1400) };
+    this.scene.background.copy(bg); d.thumb = this.snap('three', 760);
     touch(); if (!silent) toast('Renders saved to tech pack');
   },
   exportPNG() { const d = S.current; download(`${d.styleNo}_${this.lastView}.png`, this.snapPNG()); },
@@ -1539,7 +1590,7 @@ const Panels = {
         ${d.category === 'socks' ? `<div class="fld" style="margin-top:10px"><label>Style</label><div class="seg" data-segbind="garment.sockStyle">${[['crew', 'Crew'], ['noshow', 'No-show']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.sockStyle || 'crew') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
           <div class="grid2" style="margin-top:10px">${this.select('garment.sockAccent', 'Contrast heel & toe', g.sockAccent ?? '1', [['1', 'Yes'], ['', 'No']])}${g.sockStyle === 'noshow' ? '' : this.select('garment.sockCuff', 'Contrast cuff', g.sockCuff || '', [['1', 'Yes'], ['', 'No']])}</div>
           ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
-        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).map(([k, v]) => [k, v.label]))}</div>
+        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).filter(([k, v]) => k === g.fabric || v.for === 'any' || v.for === (isTop(d.category) ? 'top' : d.category === 'socks' ? 'socks' : d.category === 'boxers' ? 'boxers' : 'bottom')).map(([k, v]) => [k, v.label]))}</div>
         <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
           <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
