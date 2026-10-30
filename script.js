@@ -1182,7 +1182,7 @@ const Studio = {
       const taper = lerp(1, t === 'integrated' ? .72 : .8, 1 - Math.abs(u - .5) * 2);
       if (Math.abs(u - .5) < .55 / n) { const c = mk(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
       const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
-      L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } // staggered centre links });
+      L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } }); // jubilee: staggered centre links
     }
   },
   tickHands() {
