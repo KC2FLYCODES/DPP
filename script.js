@@ -104,7 +104,7 @@ const CATS = {
   longsleeve: { label: 'Long Sleeve', code: 'LS', msrp: null },
   crewneck: { label: 'Crewneck', code: 'CR', msrp: null },
   hoodie: { label: 'Hoodie', code: 'HD', msrp: null },
-  watch: { label: 'Wood Watch', code: 'WT', msrp: 221 }, // The Teranga, Drop 001 — price per draft site
+  watch: { label: 'Watch', code: 'WT', msrp: 221 }, // The Teranga, Drop 001 — price per draft site
 };
 const STATUSES = ['Concept', 'Sampling', 'Revision', 'Approved', 'Production'];
 const TECHNIQUES = ['Screen print', 'Puff print', 'Discharge', 'DTG', 'Flat embroidery', '3D puff embroidery', 'Tonal embroidery', 'Chenille patch', 'Woven patch', 'Heat transfer'];
@@ -146,7 +146,7 @@ const WOODS = {
   bamboo: { label: 'Bamboo', a: '#d2b47c', b: '#9b7a45' },
 };
 const BEZELS = { steel: { label: 'Brushed steel', c: '#bdbbb6', m: 1, r: .32 }, black: { label: 'Black IP steel', c: '#1d1c1b', m: 1, r: .3 }, gold: { label: 'Gold IP steel', c: '#c9a45c', m: 1, r: .25 }, wood: { label: 'Matching wood' } };
-const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Seiko NH35A · automatic', 'Seiko VK63 · meca-quartz chrono'];
+const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Miyota 82S7 · open-heart automatic', 'Seiko NH35A · automatic', 'Seiko NH34 · GMT automatic', 'Seiko NH38 · skeleton automatic', 'Sellita SW200 · automatic', 'Seiko VK63 · meca-quartz chrono'];
 
 /* =========================================================================
    3. Presets — starter specs. Values are industry starting points; confirm on fit sample.
@@ -215,15 +215,15 @@ function presetPOM(cat) {
 }
 function presetBOM(cat) {
   if (cat === 'watch') return [
-    row({ component: 'Case', material: 'Solid hardwood, CNC turned, lacquer sealed', supplier: '', spec: 'Species per colorway', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Case', material: 'Per spec — shape, material, finish on Materials page', supplier: '', spec: 'Finish per colorway', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Movement', material: 'Per spec sheet', supplier: '', spec: 'See movement field', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Crystal', material: 'Sapphire, AR coated inside', supplier: '', spec: 'Flat, 1.5 mm', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Dial', material: 'Brass, printed', supplier: '', spec: 'Edition number pad-printed', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Hands', material: 'Steel, painted', supplier: '', spec: 'H/M/S set', qty: 1, uom: 'set', cost: 0 }),
-    row({ component: 'Bezel ring', material: '316L stainless', supplier: '', spec: 'Finish per spec', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Bezel / insert', material: 'Per spec', supplier: '', spec: 'Insert print per artwork', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Crown', material: '316L stainless, push-pull', supplier: '', spec: 'Hourglass engraved end', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Caseback', material: '316L stainless, laser engraved', supplier: '', spec: 'Baobab engraving + edition N°/150', qty: 1, uom: 'pc', cost: 0 }),
-    row({ component: 'Strap links', material: 'Hardwood, two-tone 3-piece', supplier: '', spec: 'Removable pins', qty: 1, uom: 'set', cost: 0 }),
+    row({ component: 'Bracelet / strap', material: 'Per spec', supplier: '', spec: 'Removable links or quick-release bars', qty: 1, uom: 'set', cost: 0 }),
     row({ component: 'Clasp', material: '316L butterfly deployant', supplier: '', spec: 'Logo stamp', qty: 1, uom: 'pc', cost: 0 }),
     row({ component: 'Presentation box', material: 'Wood box, foam insert', supplier: '', spec: 'Numbered certificate card', qty: 1, uom: 'pc', cost: 0 }),
   ];
@@ -275,7 +275,7 @@ function newDesign(cat, name) {
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
     garment: { color: '#EEF1F9', trim: '#EEF1F9', stitch: '#EEF1F9', fabric: cat === 'hoodie' || cat === 'crewneck' ? 'fleece' : 'heavy', fit: 'boxy', finish: 'none', distress: 'none' },
-    watch: { dia: 42, caseWood: 'walnut', bezel: 'steel', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', strapWood: 'walnut', strapAccent: 'maple', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM' },
+    watch: { ...WATCH_DEFAULT },
     place: { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: { front: [], back: [] },
     colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : '#EEF1F9', pantone: '', notes: '' })],
@@ -413,23 +413,40 @@ function artRectFlat(d, side) {
   return { x: cx - w / 2, y: 40 + P.top * ppi, w };
 }
 function watchFlat(d, side, stroke) {
-  const W = d.watch, wa = WOODS[W.caseWood] || WOODS.walnut, st = WOODS[W.strapWood] || WOODS.walnut, ac = WOODS[W.strapAccent] || WOODS.maple;
+  const W = watchSpec(d), cHex = caseHex(W), G = WATCH_GEOM[W.shape] || WATCH_GEOM.round, k = 98;
+  const path = (pts, s) => 'M' + pts.map(p => `${(200 + p.x * k * s).toFixed(1)} ${(200 - p.y * k * s).toFixed(1)}`).join(' L') + 'Z';
+  const caseP = W.shape === 'round' ? null : shapePts(W.shape, 1, 64);
+  const metalStrap = ['oyster', 'jubilee', 'integrated', 'mesh'].includes(W.strap), metalHex = CASE_MATS[W.caseMat]?.kind === 'metal' ? cHex : '#c4c3bf';
   let s = `<svg viewBox="0 -40 400 480" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${stroke}" stroke-width="1.4">`;
-  for (let i = 0; i < 4; i++) { // strap links top + bottom
-    const y1 = 70 - i * 30, y2 = 330 + i * 30, w = 96 - i * 4;
-    [y1, y2].forEach(y => { s += `<rect x="${200 - w / 2}" y="${y - 13}" width="${w * .26}" height="26" rx="3" fill="${ac.a}"/><rect x="${200 - w / 2 + w * .27}" y="${y - 13}" width="${w * .46}" height="26" rx="3" fill="${st.a}"/><rect x="${200 + w / 2 - w * .26}" y="${y - 13}" width="${w * .26}" height="26" rx="3" fill="${ac.a}"/>`; });
-  }
-  s += `<rect x="150" y="84" width="22" height="40" rx="4" fill="${wa.a}"/><rect x="228" y="84" width="22" height="40" rx="4" fill="${wa.a}"/><rect x="150" y="276" width="22" height="40" rx="4" fill="${wa.a}"/><rect x="228" y="276" width="22" height="40" rx="4" fill="${wa.a}"/>`;
-  s += `<rect x="292" y="190" width="16" height="20" rx="3" fill="#bdbbb6"/><circle cx="200" cy="200" r="98" fill="${wa.a}"/>`;
-  if (side === 'front') {
-    const bz = BEZELS[W.bezel]; s += `<circle cx="200" cy="200" r="88" fill="${bz?.c || wa.b}"/><circle cx="200" cy="200" r="80" fill="${W.dial}"/>`;
-    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = i === 0 ? 62 : 66, r2 = 76; s += `<line x1="${200 + Math.sin(a) * r1}" y1="${200 - Math.cos(a) * r1}" x2="${200 + Math.sin(a) * r2}" y2="${200 - Math.cos(a) * r2}" stroke="${W.index}" stroke-width="${i % 3 ? 2 : 3.4}"/>`; }
-    s += `<line x1="200" y1="200" x2="200" y2="148" stroke="${W.index}" stroke-width="4"/><line x1="200" y1="200" x2="242" y2="214" stroke="${W.index}" stroke-width="3"/><line x1="200" y1="214" x2="200" y2="134" stroke="${W.accent}" stroke-width="1.2"/><circle cx="200" cy="200" r="4" fill="${W.index}" stroke="none"/>`;
-    s += `<text x="200" y="250" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${W.index}" stroke="none">N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}</text>`;
+  const zEdge = 200 - G.halfZ * k;
+  if (W.strap === 'woodlinks' || metalStrap) {
+    const A = W.strap === 'woodlinks' ? (WOODS[W.strapAccent] || WOODS.maple).a : shade(metalHex, -.08), C = W.strap === 'woodlinks' ? (WOODS[W.strapWood] || WOODS.walnut).a : shade(metalHex, .12);
+    for (let i = 0; i < 4; i++) { const y1 = zEdge - 22 - i * 30, y2 = 400 - zEdge + 22 + i * 30, w = 124 - i * 5; [y1, y2].forEach(y => { s += `<rect x="${200 - w / 2}" y="${y - 13}" width="${w * .3}" height="26" rx="3" fill="${A}"/><rect x="${200 - w / 2 + w * .31}" y="${y - 13}" width="${w * .38}" height="26" rx="3" fill="${C}"/><rect x="${200 + w / 2 - w * .3}" y="${y - 13}" width="${w * .3}" height="26" rx="3" fill="${A}"/>`; }); }
   } else {
-    s += `<circle cx="200" cy="200" r="80" fill="#cfcdc8"/><circle cx="200" cy="200" r="72" stroke-dasharray="2 3"/>`;
+    const sc = W.strapColor; s += `<rect x="142" y="-30" width="116" height="${zEdge + 30}" rx="8" fill="${sc}"/><rect x="142" y="${400 - zEdge}" width="116" height="${zEdge + 30}" rx="6" fill="${sc}"/>`;
+    if (W.strap === 'nato') s += `<rect x="194" y="-30" width="12" height="${zEdge + 30}" fill="${W.strapColor2}" stroke="none"/><rect x="194" y="${400 - zEdge}" width="12" height="${zEdge + 30}" fill="${W.strapColor2}" stroke="none"/>`;
+    if (W.strap === 'leather') s += `<path d="M150 -30 V${zEdge} M250 -30 V${zEdge} M150 ${400 - zEdge} V430 M250 ${400 - zEdge} V430" stroke="${W.strapColor2}" stroke-dasharray="4 3"/>`;
+  }
+  if (W.shape !== 'octagon') s += [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z]) => `<rect x="${200 + x * 62 - 11}" y="${200 + z * G.halfZ * k - 20}" width="22" height="40" rx="4" fill="${cHex}"/>`).join('');
+  s += `<rect x="${200 + G.halfX * k - 2}" y="190" width="16" height="20" rx="3" fill="${metalHex}"/>`;
+  s += caseP ? `<path d="${path(caseP, 1)}" fill="${cHex}"/>` : `<circle cx="200" cy="200" r="${1.06 * k}" fill="${cHex}"/>`;
+  if (side === 'front') {
+    const dialPath = G.dialRect ? path(shapePts(W.shape, G.dialScale, 64), 1) : null, dr = G.dialR * k;
+    if (W.shape === 'octagon') s += `<path d="${path(shapePts('octagon', .97), 1)}" fill="${shade(cHex, .15)}"/>` + Array.from({ length: 8 }, (_, i) => { const a = Math.PI / 8 + i * Math.PI / 4; return `<circle cx="${200 + Math.cos(a) * .95 * k}" cy="${200 - Math.sin(a) * .95 * k}" r="3.5" fill="${shade(cHex, -.3)}"/>`; }).join('');
+    else if (!G.dialRect && W.bezelStyle !== 'none') s += W.bezelStyle === 'gmt' ? `<path d="M${200 - .93 * k} 200 A${.93 * k} ${.93 * k} 0 0 1 ${200 + .93 * k} 200Z" fill="${W.bezelColor}"/><path d="M${200 - .93 * k} 200 A${.93 * k} ${.93 * k} 0 0 0 ${200 + .93 * k} 200Z" fill="${W.bezelColor2}"/>` : `<circle cx="200" cy="200" r="${.93 * k}" fill="${/diver|tachy/.test(W.bezelStyle) ? W.bezelColor : shade(cHex, .12)}"/>`;
+    const fillD = W.dialStyle === 'skeleton' ? '#4a4d52' : W.dial;
+    s += dialPath ? `<path d="${dialPath}" fill="${fillD}"/>` : `<circle cx="200" cy="200" r="${(/diver|gmt|tachy/.test(W.bezelStyle) && W.shape === 'round' ? .73 : G.dialR) * k}" fill="${fillD}"/>`;
+    if (W.dialStyle === 'skeleton') s += `<circle cx="200" cy="170" r="22" fill="#c9ccd2" stroke-width=".8"/><circle cx="225" cy="205" r="13" fill="#d8b26a" stroke-width=".8"/><circle cx="178" cy="212" r="11" fill="#d8b26a" stroke-width=".8"/><circle cx="200" cy="${200 + G.dialR * k * .42}" r="14" stroke="#d8b26a" stroke-width="2"/>`;
+    if (W.dialStyle === 'openheart') s += `<circle cx="${200 - G.dialR * k * .54}" cy="200" r="${G.dialR * k * .26}" fill="#4a4d52"/><circle cx="${200 - G.dialR * k * .54}" cy="200" r="${G.dialR * k * .14}" stroke="#d8b26a" stroke-width="2"/>`;
+    if (/panda/.test(W.dialStyle)) [[1, 0], [-1, 0], [0, 1]].forEach(([x, y]) => s += `<circle cx="${200 + x * .46 * dr * G.fit}" cy="${200 + y * .46 * dr * G.fit}" r="${.2 * dr * G.fit}" fill="${W.dialStyle === 'panda' ? W.index : '#EEF1F9'}" stroke-width=".8"/>`);
+    const rr = dr * G.fit;
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; s += `<line x1="${200 + Math.sin(a) * rr * .76}" y1="${200 - Math.cos(a) * rr * .76}" x2="${200 + Math.sin(a) * rr * .92}" y2="${200 - Math.cos(a) * rr * .92}" stroke="${W.index}" stroke-width="${i % 3 ? 2 : 3.4}"/>`; }
+    s += `<line x1="200" y1="200" x2="200" y2="${200 - rr * .5}" stroke="${W.index}" stroke-width="4"/><line x1="200" y1="200" x2="${200 + rr * .55}" y2="${200 + rr * .18}" stroke="${W.index}" stroke-width="3"/><line x1="200" y1="${200 + rr * .15}" x2="200" y2="${200 - rr * .8}" stroke="${W.accent}" stroke-width="1.2"/><circle cx="200" cy="200" r="4" fill="${W.index}" stroke="none"/>`;
+    if (W.date !== 'none') { const p = W.date === '3' ? [200 + rr * .68, 200] : [200, 200 + rr * .68]; s += `<rect x="${p[0] - 8}" y="${p[1] - 6}" width="16" height="12" fill="#f7f5f0" stroke-width=".8"/>`; }
+  } else {
+    s += `<circle cx="200" cy="200" r="${.8 * k}" fill="#cfcdc8"/><circle cx="200" cy="200" r="${.72 * k}" stroke-dasharray="2 3"/>`;
     [[150, 150], [250, 150], [150, 250], [250, 250]].forEach(([x, y]) => s += `<circle cx="${x}" cy="${y}" r="4" fill="#9a9893"/>`);
-    s += `<text x="200" y="196" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#141310" stroke="none">N° ${String(W.editionNo).padStart(3, '0')} / ${d.edition || 150}</text><text x="200" y="214" text-anchor="middle" font-family="Archivo" font-size="7.5" letter-spacing="1.5" fill="#141310" stroke="none">${esc(W.engraving)}</text>`;
+    s += `<text x="200" y="196" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#14172B" stroke="none">N° ${String(W.editionNo).padStart(3, '0')} / ${d.edition || 150}</text><text x="200" y="214" text-anchor="middle" font-family="Archivo" font-size="7.5" letter-spacing="1.5" fill="#14172B" stroke="none">${esc(W.engraving)}</text>`;
   }
   return s + '</svg>';
 }
@@ -529,6 +546,11 @@ const TEX = {
     });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (this._c[k] = t);
   },
+  carbon() {
+    if (this._c.carbon) return this._c.carbon;
+    const c = this.canvas(512, 512, (x, w, h) => { x.fillStyle = '#141415'; x.fillRect(0, 0, w, h); for (let i = 0; i < 1400; i++) { const v = 30 + Math.random() * 70 | 0; x.fillStyle = `rgba(${v},${v},${v + 4},.75)`; x.save(); x.translate(Math.random() * w, Math.random() * h); x.rotate(Math.random() * 6.3); x.beginPath(); x.moveTo(0, 0); x.lineTo(6 + Math.random() * 26, Math.random() * 6); x.lineTo(Math.random() * 18, 4 + Math.random() * 14); x.fill(); x.restore(); } });
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return (this._c.carbon = t);
+  },
   // cloud field 0..1 — layered upscaled random grids (cheap fbm)
   clouds(w, h, octaves = [6, 12, 24, 48, 96]) {
     const c = this.canvas(w, h, (x) => {
@@ -622,6 +644,205 @@ function artCoverage(d, side) { // fraction of print zone covered by ink — dri
 }
 
 /* =========================================================================
+   9b. Watch system — cases, materials, dials, bezels, hands, straps, presets
+   ========================================================================= */
+const CASE_MATS = {
+  wood: { label: 'Wood', kind: 'wood', c: '#6a4329' },
+  steel: { label: '316L steel · brushed', kind: 'metal', c: '#c4c3bf', r: .32 },
+  polished: { label: '316L steel · polished', kind: 'metal', c: '#dad9d5', r: .1 },
+  titanium: { label: 'Grade 5 titanium', kind: 'metal', c: '#8f9094', r: .42 },
+  dlc: { label: 'Black DLC steel', kind: 'metal', c: '#252527', r: .36 },
+  gold: { label: 'Yellow gold PVD', kind: 'metal', c: '#d8b26a', r: .2 },
+  rose: { label: 'Rose gold PVD', kind: 'metal', c: '#d29a80', r: .2 },
+  bronze: { label: 'CuSn8 bronze', kind: 'metal', c: '#a8743f', r: .46 },
+  ceramicB: { label: 'Black ceramic', kind: 'ceramic', c: '#121214', r: .16 },
+  ceramicW: { label: 'White ceramic', kind: 'ceramic', c: '#ecebe8', r: .18 },
+  carbon: { label: 'Forged carbon', kind: 'carbon', c: '#1c1c1d' },
+};
+const CASE_SHAPES = { round: 'Round', cushion: 'Cushion', octagon: 'Octagon', tonneau: 'Tonneau', rect: 'Rectangle' };
+const WATCH_GEOM = {
+  round: { halfX: 1.06, halfZ: 1.02, dialR: .89, fit: 1 },
+  cushion: { halfX: 1.1, halfZ: 1.06, dialR: .86, fit: 1 },
+  octagon: { halfX: 1.1, halfZ: 1.1, dialR: .8, fit: 1 },
+  tonneau: { halfX: .95, halfZ: 1.28, dialR: 1, dialRect: true, dialScale: .8, fit: .68 },
+  rect: { halfX: .93, halfZ: 1.2, dialR: .95, dialRect: true, dialScale: .82, fit: .72 },
+};
+const BEZEL_STYLES = { smooth: 'Smooth', fluted: 'Fluted', diver: 'Diver 60-min insert', gmt: 'GMT 24-hr two-tone', tachy: 'Tachymeter', gem: 'Gem-set (iced)', none: 'Bezel-less' };
+const DIAL_STYLES = {
+  classic: { label: 'Classic matte', rough: .55, metal: .1 }, sunburst: { label: 'Sunburst', rough: .3, metal: .2 },
+  guilloche: { label: 'Guilloché · tapisserie', rough: .38, metal: .15 }, linen: { label: 'Linen', rough: .62, metal: .05 },
+  enamel: { label: 'Enamel look', rough: .1, metal: 0 }, fume: { label: 'Fumé gradient', rough: .3, metal: .2 },
+  tropical: { label: 'Tropical (aged)', rough: .6, metal: .05 }, sector: { label: 'Sector', rough: .5, metal: .1 },
+  panda: { label: 'Panda chrono', rough: .5, metal: .1 }, rpanda: { label: 'Reverse panda chrono', rough: .5, metal: .1 },
+  skeleton: { label: 'Skeleton', rough: .38, metal: .3 }, openheart: { label: 'Open-heart', rough: .35, metal: .2 },
+};
+const NUMERALS = { index: 'Baton indices', arabic: 'Arabic', roman: 'Roman', california: 'California', none: 'None · minimal' };
+const HANDS = { baton: 'Baton', dauphine: 'Dauphine', sword: 'Sword', mercedes: 'Mercedes', pencil: 'Pencil' };
+const STRAPS = { woodlinks: 'Wood links · 3-piece', oyster: 'Oyster-style 3-link', jubilee: 'Jubilee-style 5-link', integrated: 'Integrated H-link', mesh: 'Milanese mesh', leather: 'Leather', rubber: 'FKM rubber', nato: 'NATO nylon' };
+const WATCH_DEFAULT = { dia: 42, shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', bezelColor: '#14172B', bezelColor2: '#B98A4A', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', strapColor: '#2b1d14', strapColor2: '#B98A4A', crownGuards: '', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM' };
+const watchSpec = d => ({ ...WATCH_DEFAULT, ...d.watch });
+const WATCH_PRESETS = [
+  ['The Teranga · wood', { shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', crownGuards: '', movement: 'Miyota 2035 · quartz', wr: '3 ATM' }],
+  ['Skeleton automatic', { shape: 'round', caseMat: 'steel', bezelStyle: 'smooth', dialStyle: 'skeleton', dial: '#14172B', index: '#EEF1F9', accent: '#B98A4A', numerals: 'roman', hands: 'sword', date: 'none', strap: 'leather', strapColor: '#151515', strapColor2: '#B98A4A', crownGuards: '', movement: 'Seiko NH38 · skeleton automatic', wr: '5 ATM' }],
+  ['Open-heart dress', { shape: 'round', caseMat: 'rose', bezelStyle: 'smooth', dialStyle: 'openheart', dial: '#EFE6D6', index: '#3a2a20', accent: '#9c3a2a', numerals: 'roman', hands: 'dauphine', date: 'none', strap: 'leather', strapColor: '#4a2a1a', strapColor2: '#d9c3a0', crownGuards: '', movement: 'Miyota 82S7 · open-heart automatic', wr: '3 ATM' }],
+  ['Dive · black', { shape: 'round', caseMat: 'steel', bezelStyle: 'diver', bezelColor: '#111214', dialStyle: 'sunburst', dial: '#111214', index: '#EEF1F9', accent: '#d2452b', numerals: 'index', hands: 'mercedes', date: '3', strap: 'oyster', crownGuards: '1', movement: 'Seiko NH35A · automatic', wr: '20 ATM' }],
+  ['GMT · two-tone', { shape: 'round', caseMat: 'steel', bezelStyle: 'gmt', bezelColor: '#9b1b2a', bezelColor2: '#1d3a7a', dialStyle: 'classic', dial: '#0f1012', index: '#EEF1F9', accent: '#d2452b', numerals: 'index', hands: 'mercedes', date: '3', strap: 'jubilee', crownGuards: '1', movement: 'Seiko NH34 · GMT automatic', wr: '10 ATM' }],
+  ['Octagonal sport', { shape: 'octagon', caseMat: 'steel', bezelStyle: 'smooth', dialStyle: 'guilloche', dial: '#1f3556', index: '#EEF1F9', accent: '#EEF1F9', numerals: 'index', hands: 'baton', date: '3', strap: 'integrated', crownGuards: '', movement: 'Sellita SW200 · automatic', wr: '5 ATM' }],
+  ['Panda chronograph', { shape: 'round', caseMat: 'steel', bezelStyle: 'tachy', bezelColor: '#111214', dialStyle: 'panda', dial: '#EEF1F9', index: '#111214', accent: '#d2452b', numerals: 'index', hands: 'baton', date: 'none', strap: 'leather', strapColor: '#1a1a1a', strapColor2: '#EEF1F9', crownGuards: '', movement: 'Seiko VK63 · meca-quartz chrono', wr: '10 ATM' }],
+  ['Sector field', { shape: 'round', caseMat: 'titanium', bezelStyle: 'smooth', dialStyle: 'sector', dial: '#d9d3c3', index: '#14172B', accent: '#2b4ba8', numerals: 'arabic', hands: 'sword', date: 'none', strap: 'nato', strapColor: '#3b4a3a', strapColor2: '#14172B', crownGuards: '', movement: 'Miyota 2035 · quartz', wr: '10 ATM' }],
+  ['Rectangular dress', { shape: 'rect', caseMat: 'gold', bezelStyle: 'smooth', dialStyle: 'classic', dial: '#f3efe6', index: '#14172B', accent: '#14172B', numerals: 'roman', hands: 'sword', date: 'none', strap: 'leather', strapColor: '#141414', strapColor2: '#141414', crownGuards: '', movement: 'Miyota 2035 · quartz', wr: '3 ATM' }],
+  ['Iced · gold', { shape: 'round', caseMat: 'gold', bezelStyle: 'gem', dialStyle: 'sunburst', dial: '#d8b26a', index: '#14172B', accent: '#14172B', numerals: 'index', hands: 'dauphine', date: '3', strap: 'jubilee', crownGuards: '', movement: 'Seiko NH35A · automatic', wr: '5 ATM' }],
+  ['Fumé minimal', { shape: 'round', caseMat: 'dlc', bezelStyle: 'smooth', dialStyle: 'fume', dial: '#2b4ba8', index: '#EEF1F9', accent: '#B98A4A', numerals: 'none', hands: 'pencil', date: 'none', strap: 'mesh', crownGuards: '', movement: 'Miyota 8215 · automatic', wr: '5 ATM' }],
+  ['Tropical cushion', { shape: 'cushion', caseMat: 'bronze', bezelStyle: 'smooth', dialStyle: 'tropical', dial: '#4a3322', index: '#efe3c8', accent: '#efe3c8', numerals: 'arabic', hands: 'sword', date: 'none', strap: 'rubber', strapColor: '#2a2018', crownGuards: '1', movement: 'Seiko NH35A · automatic', wr: '20 ATM' }],
+  ['Forged carbon skeleton', { shape: 'round', caseMat: 'carbon', bezelStyle: 'smooth', dialStyle: 'skeleton', dial: '#0f0f10', index: '#B98A4A', accent: '#B98A4A', numerals: 'index', hands: 'sword', date: 'none', strap: 'rubber', strapColor: '#0f0f10', crownGuards: '', movement: 'Seiko NH38 · skeleton automatic', wr: '10 ATM' }],
+  ['Tonneau ceramic', { shape: 'tonneau', caseMat: 'ceramicB', bezelStyle: 'smooth', dialStyle: 'skeleton', dial: '#111111', index: '#EEF1F9', accent: '#d2452b', numerals: 'arabic', hands: 'baton', date: 'none', strap: 'rubber', strapColor: '#111111', crownGuards: '', movement: 'Seiko NH38 · skeleton automatic', wr: '5 ATM' }],
+];
+function shapePts(shape, s = 1, n = 160) {
+  if (shape === 'octagon') return Array.from({ length: 8 }, (_, i) => { const a = Math.PI / 8 + i * Math.PI / 4; return new THREE.Vector2(Math.cos(a) * 1.12 * s, Math.sin(a) * 1.12 * s); });
+  const [ax, ay, p] = { cushion: [1.04, 1.04, 4.2], tonneau: [.86, 1.22, 3.2], rect: [.86, 1.14, 9] }[shape] || [1, 1, 2], out = [];
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a);
+    let x = Math.sign(c) * Math.abs(c) ** (2 / p) * ax; const y = Math.sign(sn) * Math.abs(sn) ** (2 / p) * ay;
+    if (shape === 'tonneau') x *= 1 - .14 * (y / ay) ** 2;
+    const v = new THREE.Vector2(x * s, y * s);
+    if (!out.length || out[out.length - 1].distanceTo(v) > .006 * s) out.push(v); // drop near-duplicates (bevel NaNs at tight corners)
+  }
+  if (out.length > 2 && out[0].distanceTo(out[out.length - 1]) < .006 * s) out.pop();
+  return out;
+}
+const circlePts = (r, n) => Array.from({ length: n }, (_, i) => new THREE.Vector2(Math.cos(-i / n * Math.PI * 2) * r, Math.sin(-i / n * Math.PI * 2) * r));
+const caseHex = W => W.caseMat === 'wood' ? (WOODS[W.caseWood] || WOODS.walnut).a : (CASE_MATS[W.caseMat] || CASE_MATS.steel).c;
+function watchMat(key, species, bz) {
+  if (key === '_bz') return new THREE.MeshPhysicalMaterial({ color: bz.c, metalness: 1, roughness: bz.r });
+  const m = CASE_MATS[key] || CASE_MATS.steel;
+  if (key === 'wood' || m.kind === 'wood') return new THREE.MeshPhysicalMaterial({ map: TEX.wood(species || 'walnut'), roughness: .5, clearcoat: .55, clearcoatRoughness: .35 });
+  if (m.kind === 'ceramic') return new THREE.MeshPhysicalMaterial({ color: m.c, metalness: 0, roughness: m.r, clearcoat: 1, clearcoatRoughness: .06 });
+  if (m.kind === 'carbon') return new THREE.MeshPhysicalMaterial({ map: TEX.carbon(), roughness: .4, metalness: .15, clearcoat: 1, clearcoatRoughness: .08 });
+  return new THREE.MeshPhysicalMaterial({ color: m.c, metalness: 1, roughness: m.r, clearcoat: m.r < .2 ? .3 : 0 });
+}
+function strapMat(type, c1, c2) {
+  // UV: x = around the strap (x .5 = top face, .25/.75 = edges), y = along the strap (y = t·H, buckle at .5)
+  const k = ['strap2', type, c1, c2].join(':');
+  if (!TEX._c[k]) {
+    const tile = type === 'nato';
+    const cv = TEX.canvas(256, tile ? 512 : 2048, (x, w, h) => {
+      x.fillStyle = c1; x.fillRect(0, 0, w, h);
+      const im = x.getImageData(0, 0, w, h), p = im.data, amp = type === 'leather' ? 16 : 5;
+      for (let i = 0; i < p.length; i += 4) { const v = (Math.random() - .5) * amp + (type === 'leather' && Math.random() < .02 ? -14 : 0); p[i] += v; p[i + 1] += v; p[i + 2] += v; }
+      x.putImageData(im, 0, 0);
+      if (type === 'leather' || type === 'rubber') {
+        x.fillStyle = type === 'leather' ? shade(c1, -.45) : shade(c1, -.25); [.25, .75].forEach(u => x.fillRect(u * w - 7, 0, 14, h)); // painted / moulded edges
+        if (type === 'leather') { x.strokeStyle = c2; x.lineWidth = 3.2; x.lineCap = 'round'; x.setLineDash([9, 7]); [.36, .64].forEach(u => { x.beginPath(); x.moveTo(u * w, 0); x.lineTo(u * w, h); x.stroke(); }); x.setLineDash([]); }
+        if (type === 'rubber') { x.fillStyle = shade(c1, -.3); for (let y = 0; y < h; y += 26) x.fillRect(w * .34, y, w * .32, 5); }
+        for (let i = 0; i < 6; i++) { const y = (.53 + i * .022) * h; x.fillStyle = 'rgba(0,0,0,.85)'; x.beginPath(); x.ellipse(w * .5, y, 9, 7, 0, 0, Math.PI * 2); x.fill(); x.strokeStyle = shade(c1, .25); x.lineWidth = 1.5; x.stroke(); }
+      }
+      if (type === 'nato') { x.fillStyle = c2; [[.46, .54], [.3, .34], [.66, .7]].forEach(([a, b]) => x.fillRect(a * w, 0, (b - a) * w, h)); for (let y = 0; y < h; y += 4) { x.fillStyle = 'rgba(0,0,0,.14)'; x.fillRect(0, y, w, 1.6); } for (let xx = 0; xx < w; xx += 3) { x.fillStyle = 'rgba(255,255,255,.05)'; x.fillRect(xx, 0, 1, h); } }
+    });
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, tile ? 14 : 1); TEX._c[k] = t;
+  }
+  return new THREE.MeshPhysicalMaterial({ map: TEX._c[k], bumpMap: TEX._c[k], bumpScale: type === 'nato' ? 1.2 : 2.2, roughness: type === 'rubber' ? .78 : type === 'nato' ? .92 : .5, sheen: type === 'nato' ? .7 : .25, sheenColor: new THREE.Color(c1).lerp(new THREE.Color('#fff'), .4), clearcoat: type === 'leather' ? .3 : type === 'rubber' ? .1 : 0, clearcoatRoughness: .5 });
+}
+function meshMat(metal) {
+  if (!TEX._c.mesh) { const cv = TEX.canvas(128, 128, (x, w, h) => { x.fillStyle = '#808080'; x.fillRect(0, 0, w, h); x.strokeStyle = '#fff'; x.lineWidth = 2; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i - h, h); x.stroke(); } x.strokeStyle = '#000'; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i + 4, 0); x.lineTo(i + 4 - h, h); x.stroke(); } }); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 90); TEX._c.mesh = t; }
+  const m = metal.clone(); m.bumpMap = TEX._c.mesh; m.bumpScale = 3; m.roughness = Math.max(.25, m.roughness); return m;
+}
+function handGeo(style, L, w) {
+  const t = .1, shapes = [], s = new THREE.Shape();
+  if (style === 'dauphine') { s.moveTo(0, -t); s.lineTo(w * .65, L * .2); s.lineTo(0, L); s.lineTo(-w * .65, L * .2); }
+  else if (style === 'sword') { s.moveTo(-w * .4, -t); s.lineTo(-w * .55, L * .76); s.lineTo(0, L); s.lineTo(w * .55, L * .76); s.lineTo(w * .4, -t); }
+  else if (style === 'pencil') { s.moveTo(-w * .3, -t); s.lineTo(-w * .3, L * .9); s.lineTo(0, L); s.lineTo(w * .3, L * .9); s.lineTo(w * .3, -t); }
+  else if (style === 'mercedes') {
+    s.moveTo(-w / 2, -t); s.lineTo(-w / 2, L * .62); s.lineTo(w / 2, L * .62); s.lineTo(w / 2, -t);
+    const ring = new THREE.Shape(); ring.absarc(0, L * .74, w * 1.25, 0, Math.PI * 2, false); const hole = new THREE.Path(); hole.absarc(0, L * .74, w * .8, 0, Math.PI * 2, true); ring.holes.push(hole); shapes.push(ring);
+    const tip = new THREE.Shape(); tip.moveTo(-w * .4, L * .86); tip.lineTo(0, L); tip.lineTo(w * .4, L * .86); shapes.push(tip);
+  }
+  else { s.moveTo(-w / 2, -t); s.lineTo(-w / 2, L); s.lineTo(w / 2, L); s.lineTo(w / 2, -t); }
+  shapes.push(s);
+  const g = new THREE.ExtrudeGeometry(shapes, { depth: .012, bevelEnabled: false, curveSegments: 24 }); g.rotateX(-Math.PI / 2); return g;
+}
+// Dial artwork. `fit` shrinks the layout for rectangular/tonneau dials.
+function dialCanvas(d, W, fit = 1) {
+  return TEX.canvas(1024, 1024, (x, w) => {
+    const c = w / 2, R = c * fit, st = W.dialStyle, dial = W.dial, ink = W.index, skel = st === 'skeleton', heart = st === 'openheart';
+    const chrono = st === 'panda' || st === 'rpanda';
+    x.clearRect(0, 0, w, w);
+    if (!skel) { x.fillStyle = dial; x.fillRect(0, 0, w, w); }
+    const over = (fn) => { x.save(); fn(); x.restore(); };
+    if (st === 'classic' || st === 'enamel' || chrono) over(() => { const g = x.createRadialGradient(c, c * .7, 40, c, c, c); g.addColorStop(0, `rgba(255,255,255,${st === 'enamel' ? .14 : .07})`); g.addColorStop(1, 'rgba(0,0,0,.16)'); x.fillStyle = g; x.fillRect(0, 0, w, w); });
+    if (st === 'sunburst' || st === 'fume') over(() => {
+      if (st === 'fume') { const g = x.createRadialGradient(c, c, 30, c, c, c * 1.05); g.addColorStop(0, shade(dial, .28)); g.addColorStop(.55, dial); g.addColorStop(1, shade(dial, -.82)); x.fillStyle = g; x.fillRect(0, 0, w, w); }
+      const g2 = x.createConicGradient(0, c, c); for (let i = 0; i <= 8; i++) g2.addColorStop(i / 8, i % 2 ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.16)'); x.fillStyle = g2; x.fillRect(0, 0, w, w);
+      x.strokeStyle = 'rgba(255,255,255,.035)'; x.lineWidth = 1; for (let i = 0; i < 720; i++) { const a = i / 720 * Math.PI * 2; x.beginPath(); x.moveTo(c, c); x.lineTo(c + Math.cos(a) * c * 1.5, c + Math.sin(a) * c * 1.5); x.stroke(); }
+    });
+    if (st === 'guilloche') over(() => { const s = 26; for (let yy = 0; yy < w; yy += s) for (let xx = 0; xx < w; xx += s) { x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx + s, yy); x.lineTo(xx + s / 2, yy + s / 2); x.fill(); x.fillStyle = 'rgba(0,0,0,.2)'; x.beginPath(); x.moveTo(xx, yy + s); x.lineTo(xx + s, yy + s); x.lineTo(xx + s / 2, yy + s / 2); x.fill(); } });
+    if (st === 'linen') over(() => { for (let i = 0; i < w; i += 3) { x.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},.05)`; x.fillRect(i, 0, 1.5, w); x.fillRect(0, i, w, 1.5); } });
+    if (st === 'tropical') over(() => { const f = TEX.clouds(128, 128), sm = TEX.canvas(128, 128, (y) => { const im = y.createImageData(128, 128); for (let i = 0; i < f.length; i++) { im.data[i * 4] = 140; im.data[i * 4 + 1] = 92; im.data[i * 4 + 2] = 48; im.data[i * 4 + 3] = f[i] * 120; } y.putImageData(im, 0, 0); }); x.imageSmoothingQuality = 'high'; x.drawImage(sm, 0, 0, w, w); });
+    if (st === 'sector') over(() => { x.fillStyle = shade(dial, -.12); x.beginPath(); x.arc(c, c, R * .78, 0, Math.PI * 2); x.arc(c, c, R * .5, 0, Math.PI * 2, true); x.fill(); x.strokeStyle = ink; x.globalAlpha = .55; x.lineWidth = 2; [.5, .78].forEach(k => { x.beginPath(); x.arc(c, c, R * k, 0, Math.PI * 2); x.stroke(); }); x.beginPath(); x.moveTo(c - R * .78, c); x.lineTo(c + R * .78, c); x.moveTo(c, c - R * .78); x.lineTo(c, c + R * .78); x.stroke(); });
+    if (skel) over(() => { x.fillStyle = dial; x.beginPath(); x.arc(c, c, c, 0, Math.PI * 2); x.arc(c, c, R * .76, 0, Math.PI * 2, true); x.fill(); x.strokeStyle = dial; x.lineWidth = 26; x.beginPath(); x.arc(c, c, R * .2, 0, Math.PI * 2); x.stroke(); });
+    const hole = heart ? { x: c - R * .54, y: c, r: R * .26 } : null;
+    if (hole) over(() => { x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2); x.fill(); x.globalCompositeOperation = 'source-over'; x.strokeStyle = ink; x.lineWidth = 8; x.beginPath(); x.arc(hole.x, hole.y, hole.r + 4, 0, Math.PI * 2); x.stroke(); });
+    const sub = chrono ? [[R * .46, 0], [-R * .46, 0], [0, R * .46]] : [];
+    sub.forEach(([dx, dy]) => over(() => { const sc = st === 'panda' ? ink : '#EEF1F9', sx = c + dx, sy = c + dy, r = R * .2; x.fillStyle = sc; x.beginPath(); x.arc(sx, sy, r, 0, Math.PI * 2); x.fill(); x.strokeStyle = st === 'panda' ? dial : ink; x.lineWidth = 3; for (let i = 0; i < 30; i++) { const a = i / 30 * Math.PI * 2, r1 = i % 5 ? r * .82 : r * .7; x.beginPath(); x.moveTo(sx + Math.sin(a) * r1, sy - Math.cos(a) * r1); x.lineTo(sx + Math.sin(a) * r * .94, sy - Math.cos(a) * r * .94); x.stroke(); } x.lineWidth = 5; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + r * .5, sy - r * .55); x.stroke(); }));
+    const blocked = new Set([...(W.date === '3' || chrono ? [3] : []), ...(W.date === '6' || chrono ? [6] : []), ...(chrono ? [9] : []), ...(heart ? [9] : [])]);
+    x.strokeStyle = ink; x.fillStyle = ink;
+    if (W.numerals !== 'none') for (let i = 0; i < 60; i++) { // minute track
+      if (i % 5 === 0) continue; const a = i / 60 * Math.PI * 2; x.lineWidth = 3; x.beginPath(); x.moveTo(c + Math.sin(a) * R * .89, c - Math.cos(a) * R * .89); x.lineTo(c + Math.sin(a) * R * .94, c - Math.cos(a) * R * .94); x.stroke();
+    }
+    const ROM = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+    for (let hNum = 0; hNum < 12; hNum++) {
+      const pos = hNum || 12, a = hNum / 12 * Math.PI * 2; if (blocked.has(pos)) continue;
+      const nx = c + Math.sin(a) * R * .72, ny = c - Math.cos(a) * R * .72;
+      let kind = W.numerals; if (kind === 'california') kind = (pos >= 4 && pos <= 8) ? 'arabic' : (pos === 3 || pos === 9) ? 'index' : 'roman';
+      if (kind === 'none') { if (pos % 3 === 0) { x.beginPath(); x.arc(c + Math.sin(a) * R * .88, c - Math.cos(a) * R * .88, 9, 0, Math.PI * 2); x.fill(); } continue; }
+      if (kind === 'index') { x.lineWidth = pos === 12 ? 22 : 14; const r1 = R * (pos === 12 ? .72 : .75); x.beginPath(); x.moveTo(c + Math.sin(a) * r1, c - Math.cos(a) * r1); x.lineTo(c + Math.sin(a) * R * .93, c - Math.cos(a) * R * .93); x.stroke(); continue; }
+      x.save(); x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.font = kind === 'roman' ? `400 ${Math.round(84 * fit)}px "Instrument Serif"` : `400 ${Math.round(68 * fit)}px "Archivo Black"`; x.letterSpacing = '0px';
+      x.fillText(kind === 'roman' ? ROM[hNum] : String(pos), nx, ny); x.restore();
+    }
+    if (W.date === '3' || W.date === '6') over(() => { const p = W.date === '3' ? [c + R * .68, c] : [c, c + R * .68]; x.fillStyle = '#f7f5f0'; x.strokeStyle = ink; x.lineWidth = 4; x.fillRect(p[0] - 42, p[1] - 30, 84, 60); x.strokeRect(p[0] - 42, p[1] - 30, 84, 60); x.fillStyle = '#111'; x.font = '600 40px "JetBrains Mono"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(new Date().getDate()), p[0], p[1] + 2); });
+    if (!skel) {
+      Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink);
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.font = `500 ${Math.round(24 * fit)}px "JetBrains Mono"`; x.letterSpacing = '6px';
+      const mv = String(W.movement).toUpperCase(), label = mv.includes('GMT') ? 'GMT AUTOMATIC' : mv.includes('CHRONO') ? 'CHRONOGRAPH' : mv.includes('AUTO') ? 'AUTOMATIC' : 'QUARTZ';
+      if (!chrono) x.fillText(label, c, c + R * .27);
+      x.font = `600 ${Math.round(30 * fit)}px "JetBrains Mono"`; x.letterSpacing = '4px';
+      x.fillText(`N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}`, c, chrono ? c + R * .2 : c + R * .4);
+    } else { x.textAlign = 'center'; x.font = '600 22px "JetBrains Mono"'; x.letterSpacing = '3px'; x.fillStyle = ink; x.fillText(`N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}`, c, c + R * .84); }
+  });
+}
+// Bezel insert ring (planar UVs: outer radius = canvas edge)
+function insertCanvas(W) {
+  return TEX.canvas(1024, 1024, (x, w) => {
+    const c = w / 2, rIn = c * .73 / .9, rMid = (c + rIn) / 2, ink = lum(W.bezelColor) > .5 ? '#111' : '#EEF1F9';
+    const ring = (a0, a1, col) => { x.fillStyle = col; x.beginPath(); x.arc(c, c, c, a0, a1); x.arc(c, c, rIn, a1, a0, true); x.closePath(); x.fill(); };
+    if (W.bezelStyle === 'gmt') { ring(Math.PI, Math.PI * 2, W.bezelColor); ring(0, Math.PI, W.bezelColor2); } else ring(0, Math.PI * 2, W.bezelColor);
+    x.fillStyle = ink; x.strokeStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
+    const label = (txt, a, size, font = 'Archivo Black') => { x.save(); x.translate(c, c); x.rotate(a); x.font = `400 ${size}px "${font}"`; x.fillText(txt, 0, -rMid); x.restore(); };
+    const tri = () => { x.save(); x.translate(c, c); x.beginPath(); x.moveTo(0, -rIn - 8); x.lineTo(-26, -c + 14); x.lineTo(26, -c + 14); x.closePath(); x.fill(); x.restore(); };
+    if (W.bezelStyle === 'diver') { tri(); [10, 20, 30, 40, 50].forEach(n => label(String(n), n / 60 * Math.PI * 2, 44)); for (let i = 1; i < 60; i++) { if (i % 10 === 0) continue; const a = i / 60 * Math.PI * 2; x.save(); x.translate(c, c); x.rotate(a); x.fillRect(-3, -c + 14, 6, i <= 15 ? 26 : i % 5 ? 0 : 30); x.restore(); } }
+    if (W.bezelStyle === 'gmt') { tri(); for (let n = 2; n < 24; n += 2) label(String(n), n / 24 * Math.PI * 2, 40); for (let n = 1; n < 24; n += 2) { x.save(); x.translate(c, c); x.rotate(n / 24 * Math.PI * 2); x.beginPath(); x.arc(0, -rMid, 6, 0, Math.PI * 2); x.fill(); x.restore(); } }
+    if (W.bezelStyle === 'tachy') { label('TACHYMETRE', 0, 26, 'JetBrains Mono'); [60, 70, 80, 90, 100, 120, 150, 200, 250, 300, 400, 500].forEach(n => { const a = (3600 / n) / 60 * Math.PI * 2; if (n !== 60) label(String(n), a, 30, 'JetBrains Mono'); x.save(); x.translate(c, c); x.rotate(a); x.fillRect(-2, -c + 8, 4, 18); x.restore(); }); }
+  });
+}
+// Visible movement for skeleton / open-heart
+function movementCanvas(W) {
+  return TEX.canvas(1024, 1024, (x, w) => {
+    const c = w / 2, gold = /gold|rose|bronze/.test(W.caseMat), base = gold ? '#9c8452' : '#4a4d52', bridge = gold ? '#cdb57a' : '#9a9da3';
+    x.fillStyle = base; x.fillRect(0, 0, w, w);
+    for (let yy = 0; yy < w; yy += 26) for (let xx = (yy / 26 % 2) * 13; xx < w; xx += 26) { const g = x.createRadialGradient(xx, yy, 2, xx, yy, 16); g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(1, 'rgba(0,0,0,.08)'); x.fillStyle = g; x.beginPath(); x.arc(xx, yy, 16, 0, Math.PI * 2); x.fill(); }
+    const gear = (gx, gy, r, teeth, col) => { x.fillStyle = col; x.beginPath(); for (let i = 0; i < teeth * 2; i++) { const a = i / (teeth * 2) * Math.PI * 2, rr = i % 2 ? r : r * .9; x.lineTo(gx + Math.cos(a) * rr, gy + Math.sin(a) * rr); } x.fill(); x.globalCompositeOperation = 'destination-out'; for (let k = 0; k < 5; k++) { const a0 = k / 5 * Math.PI * 2 + .2; x.beginPath(); x.moveTo(gx, gy); x.arc(gx, gy, r * .72, a0, a0 + Math.PI * 2 / 5 - .35); x.closePath(); x.fill(); } x.globalCompositeOperation = 'source-over'; x.fillStyle = col; x.beginPath(); x.arc(gx, gy, r * .2, 0, Math.PI * 2); x.fill(); x.fillStyle = '#b0192b'; x.beginPath(); x.arc(gx, gy, Math.max(6, r * .08), 0, Math.PI * 2); x.fill(); x.fillStyle = 'rgba(255,255,255,.6)'; x.beginPath(); x.arc(gx - 2, gy - 2, 2.5, 0, Math.PI * 2); x.fill(); };
+    gear(c, c - 210, 170, 60, gold ? '#e3c98d' : '#c9ccd2');
+    gear(c + 190, c - 20, 95, 40, '#d8b26a'); gear(c - 160, c + 60, 80, 34, '#d8b26a'); gear(c + 40, c + 120, 62, 28, '#c9ccd2'); gear(c - 30, c - 40, 50, 22, '#d8b26a');
+    x.lineCap = 'round'; x.strokeStyle = bridge; x.lineWidth = 64; x.globalAlpha = .92;
+    x.beginPath(); x.moveTo(c - 380, c + 260); x.quadraticCurveTo(c, c + 120, c + 380, c + 280); x.stroke();
+    x.beginPath(); x.moveTo(c - 360, c - 300); x.lineTo(c + 340, c - 330); x.stroke();
+    x.globalAlpha = 1; x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 3; for (let i = -6; i < 6; i++) { x.beginPath(); x.moveTo(c - 380, c + 260 + i * 9); x.quadraticCurveTo(c, c + 120 + i * 9, c + 380, c + 280 + i * 9); x.stroke(); }
+    [[c - 300, c - 300], [c + 300, c - 325], [c - 340, c + 255], [c + 340, c + 275]].forEach(([sx, sy]) => { x.fillStyle = '#2a3a8a'; x.beginPath(); x.arc(sx, sy, 16, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#111'; x.lineWidth = 4; x.beginPath(); x.moveTo(sx - 12, sy); x.lineTo(sx + 12, sy); x.stroke(); });
+  });
+}
+
+/* =========================================================================
    9. 3D Studio — procedural garments + wood watch
    ========================================================================= */
 function torsoFn(P) {
@@ -634,12 +855,32 @@ function torsoFn(P) {
       rx = P.w * prof; rz = P.d * prof * (1 + .1 * Math.max(0, s) * Math.sin(k * Math.PI * .9));
       y = -P.h / 2 + k * P.h;
     } else {
-      const k = (v - split) / (1 - split), ex = Math.sin(k * Math.PI / 2), ez = Math.pow(k, 1.8), e = k * k * (3 - 2 * k);
-      rx = lerp(P.w, P.neckR, ex); rz = lerp(P.d, P.neckR * .8, ez);
-      y = P.h / 2 + P.rise * ex - P.neckDrop * Math.pow(Math.max(0, s), 1.5) * e * e;
+      // shoulder yoke: rounded roll-over (no hard lid edge), front/back panels stay full until near the neck
+      const k = (v - split) / (1 - split), e = k * k * (3 - 2 * k);
+      rx = lerp(P.w, P.neckR, Math.pow(k, 1.5)); rz = lerp(P.d, P.neckR * .8, Math.pow(k, 1.3));
+      y = P.h / 2 + P.rise * Math.sin(k * Math.PI / 2) - P.neckDrop * Math.pow(Math.max(0, s), 1.5) * e * e;
     }
     t.set(rx * c, y, rz * s);
   };
+}
+// ring of points around `c`, perpendicular to tangent T (curve lives in the x/y plane, so z is a stable binormal)
+function ellipseRing(c, T, r, ratio, n, Bv = null, phase = 0, sq = 2) {
+  const B = Bv || new THREE.Vector3(0, 0, 1), N = new THREE.Vector3().crossVectors(B, T).normalize(), out = [];
+  const se = v => Math.sign(v) * Math.abs(v) ** (2 / sq); // sq > 2 squares the profile (flat strap, rounded edges)
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + phase; out.push(c.clone().addScaledVector(N, se(Math.cos(a)) * r).addScaledVector(B, se(Math.sin(a)) * r * ratio)); }
+  return out;
+}
+// swept tube with variable radius and an elliptical cross-section
+function sweepGeo(curve, radiusAt, ratio, segs, radial, B = null, o = {}) {
+  const pos = [], uv = [], idx = [];
+  for (let j = 0; j <= segs; j++) {
+    const t = j / segs, ring = ellipseRing(curve.getPointAt(t), curve.getTangentAt(t), radiusAt(t), o.ratioAt ? o.ratioAt(t) : ratio, radial, B, o.phase || 0, o.sq || 2);
+    ring.push(ring[0]); ring.forEach((p, i) => { pos.push(p.x, p.y, p.z); uv.push(i / radial, 1 - t); });
+  }
+  const w = radial + 1;
+  for (let j = 0; j < segs; j++) for (let i = 0; i < radial; i++) { const a = j * w + i, b = a + w; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
 }
 const bandFn = (rx, rz, y0, h, taper = .94) => (u, v, t) => { const a = u * Math.PI * 2, k = lerp(1, taper, v); t.set(rx * k * Math.cos(a), y0 - v * h, rz * k * Math.sin(a)); };
 
@@ -730,21 +971,23 @@ const Studio = {
       const bw = P.w * (1 + P.flare) * .985, bd = P.d * (1 + P.flare) * .985;
       const bg = new ParametricGeometry(bandFn(bw, bd, -P.h / 2 + .02, .3), 96, 6); bg.computeVertexNormals(); this.add(bg, trim);
     } else this.add(new THREE.TubeGeometry(ring(0), 160, .022, 8, true), body);
-    // sleeves
-    const armR = (long ? .38 : .42) * fit.w, len = long ? 2.3 : 1.0, openR = long ? .2 : .34, ang = long ? .28 : .8;
-    [1, -1].forEach(side => {
-      const piv = new THREE.Group();
-      piv.position.set(side * (P.w * .74 + fit.drop * .35), P.h / 2 - armR * (long ? .8 : .45) - fit.drop * .4, 0); piv.rotation.z = side * ang;
-      const sg = new THREE.CylinderGeometry(armR, openR, len, 56, 12, true); sg.translate(0, -len / 2, 0); sg.scale(1, 1, .78);
-      const sm = new THREE.Mesh(sg, this.fabricMat(g.color, g.fabric, false, 14, 10, surf)); sm.castShadow = sm.receiveShadow = true; piv.add(sm);
-      if (long) {
-        const cg = new THREE.CylinderGeometry(openR * 1.02, openR * .95, fleece ? .32 : .26, 40, 1, true); cg.translate(0, -len - (fleece ? .14 : .11), 0); cg.scale(1, 1, .82);
-        const cm = new THREE.Mesh(cg, trim); cm.castShadow = true; piv.add(cm);
-      } else {
-        const tor = new THREE.TorusGeometry(openR, .02, 8, 56); tor.rotateX(Math.PI / 2); tor.scale(1, 1, .82); tor.translate(0, -len, 0);
-        piv.add(new THREE.Mesh(tor, body));
-      }
-      this.root.add(piv);
+    // sleeves — one continuous sweep: starts buried in the body, rolls over the shoulder, runs down the arm
+    const armR = (long ? .4 : .43) * fit.w, openR = long ? .19 : .35, len = long ? 2.2 : .95, ang = long ? .3 : .78;
+    const sleeveMat = this.fabricMat(g.color, g.fabric, false, 14, 10, surf);
+    [1, -1].forEach(sx => {
+      const shY = P.h / 2 - armR * .92 - fit.drop * .35;
+      const sh = new THREE.Vector3(sx * (P.w * .9 + fit.drop * .3), shY, 0);
+      const dir = new THREE.Vector3(sx * Math.sin(ang), -Math.cos(ang), 0);
+      const pts = [new THREE.Vector3(sx * P.w * .42, shY + .05, 0), new THREE.Vector3(sx * P.w * .7, shY + .03, 0), sh,
+        sh.clone().addScaledVector(dir, len * .5).add(new THREE.Vector3(0, 0, long ? .06 : 0)),
+        sh.clone().addScaledVector(dir, len).add(new THREE.Vector3(-sx * (long ? .06 : 0), 0, long ? .1 : 0))];
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      const t0 = .3; // fraction of the curve that sits inside the body
+      const rad = t => t < t0 ? lerp(armR * .8, armR, t / t0) : lerp(armR, openR, Math.pow((t - t0) / (1 - t0), long ? .8 : 1.1));
+      this.add(sweepGeo(curve, rad, .8, 90, 48), sleeveMat);
+      const end = curve.getPoint(1), T = curve.getTangent(1);
+      if (long) this.add(sweepGeo(new THREE.LineCurve3(end.clone().addScaledVector(T, -.02), end.clone().addScaledVector(T, fleece ? .32 : .26)), t => openR * lerp(1.04, .94, t), .8, 4, 40), trim);
+      else this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ellipseRing(end, T, openR, .8, 64), true), 64, .02, 8, true), body);
     });
     if (cat === 'hoodie') {
       const hood = new THREE.SphereGeometry(1, 48, 32, 0, Math.PI * 2, 0, Math.PI * .62);
@@ -797,69 +1040,158 @@ const Studio = {
   },
   /* ---------- watch ---------- */
   buildWatch(d) {
-    const W = d.watch, sc = W.dia / 42, grp = new THREE.Group(); this.root.add(grp);
-    const wood = sp => new THREE.MeshPhysicalMaterial({ map: TEX.wood(sp), roughness: .5, clearcoat: .55, clearcoatRoughness: .35 });
-    const bz = BEZELS[W.bezel], metal = bz.m ? new THREE.MeshStandardMaterial({ color: bz.c, metalness: 1, roughness: bz.r }) : wood(W.caseWood);
-    const steel = new THREE.MeshStandardMaterial({ color: '#c4c2bd', metalness: 1, roughness: .3 });
+    const W = watchSpec(d), sc = W.dia / 42, grp = new THREE.Group(); this.root.add(grp);
     const mk = (geo, mat, parent = grp) => { const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
-    const prof = [[0, -.42], [.9, -.42], [.98, -.39], [1.03, -.3], [1.06, -.12], [1.06, .16], [1.02, .28], [.96, .34], [.9, .35]].map(([x, y]) => new THREE.Vector2(x, y));
-    mk(new THREE.LatheGeometry(prof, 120), wood(W.caseWood));
-    const bez = mk(new THREE.TorusGeometry(.925, .05, 20, 120), metal); bez.rotation.x = Math.PI / 2; bez.position.y = .36;
-    const dialTex = new THREE.CanvasTexture(this.dialCanvas(d)); dialTex.colorSpace = THREE.SRGBColorSpace; dialTex.anisotropy = 8; dialTex.userData.own = true;
-    const dial = mk(new THREE.CircleGeometry(.89, 120), new THREE.MeshStandardMaterial({ map: dialTex, roughness: .55, metalness: .1 })); dial.rotation.x = -Math.PI / 2; dial.position.y = .31;
-    // hands — pivot at center, pointing to 12 (-z)
-    const hand = (len, w, col, y) => { const g = new THREE.BoxGeometry(w, .012, len); g.translate(0, 0, -len / 2 + .06); const m = mk(g, new THREE.MeshStandardMaterial({ color: col, metalness: .4, roughness: .4 })); m.position.y = y; return m; };
-    this.hands = { h: hand(.5, .055, W.index, .325), m: hand(.74, .04, W.index, .34), s: hand(.82, .012, W.accent, .355) };
-    mk(new THREE.CylinderGeometry(.04, .04, .06, 24), new THREE.MeshStandardMaterial({ color: W.index, metalness: .6, roughness: .3 })).position.y = .34;
-    const cry = mk(new THREE.CircleGeometry(.9, 96), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: .12, roughness: 0, metalness: 0, clearcoat: 1, envMapIntensity: 2 }), grp);
-    cry.rotation.x = -Math.PI / 2; cry.position.y = .4; cry.castShadow = false;
-    const crown = mk(new THREE.CylinderGeometry(.1, .1, .16, 32), steel); crown.rotation.z = Math.PI / 2; crown.position.set(1.13, 0, 0);
-    mk(new THREE.CylinderGeometry(.06, .06, .08, 16), steel).rotation.z = Math.PI / 2;
-    grp.children.at(-1).position.set(1.04, 0, 0);
-    const lugMat = wood(W.caseWood);
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(new RoundedBoxGeometry(.2, .22, .44, 3, .06), lugMat); l.position.set(sx * .42, -.04, sz * 1.02); });
-    // strap: 3-piece links following a wrist curve, butterfly clasp at the bottom
-    const pts = [[0, .0, 1.2], [0, -.18, 1.55], [0, -.78, 1.86], [0, -1.6, 1.88], [0, -2.36, 1.48], [0, -2.78, .72], [0, -2.9, 0], [0, -2.78, -.72], [0, -2.36, -1.48], [0, -1.6, -1.88], [0, -.78, -1.86], [0, -.18, -1.55], [0, 0, -1.2]].map(p => new THREE.Vector3(...p));
-    const curve = new THREE.CatmullRomCurve3(pts), L = curve.getLength(), pitch = .34, n = Math.floor(L / pitch);
-    const mA = wood(W.strapWood), mB = wood(W.strapAccent), lw = .62;
-    const gC = new RoundedBoxGeometry(lw * .5, .16, pitch * .9, 3, .045), gS = new RoundedBoxGeometry(lw * .24, .15, pitch * .9, 3, .045);
-    for (let i = 0; i < n; i++) {
-      const u = (i + .5) / n, p = curve.getPointAt(u), tg = curve.getTangentAt(u);
-      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), tg);
-      const taper = lerp(1, .8, 1 - Math.abs(u - .5) * 2);
-      if (Math.abs(u - .5) < .55 / n) { const c = mk(new RoundedBoxGeometry(lw * taper, .12, pitch * 1.6, 3, .03), steel); c.position.copy(p); c.quaternion.copy(q); continue; }
-      const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
-      mk(gC, mA, link);
-      [-1, 1].forEach(s => { const sm = mk(gS, mB, link); sm.position.x = s * lw * .38; });
+    const caseMat = watchMat(W.caseMat, W.caseWood);
+    const cm = CASE_MATS[W.caseMat] || CASE_MATS.steel;
+    const metal = cm.kind === 'metal' ? caseMat : W.caseMat === 'wood' ? (BEZELS[W.bezel]?.m ? watchMat('_bz', null, BEZELS[W.bezel]) : watchMat('wood', W.caseWood)) : watchMat('steel');
+    const polished = metal.clone(); polished.roughness = Math.min(.12, metal.roughness);
+    const steel = watchMat('steel');
+    const G = WATCH_GEOM[W.shape] || WATCH_GEOM.round;
+    // case
+    if (W.shape === 'round') {
+      const prof = [[0, -.42], [.9, -.42], [.98, -.39], [1.03, -.3], [1.06, -.12], [1.06, .16], [1.02, .28], [.96, .34], [.9, .35]].map(([x, y]) => new THREE.Vector2(x, y));
+      mk(new THREE.LatheGeometry(prof, 128), caseMat);
+    } else {
+      // shaped case: a ring with the dial well cut through, closed underneath by a caseback
+      const G0 = WATCH_GEOM[W.shape], cs = new THREE.Shape(shapePts(W.shape, 1));
+      cs.holes.push(new THREE.Path(G0.dialRect ? shapePts(W.shape, G0.dialScale * 1.01).reverse() : circlePts(G0.dialR + .01, 128)));
+      const g = new THREE.ExtrudeGeometry(cs, { depth: .58, bevelEnabled: true, bevelThickness: .09, bevelSize: .07, bevelSegments: 6, curveSegments: 64 });
+      g.rotateX(-Math.PI / 2); g.computeBoundingBox(); g.translate(0, .35 - g.boundingBox.max.y, 0); mk(g, caseMat);
+      const back = mk(new THREE.CircleGeometry(Math.min(G0.halfX, G0.halfZ) * .92, 96), watchMat('steel')); back.rotation.x = Math.PI / 2; back.position.y = g.boundingBox.min.y + .35 - g.boundingBox.max.y + .01;
     }
+    // dial (shape-aware), movement for skeleton / open-heart
+    const dialR = G.dialR, insert = /diver|gmt|tachy/.test(W.bezelStyle) && W.shape === 'round';
+    const dialShape = G.dialRect ? shapePts(W.shape, G.dialScale) : null;
+    const dialGeo = () => { if (!dialShape) return new THREE.CircleGeometry(dialR, 128); const g = new THREE.ShapeGeometry(new THREE.Shape(dialShape), 64), p = g.attributes.position, uv = g.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) / dialR + 1) / 2, (p.getY(i) / dialR + 1) / 2); return g; };
+    const open = W.dialStyle === 'skeleton' || W.dialStyle === 'openheart';
+    const dialTex = new THREE.CanvasTexture(dialCanvas(d, W, G.fit)); dialTex.colorSpace = THREE.SRGBColorSpace; dialTex.anisotropy = 8; dialTex.userData.own = true;
+    const finish = DIAL_STYLES[W.dialStyle] || DIAL_STYLES.classic;
+    const dial = mk(dialGeo(), new THREE.MeshPhysicalMaterial({ map: dialTex, roughness: finish.rough, metalness: finish.metal, clearcoat: W.dialStyle === 'enamel' ? 1 : .2, envMapIntensity: .55, transparent: open, alphaTest: open ? .4 : 0, side: THREE.DoubleSide }));
+    dial.rotation.x = -Math.PI / 2; dial.position.y = .3;
+    this.balance = null;
+    if (open) {
+      const mv = new THREE.CanvasTexture(movementCanvas(W)); mv.colorSpace = THREE.SRGBColorSpace; mv.userData.own = true;
+      const plate = mk(dialGeo(), new THREE.MeshStandardMaterial({ map: mv, metalness: .75, roughness: .38 })); plate.rotation.x = -Math.PI / 2; plate.position.y = .2;
+      const bw = new THREE.Group(), gold = new THREE.MeshStandardMaterial({ color: '#d8b26a', metalness: 1, roughness: .22 });
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(.13, .012, 10, 48), gold); rim.rotation.x = Math.PI / 2; bw.add(rim);
+      for (let i = 0; i < 2; i++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(.26, .008, .012), gold); sp.rotation.y = i * Math.PI / 2; bw.add(sp); }
+      const coil = []; for (let a = 0; a < Math.PI * 10; a += .2) coil.push(new THREE.Vector3(Math.cos(a) * (.015 + a * .0025), .01, Math.sin(a) * (.015 + a * .0025)));
+      bw.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(coil), 160, .0025, 4), steel));
+      const bp = W.dialStyle === 'skeleton' ? [0, .24, dialR * .42] : [-dialR * .48, .24, 0];
+      bw.position.set(...bp); grp.add(bw); this.balance = bw;
+    }
+    // bezel
+    const bezY = .36;
+    if (W.shape === 'octagon') {
+      const oct = new THREE.Shape(shapePts('octagon', .97)); oct.holes.push(new THREE.Path(circlePts(.8, 96)));
+      const og = new THREE.ExtrudeGeometry(oct, { depth: .06, bevelEnabled: true, bevelThickness: .025, bevelSize: .02, bevelSegments: 3, curveSegments: 64 }); og.rotateX(-Math.PI / 2); og.translate(0, .37, 0);
+      mk(og, polished);
+      for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * Math.PI / 4, s = mk(new THREE.CylinderGeometry(.038, .038, .03, 20), metal); s.position.set(Math.cos(a) * .885, .47, Math.sin(a) * .885); const slot = mk(new THREE.BoxGeometry(.06, .012, .01), new THREE.MeshStandardMaterial({ color: '#333', metalness: .8, roughness: .5 })); slot.position.set(s.position.x, .487, s.position.z); slot.rotation.y = -a + .7; }
+    } else if (W.shape !== 'round') {
+      const fr = new THREE.Shape(shapePts(W.shape, .98)); fr.holes.push(new THREE.Path(G.dialRect ? shapePts(W.shape, G.dialScale * 1.02).reverse() : circlePts(G.dialR + .02, 128)));
+      const fg = new THREE.ExtrudeGeometry(fr, { depth: .04, bevelEnabled: true, bevelThickness: .02, bevelSize: .015, bevelSegments: 3, curveSegments: 64 }); fg.rotateX(-Math.PI / 2); fg.translate(0, .37, 0); mk(fg, W.caseMat === 'wood' ? metal : polished);
+    } else if (W.bezelStyle !== 'none') {
+      const edge = mk(new THREE.TorusGeometry(.925, .05, 20, 128), W.bezelStyle === 'gem' ? watchMat(W.caseMat === 'wood' ? 'steel' : W.caseMat) : metal); edge.rotation.x = Math.PI / 2; edge.position.y = bezY;
+      if (insert) {
+        const it = new THREE.CanvasTexture(insertCanvas(W)); it.colorSpace = THREE.SRGBColorSpace; it.anisotropy = 8; it.userData.own = true;
+        const ring = mk(new THREE.RingGeometry(.73, .9, 128), new THREE.MeshPhysicalMaterial({ map: it, roughness: .25, metalness: .15, clearcoat: 1 })); ring.rotation.x = -Math.PI / 2; ring.position.y = .385;
+      } else if (W.bezelStyle === 'fluted') {
+        const fl = TEX.canvas(512, 512, (x) => { x.fillStyle = '#808080'; x.fillRect(0, 0, 512, 512); x.translate(256, 256); for (let i = 0; i < 120; i++) { x.rotate(Math.PI * 2 / 120); x.fillStyle = i % 2 ? '#fff' : '#000'; x.fillRect(-1.6, 180, 3.2, 80); } });
+        const ft = new THREE.CanvasTexture(fl); ft.userData.own = true;
+        const fm = polished.clone(); fm.bumpMap = ft; fm.bumpScale = 6;
+        const ring = mk(new THREE.RingGeometry(.76, .93, 160), fm); ring.rotation.x = -Math.PI / 2; ring.position.y = .385;
+      } else if (W.bezelStyle === 'gem') {
+        const gm = new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 0, roughness: 0, transmission: 1, ior: 2.4, thickness: .2, iridescence: .4, envMapIntensity: 3 });
+        const gg = new THREE.OctahedronGeometry(.042, 1), n = 44, inst = new THREE.InstancedMesh(gg, gm, n), o = new THREE.Object3D();
+        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; o.position.set(Math.cos(a) * .84, .4, Math.sin(a) * .84); o.rotation.set(Math.random(), Math.random(), 0); o.updateMatrix(); inst.setMatrixAt(i, o.matrix); }
+        grp.add(inst);
+        const seat = mk(new THREE.RingGeometry(.78, .9, 128), metal); seat.rotation.x = -Math.PI / 2; seat.position.y = .38;
+      }
+    }
+    // hands — pivot at center, pointing to 12 (-z)
+    const handMat = c => new THREE.MeshStandardMaterial({ color: c, metalness: .6, roughness: .28 });
+    const hand = (len, wid, col, y, style) => { const g = handGeo(style, len, wid); const m = mk(g, handMat(col)); m.position.y = y; return m; };
+    const hl = dialR / .89;
+    this.hands = { h: hand(.48 * hl, .07, W.index, .325, W.hands), m: hand(.72 * hl, .05, W.index, .345, W.hands === 'mercedes' ? 'sword' : W.hands), s: hand(.8 * hl, .014, W.accent, .362, 'baton') };
+    mk(new THREE.CylinderGeometry(.04, .04, .07, 24), handMat(W.index)).position.y = .345;
+    // crystal
+    const cg = insert ? new THREE.CircleGeometry(.74, 96) : dialGeo();
+    const cry = mk(cg, new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: .1, roughness: 0, metalness: 0, clearcoat: 1, envMapIntensity: 2.2 }));
+    cry.rotation.x = -Math.PI / 2; cry.position.y = .42; cry.castShadow = false;
+    // crown + guards
+    const crownMat = cm.kind === 'metal' ? metal : steel;
+    const crown = mk(new THREE.CylinderGeometry(.1, .1, .16, 32), crownMat); crown.rotation.z = Math.PI / 2; crown.position.set(G.halfX + .1, 0, 0);
+    const stem = mk(new THREE.CylinderGeometry(.06, .06, .1, 16), crownMat); stem.rotation.z = Math.PI / 2; stem.position.set(G.halfX, 0, 0);
+    if (W.crownGuards) [-1, 1].forEach(s => { const gd = mk(new RoundedBoxGeometry(.16, .2, .1, 3, .04), caseMat); gd.position.set(G.halfX + .04, 0, s * .17); });
+    // lugs (integrated octagon has none)
+    if (W.shape !== 'octagon') [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(new RoundedBoxGeometry(.22, .26, .5, 4, .08), caseMat); l.position.set(sx * .63, -.06, sz * (G.halfZ - .04)); l.rotation.x = sz * .18; });
+    const bm = cm.kind === 'metal' ? metal : steel, bp = bm.clone(); bp.roughness = Math.min(.1, bm.roughness);
+    this.buildStrap(W, grp, mk, { metal: bm, polished: bp, steel }, G);
     grp.scale.setScalar(sc); grp.rotation.x = .62;
   },
-  dialCanvas(d) {
-    const W = d.watch;
-    return TEX.canvas(1024, 1024, (x, w) => {
-      const c = w / 2;
-      x.fillStyle = W.dial; x.beginPath(); x.arc(c, c, c, 0, Math.PI * 2); x.fill();
-      const g = x.createRadialGradient(c, c * .7, 40, c, c, c); g.addColorStop(0, 'rgba(255,255,255,.08)'); g.addColorStop(1, 'rgba(0,0,0,.18)'); x.fillStyle = g; x.fill();
-      x.strokeStyle = W.index; x.fillStyle = W.index;
-      for (let i = 0; i < 60; i++) {
-        const a = i / 60 * Math.PI * 2, hr = i % 5 === 0, r1 = hr ? 380 : 452, r2 = 478;
-        x.lineWidth = hr ? 14 : 3; x.beginPath(); x.moveTo(c + Math.sin(a) * r1, c - Math.cos(a) * r1); x.lineTo(c + Math.sin(a) * r2, c - Math.cos(a) * r2); x.stroke();
-        if (i === 0) { x.lineWidth = 9; [-14, 14].forEach(o => { x.beginPath(); x.moveTo(c + o, c - 372); x.lineTo(c + o, c - 478); x.stroke(); }); x.strokeStyle = W.dial; x.lineWidth = 16; x.beginPath(); x.moveTo(c, c - 372); x.lineTo(c, c - 478); x.stroke(); x.strokeStyle = W.index; }
-      }
-      Mark.draw(x, c, c - 228, 176, 150, W.index);
-      x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.font = '500 26px "JetBrains Mono"'; x.letterSpacing = '6px';
-      x.fillText(String(W.movement).toUpperCase().includes('AUTO') ? 'AUTOMATIC' : 'QUARTZ', c, c + 150);
-      x.font = '600 34px "JetBrains Mono"'; x.letterSpacing = '4px';
-      x.fillText(`N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}`, c, c + 215);
-      x.font = '700 22px Archivo'; x.letterSpacing = '7px'; x.globalAlpha = .7;
-      x.fillText("DON'T POSTPONE PASSION", c, c + 300); x.globalAlpha = 1;
-    });
+  buildStrap(W, grp, mk, M, G) {
+    const z0 = G.halfZ + .18, integ = W.shape === 'octagon';
+    const base = [[0, 0, z0], [0, -.18, z0 + .35], [0, -.78, 1.86], [0, -1.6, 1.88], [0, -2.36, 1.48], [0, -2.78, .72], [0, -2.9, 0], [0, -2.78, -.72], [0, -2.36, -1.48], [0, -1.6, -1.88], [0, -.78, -1.86], [0, -.18, -(z0 + .35)], [0, 0, -z0]].map(p => new THREE.Vector3(...p));
+    const X = new THREE.Vector3(1, 0, 0);
+    const t = W.strap, Q = (curve, u) => ({ p: curve.getPointAt(u), T: curve.getTangentAt(u), q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u)) });
+    // flat strap with rounded edges; width tapers from lug width toward the buckle
+    const pad = u => lerp(1.45, 1, 1 - Math.abs(u - .5) * 2); // padded: thicker at the lugs, slimmer at the buckle
+    const band = (curve, w0, thick, mat, closed = false) => mk(sweepGeo(curve, u => thick / 2 * pad(u), 1, closed ? 260 : 220, 48, X, { phase: Math.PI, sq: 5, ratioAt: u => lerp(w0, w0 * .82, 1 - Math.abs(u - .5) * 2) / (thick * pad(u)) }), mat);
+    const widthAt = (w0, u) => lerp(w0, w0 * .82, 1 - Math.abs(u - .5) * 2);
+    const loop = (curve, u, hw, hh, r, mat, lift = 0) => { // rounded-rect hoop around the strap (buckle frame, keepers)
+      const { p, T } = Q(curve, u), N = new THREE.Vector3().crossVectors(X, T).normalize(), pts = [];
+      for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2, se = v => Math.sign(v) * Math.abs(v) ** (2 / 6); pts.push(p.clone().addScaledVector(X, se(Math.cos(a)) * hw).addScaledVector(N, se(Math.sin(a)) * hh + lift)); }
+      return mk(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, r, 10, true), mat);
+    };
+    const tuck = [[0, -.07, G.halfZ + .05], ...base.slice(1, -1).map(v => v.toArray()), [0, -.07, -(G.halfZ + .05)]].map(p => new THREE.Vector3(...p));
+    if (t === 'leather' || t === 'rubber' || t === 'mesh') {
+      const curve = new THREE.CatmullRomCurve3(tuck), w0 = integ ? 1.15 : 1.02, th = t === 'mesh' ? .06 : t === 'rubber' ? .13 : .11;
+      band(curve, w0, th, t === 'mesh' ? meshMat(M.metal) : strapMat(t, W.strapColor, W.strapColor2));
+      if (t === 'mesh') { const { p, q } = Q(curve, .5); const cl = mk(new RoundedBoxGeometry(w0 * .86, .09, .55, 3, .03), M.polished); cl.position.copy(p); cl.quaternion.copy(q); return; }
+      const wb = widthAt(w0, .5) / 2, keeperMat = new THREE.MeshPhysicalMaterial({ color: W.strapColor, roughness: t === 'rubber' ? .8 : .55, sheen: .2 });
+      loop(curve, .5, wb + .05, th / 2 + .05, .024, M.polished, .015);                     // buckle frame
+      const { p, T } = Q(curve, .5), N = new THREE.Vector3().crossVectors(X, T).normalize();
+      const prong = mk(new THREE.CylinderGeometry(.014, .014, .17, 10), M.polished);         // prong lying on the strap
+      prong.position.copy(p).addScaledVector(N, th / 2 + .02).addScaledVector(T, .08); prong.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), T);
+      [.465, .44].forEach(u => loop(curve, u, widthAt(w0, u) / 2 + .016, th / 2 + .016, .015, keeperMat)); // keepers
+      return;
+    }
+    if (t === 'nato') {
+      const pts = [[0, -.56, 0], [0, -.52, .9], [0, -.08, G.halfZ + .05], ...base.slice(1, -1).map(v => v.toArray()), [0, -.08, -(G.halfZ + .05)], [0, -.52, -.9]].map(p => new THREE.Vector3(...p));
+      const curve = new THREE.CatmullRomCurve3(pts, true), w0 = .98, th = .05;
+      mk(sweepGeo(curve, () => th / 2, w0 / th, 260, 40, X, { phase: Math.PI, sq: 9 }), strapMat('nato', W.strapColor, W.strapColor2));
+      [.36, .46].forEach(u => loop(curve, u, w0 / 2 + .02, th / 2 + .02, .016, M.polished));
+      loop(curve, .41, w0 / 2 + .04, th / 2 + .04, .022, M.polished, .01);
+      return;
+    }
+    // link bracelets
+    const L = {
+      woodlinks: { pitch: .34, th: .17, lw: 1.02, p: [[0, .5, 'A'], [-.38, .24, 'B'], [.38, .24, 'B']] },
+      oyster: { pitch: .3, th: .14, lw: 1.02, p: [[0, .32, 'P'], [-.33, .3, 'S'], [.33, .3, 'S']] },
+      jubilee: { pitch: .2, th: .13, lw: 1.02, p: [[-.37, .22, 'S'], [.37, .22, 'S'], [-.12, .2, 'P'], [.12, .2, 'P']] },
+      integrated: { pitch: .26, th: .15, lw: integ ? 1.2 : 1.04, p: [[0, .16, 'P'], [-.3, .42, 'S'], [.3, .42, 'S']] },
+    }[t] || null;
+    if (!L) return;
+    const mats = t === 'woodlinks' ? { A: watchMat('wood', W.strapWood), B: watchMat('wood', W.strapAccent) } : { P: M.polished, S: M.metal };
+    const curve = new THREE.CatmullRomCurve3(base), len = curve.getLength(), n = Math.floor(len / L.pitch);
+    const geos = L.p.map(([, w]) => new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * .95, 3, Math.min(.045, L.th * .3)));
+    [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), T); const e = mk(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
+    for (let i = 0; i < n; i++) {
+      const u = (i + .5) / n, p = curve.getPointAt(u), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u));
+      const taper = lerp(1, t === 'integrated' ? .72 : .8, 1 - Math.abs(u - .5) * 2);
+      if (Math.abs(u - .5) < .55 / n) { const c = mk(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
+      const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
+      L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } // staggered centre links });
+    }
   },
   tickHands() {
     if (!this.hands) return;
     const t = new Date(), s = t.getSeconds() + t.getMilliseconds() / 1000, m = t.getMinutes() + s / 60, h = (t.getHours() % 12) + m / 60;
-    this.hands.s.rotation.y = -s / 60 * Math.PI * 2; this.hands.m.rotation.y = -m / 60 * Math.PI * 2; this.hands.h.rotation.y = -h / 12 * Math.PI * 2;
+    const quartz = /quartz/i.test(S.current?.watch?.movement || '') && !/meca/i.test(S.current?.watch?.movement || '');
+    const ss = quartz ? Math.floor(s) : s; // quartz ticks, mechanical sweeps
+    this.hands.s.rotation.y = -ss / 60 * Math.PI * 2; this.hands.m.rotation.y = -m / 60 * Math.PI * 2; this.hands.h.rotation.y = -h / 12 * Math.PI * 2;
+    if (this.balance) this.balance.rotation.y = Math.sin(performance.now() / 1000 * Math.PI * 2 * 4) * 1.9; // 4 Hz / 28,800 vph
   },
   /* ---------- output ---------- */
   snap(view, size = 1200) {
@@ -903,19 +1235,31 @@ const Panels = {
   studio() {
     const d = S.current, L = $('#studioLeft'), R = $('#studioRight');
     if (d.category === 'watch') {
-      const W = d.watch, woods = Object.entries(WOODS).map(([k, v]) => [k, v.label]);
-      L.innerHTML = `<div class="sec"><h4><em>A</em>Case</h4>
-        ${this.range('watch.dia', 'Case diameter', W.dia, 36, 46, 1, v => v + ' mm')}
-        <div class="row">${this.select('watch.caseWood', 'Case wood', W.caseWood, woods)}</div>
-        <div class="row">${this.select('watch.bezel', 'Bezel', W.bezel, Object.entries(BEZELS).map(([k, v]) => [k, v.label]))}</div>
-        <div class="grid2" style="margin-top:10px">${this.select('watch.crystal', 'Crystal', W.crystal, [['Sapphire', 'Sapphire'], ['Mineral', 'Hardened mineral']])}${this.select('watch.wr', 'Water resist.', W.wr, [['3 ATM', '3 ATM'], ['5 ATM', '5 ATM']])}</div></div>
-        <div class="sec"><h4><em>B</em>Dial</h4>${this.colorField('watch.dial', 'Dial', W.dial)}<div class="grid2" style="margin-top:12px">
-          <div class="fld"><label>Indices / hands</label><div class="row"><input type="color" data-bind="watch.index" value="${W.index}"><span class="mono">${W.index}</span></div></div>
-          <div class="fld"><label>Seconds accent</label><div class="row"><input type="color" data-bind="watch.accent" value="${W.accent}"><span class="mono">${W.accent}</span></div></div></div>
-          <div class="grid2" style="margin-top:10px"><div class="fld"><label>Edition N°</label><input class="in mono" type="number" min="1" max="${d.edition || 150}" data-bind="watch.editionNo" data-num value="${W.editionNo}"></div>
-          <div class="fld"><label>Edition cap</label><input class="in mono" type="number" min="1" data-bind="edition" data-num value="${d.edition || 150}"></div></div></div>
-        <div class="sec"><h4><em>C</em>Strap</h4>${this.select('watch.strapWood', 'Center links', W.strapWood, woods)}<div style="margin-top:10px">${this.select('watch.strapAccent', 'Side links', W.strapAccent, woods)}</div></div>
-        <div class="sec"><h4><em>D</em>Movement & caseback</h4>${this.select('watch.movement', 'Movement', W.movement, MOVEMENTS.map(m => [m, m]))}
+      const W = watchSpec(d), woods = Object.entries(WOODS).map(([k, v]) => [k, v.label]), kv = o => Object.entries(o).map(([k, v]) => [k, typeof v === 'string' ? v : v.label]);
+      const cp = (path, label, val) => `<div class="fld"><label>${label}</label><div class="row"><input type="color" data-bind="${path}" value="${val}"><span class="mono">${String(val).toUpperCase()}</span></div></div>`;
+      const band = ['leather', 'rubber', 'nato'].includes(W.strap);
+      L.innerHTML = `<div class="sec"><h4><em>A</em>Style presets</h4><div class="grid2">${WATCH_PRESETS.map(([n], i) => `<button class="btn sm" style="white-space:normal;text-align:left;justify-content:flex-start;line-height:1.25" data-wpreset="${i}">${n}</button>`).join('')}</div>
+          <p class="hint" style="margin-top:8px">Starting points. Every field below stays editable.</p></div>
+        <div class="sec"><h4><em>B</em>Case</h4>
+          <div class="fld"><label>Shape</label><div class="seg" data-segbind="watch.shape">${Object.entries(CASE_SHAPES).map(([k, v]) => `<button data-v="${k}" style="padding:7px 2px;font-size:10.5px" class="${k === W.shape ? 'on' : ''}">${v === 'Rectangle' ? 'Rect' : v}</button>`).join('')}</div></div>
+          <div style="margin-top:10px">${this.select('watch.caseMat', 'Material', W.caseMat, kv(CASE_MATS))}</div>
+          ${W.caseMat === 'wood' ? `<div class="grid2" style="margin-top:10px">${this.select('watch.caseWood', 'Species', W.caseWood, woods)}${this.select('watch.bezel', 'Bezel metal', W.bezel, kv(BEZELS))}</div>` : ''}
+          <div style="margin-top:10px">${this.range('watch.dia', 'Case size', W.dia, 34, 46, 1, v => v + ' mm')}</div>
+          <div class="grid2" style="margin-top:10px">${this.select('watch.crownGuards', 'Crown guards', W.crownGuards, [['', 'No'], ['1', 'Yes']])}${this.select('watch.crystal', 'Crystal', W.crystal, [['Sapphire', 'Sapphire'], ['Domed sapphire', 'Domed sapphire'], ['Mineral', 'Hardened mineral']])}</div></div>
+        <div class="sec"><h4><em>C</em>Bezel</h4>${this.select('watch.bezelStyle', 'Style', W.bezelStyle, kv(BEZEL_STYLES))}
+          ${/diver|gmt|tachy/.test(W.bezelStyle) ? `<div class="grid2" style="margin-top:10px">${cp('watch.bezelColor', W.bezelStyle === 'gmt' ? 'Day half' : 'Insert', W.bezelColor)}${W.bezelStyle === 'gmt' ? cp('watch.bezelColor2', 'Night half', W.bezelColor2) : ''}</div>` : ''}
+          ${W.shape !== 'round' ? '<p class="hint" style="margin-top:8px">Inserts and gem-setting render on round cases. Shaped cases use a fitted frame.</p>' : ''}</div>
+        <div class="sec"><h4><em>D</em>Dial</h4>${this.select('watch.dialStyle', 'Dial style', W.dialStyle, kv(DIAL_STYLES))}
+          <div style="margin-top:10px">${this.colorField('watch.dial', 'Dial color', W.dial)}</div>
+          <div class="grid2" style="margin-top:12px">${cp('watch.index', 'Indices / hands', W.index)}${cp('watch.accent', 'Seconds hand', W.accent)}</div>
+          <div class="grid2" style="margin-top:10px">${this.select('watch.numerals', 'Numerals', W.numerals, kv(NUMERALS))}${this.select('watch.hands', 'Hands', W.hands, kv(HANDS))}</div>
+          <div class="grid3" style="margin-top:10px">${this.select('watch.date', 'Date', W.date, [['none', 'None'], ['3', '3 o\'clock'], ['6', '6 o\'clock']])}<div class="fld"><label>Edition N°</label><input class="in mono" type="number" min="1" max="${d.edition || 150}" data-bind="watch.editionNo" data-num value="${W.editionNo}"></div><div class="fld"><label>Cap</label><input class="in mono" type="number" min="1" data-bind="edition" data-num value="${d.edition || 150}"></div></div></div>
+        <div class="sec"><h4><em>E</em>Bracelet / strap</h4>${this.select('watch.strap', 'Type', W.strap, kv(STRAPS))}
+          ${W.strap === 'woodlinks' ? `<div class="grid2" style="margin-top:10px">${this.select('watch.strapWood', 'Center links', W.strapWood, woods)}${this.select('watch.strapAccent', 'Side links', W.strapAccent, woods)}</div>` : ''}
+          ${band ? `<div class="grid2" style="margin-top:10px">${cp('watch.strapColor', 'Strap', W.strapColor)}${W.strap !== 'rubber' ? cp('watch.strapColor2', W.strap === 'nato' ? 'Stripe' : 'Stitch', W.strapColor2) : ''}</div>` : ''}
+          ${['oyster', 'jubilee', 'integrated', 'mesh'].includes(W.strap) ? '<p class="hint" style="margin-top:8px">Metal bracelets follow the case metal. Wood or ceramic cases default to steel.</p>' : ''}</div>
+        <div class="sec"><h4><em>F</em>Movement & caseback</h4>${this.select('watch.movement', 'Movement', W.movement, MOVEMENTS.map(m => [m, m]))}
+          <div style="margin-top:10px">${this.select('watch.wr', 'Water resistance', W.wr, ['3 ATM', '5 ATM', '10 ATM', '20 ATM', '30 ATM'].map(v => [v, v]))}</div>
           <div class="fld" style="margin-top:10px"><label>Caseback engraving</label><input class="in" data-bind="watch.engraving" value="${esc(W.engraving)}"></div></div>`;
     } else {
       const g = d.garment;
@@ -953,6 +1297,7 @@ const Panels = {
     $('#sGlb').onclick = () => Studio.exportGLB();
     $('#cwAdd').onclick = () => { const hex = d.category === 'watch' ? WOODS[d.watch.caseWood].a : d.garment.color; d.colorways.push(row({ name: 'Colorway ' + (d.colorways.length + 1), hex, pantone: '', notes: d.category === 'watch' ? `${WOODS[d.watch.caseWood].label} / ${WOODS[d.watch.strapAccent].label}` : '' })); touch(); this.studio(); };
     $$('[data-cw]', R).forEach(el => el.onclick = () => { const c = d.colorways.find(x => x.id === el.dataset.cw); if (d.category === 'watch') return; d.garment.color = c.hex; touch(); Studio.build(); this.studio(); });
+    $$('[data-wpreset]', L).forEach(b => b.onclick = () => { Object.assign(d.watch, WATCH_PRESETS[b.dataset.wpreset][1]); touch(); Studio.build(); this.studio(); toast(WATCH_PRESETS[b.dataset.wpreset][0] + ' applied'); });
     $$('[data-goart]', L).forEach(b => b.onclick = () => { Art.side = b.dataset.goart; go('artwork'); });
     $$('[data-copy]', L).forEach(b => b.onclick = () => { setPath(d, b.dataset.copy, d.garment.color); touch(); Studio.build(); this.studio(); });
   },
@@ -987,6 +1332,7 @@ const rebuildSoon = debounce(() => Studio.build(), 120);
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -1436,9 +1782,18 @@ const TechPack = {
     };
   },
   materials(d) {
-    const isW = d.category === 'watch', g = d.garment, W = d.watch, f = FABRICS[g.fabric];
+    const isW = d.category === 'watch', g = d.garment, W = watchSpec(d), f = FABRICS[g.fabric];
     const spec = isW
-      ? [['Case', `${W.dia} mm · ${WOODS[W.caseWood].label}`], ['Bezel', BEZELS[W.bezel].label], ['Dial / indices', `<span class="tp-sw" style="background:${W.dial}"></span>${W.dial.toUpperCase()} / <span class="tp-sw" style="background:${W.index}"></span>${W.index.toUpperCase()}`], ['Seconds accent', `<span class="tp-sw" style="background:${W.accent}"></span>${W.accent.toUpperCase()}`], ['Movement', W.movement], ['Crystal', W.crystal], ['Water resistance', W.wr], ['Strap', `${WOODS[W.strapWood].label} center · ${WOODS[W.strapAccent].label} sides`], ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)]]
+      ? (() => { const sw = h => `<span class="tp-sw" style="background:${h}"></span>${h.toUpperCase()}`; return [
+        ['Case', `${CASE_SHAPES[W.shape]} · ${W.dia} mm · ${W.caseMat === 'wood' ? WOODS[W.caseWood].label : CASE_MATS[W.caseMat].label}`],
+        ['Crown', W.crownGuards ? 'Screw-down style, with guards' : 'Push-pull'],
+        ['Bezel', W.shape === 'round' ? BEZEL_STYLES[W.bezelStyle] + (/diver|gmt|tachy/.test(W.bezelStyle) ? ' · ' + sw(W.bezelColor) + (W.bezelStyle === 'gmt' ? ' / ' + sw(W.bezelColor2) : '') : '') : 'Fitted frame'],
+        ['Dial', `${DIAL_STYLES[W.dialStyle].label} · ${sw(W.dial)}`],
+        ['Numerals / hands', `${NUMERALS[W.numerals]} · ${HANDS[W.hands]} · ${sw(W.index)}`],
+        ['Seconds / date', `${sw(W.accent)} · date ${W.date === 'none' ? 'none' : 'at ' + W.date}`],
+        ['Movement', W.movement], ['Crystal / WR', `${W.crystal} · ${W.wr}`],
+        ['Strap', STRAPS[W.strap] + (W.strap === 'woodlinks' ? `: ${WOODS[W.strapWood].label} / ${WOODS[W.strapAccent].label}` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ' · ' + sw(W.strapColor) : '')],
+        ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)]]; })()
       : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`]];
     return {
       title: 'Materials & BOM', body: `<div class="tp-grid" style="grid-template-columns:1fr 2.2fr">
@@ -1566,8 +1921,14 @@ const SCENES = {
   night: 'city street at night, direct on-camera flash',
 };
 function promptSpec(d) {
-  const isW = d.category === 'watch', g = d.garment, W = d.watch;
-  if (isW) return `a ${W.dia} mm wooden wristwatch: ${WOODS[W.caseWood].label.toLowerCase()} case with a ${BEZELS[W.bezel].label.toLowerCase()} bezel, ${colorName(W.dial)} dial (${W.dial}) with ${colorName(W.index)} baton indices and hands, ${colorName(W.accent)} seconds hand, three-piece link bracelet in ${WOODS[W.strapWood].label.toLowerCase()} with ${WOODS[W.strapAccent].label.toLowerCase()} side links, brushed steel butterfly clasp. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" printed above 6 o'clock. Hand-finished natural wood grain, matte lacquer`;
+  const isW = d.category === 'watch', g = d.garment, W = watchSpec(d);
+  if (isW) {
+    const mat = W.caseMat === 'wood' ? WOODS[W.caseWood].label.toLowerCase() + ' wood' : CASE_MATS[W.caseMat].label.toLowerCase();
+    const dialTxt = { skeleton: 'fully skeletonized dial exposing the gears, bridges and red jewels of the movement', openheart: 'open-heart dial with a cut-out at 9 o\'clock showing the beating balance wheel', panda: 'panda chronograph dial with three contrasting sub-dials', rpanda: 'reverse-panda chronograph dial with three light sub-dials', sector: 'sector dial with concentric zones and a crosshair', guilloche: 'guilloché tapisserie-pattern dial', sunburst: 'sunburst dial', fume: 'fumé gradient dial fading to black at the edge', tropical: 'aged tropical dial with brown fading', enamel: 'glossy enamel dial', linen: 'linen-texture dial' }[W.dialStyle] || 'matte dial';
+    const strapTxt = { woodlinks: `three-piece wood link bracelet in ${WOODS[W.strapWood].label.toLowerCase()} with ${WOODS[W.strapAccent].label.toLowerCase()} side links`, oyster: 'three-link oyster-style bracelet, brushed outer links and polished centre', jubilee: 'five-link jubilee-style bracelet', integrated: 'integrated H-link bracelet flowing from the case', mesh: 'Milanese mesh bracelet', leather: `${colorName(W.strapColor)} leather strap with ${colorName(W.strapColor2)} stitching`, rubber: `${colorName(W.strapColor)} FKM rubber strap`, nato: `${colorName(W.strapColor)} NATO strap with a ${colorName(W.strapColor2)} stripe` }[W.strap];
+    const bez = W.shape !== 'round' ? '' : { diver: `, unidirectional diver bezel with ${colorName(W.bezelColor)} 60-minute insert`, gmt: `, 24-hour GMT bezel split ${colorName(W.bezelColor)} and ${colorName(W.bezelColor2)}`, tachy: `, ${colorName(W.bezelColor)} tachymeter bezel`, fluted: ', fluted polished bezel', gem: ', fully gem-set iced-out bezel', none: ', slim bezel-less case' }[W.bezelStyle] || '';
+    return `a ${W.dia} mm ${CASE_SHAPES[W.shape].toLowerCase()} wristwatch in ${mat}${bez}${W.crownGuards ? ', crown guards' : ''}; ${colorName(W.dial)} (${W.dial}) ${dialTxt}, ${NUMERALS[W.numerals].toLowerCase()}, ${HANDS[W.hands].toLowerCase()} hands in ${colorName(W.index)}, ${colorName(W.accent)} seconds hand${W.date !== 'none' ? `, date window at ${W.date} o'clock` : ''}; ${strapTxt}. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" on the dial. Sapphire crystal with crisp reflections, precise machining, realistic metal finishing`;
+  }
   const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie' }[d.category];
   const f = FABRICS[g.fabric], fit = FITS[g.fit].label.toLowerCase();
   const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband' }[d.category];
