@@ -22,12 +22,15 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
+  - **Sleeves:** separate sleeve color. Sleeve logo is either the DPP mark (set its width and distance below the shoulder seam) or the DON'T POSTPONE PASSION wordmark running shoulder to cuff. It can go on the left, right or both sleeves, screen printed or embroidered.
+- **Labels and tags** (tops and bottoms): every new piece comes with the woven DPP label inside the back neck or waistband. You can switch to a printed tagless label or none. An optional DPP hang tag shows style number, size, price and a barcode. Label colors and size are editable, and the panel shows a preview.
 - **Bottoms:** pants in straight or slim cut, shorts, boxer briefs. **Double waistband** (pants and shorts): a second band stacked above the main one, plaid by default. It follows the garment's own waist line, and its height, plaid colors or solid color are editable.
 - **Accessories:** hooded wrap scarf, balaclava (merino rib by default; polar fleece and chunky knit also available)
 - **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping.
 - **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
 - **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets.
+  - **Hour markers:** applied by default. Batons and dots are raised, polished metal, with lume on dark dials. Numerals and the DPP mark at 12 are raised too. Switch to Printed for a flat dial.
   - **Skeleton and open-heart** dials show a full 3D movement: a gear train that turns, a beating balance wheel, Geneva-striped bridges, jewels and blued screws. Dark cases get a black movement.
   - **Case build** has three options:
     - Parametric: any shape.

@@ -842,7 +842,7 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { color: cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', trim: cat === 'duffle' ? '' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75 },
+    garment: { color: cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', trim: cat === 'duffle' ? '' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75, sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', hangTag: '' },
     watch: { ...WATCH_DEFAULT },
     place: cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
@@ -963,10 +963,55 @@ function go(view) {
    6. Flat sketches (SVG) — used for library thumbs, cat picker, tech pack
    ========================================================================= */
 const FLAT = {
-  tee: { body: 'M158 40 L98 58 L40 150 L78 173 L112 133 L112 420 L288 420 L288 133 L322 173 L360 150 L302 58 L242 40', stitch: ['M112 410 L288 410', 'M47 141 L85 163', 'M353 141 L315 163'] },
-  longsleeve: { body: 'M158 40 L98 58 L66 200 L40 412 L80 416 L98 236 L112 150 L112 420 L288 420 L288 150 L302 236 L320 416 L360 412 L334 200 L302 58 L242 40', stitch: ['M112 410 L288 410'], cuffs: ['M43 384 L83 388', 'M357 384 L317 388'] },
-  crewneck: { body: 'M158 40 L96 58 L62 200 L38 412 L80 416 L98 236 L110 150 L110 420 L290 420 L290 150 L302 236 L320 416 L362 412 L338 200 L304 58 L242 40', stitch: [], cuffs: ['M41 380 L83 384', 'M359 380 L317 384'], band: 'M110 386 L290 386' },
+  tee: { body: 'M158 40 L98 58 L40 150 L78 173 L112 133 L112 420 L288 420 L288 133 L322 173 L360 150 L302 58 L242 40', sleeve: 'M98 58 L40 150 L78 173 L112 133', stitch: ['M112 410 L288 410', 'M47 141 L85 163', 'M353 141 L315 163'] },
+  longsleeve: { body: 'M158 40 L98 58 L66 200 L40 412 L80 416 L98 236 L112 150 L112 420 L288 420 L288 150 L302 236 L320 416 L360 412 L334 200 L302 58 L242 40', sleeve: 'M98 58 L66 200 L40 412 L80 416 L98 236 L112 150', stitch: ['M112 410 L288 410'], cuffs: ['M43 384 L83 388', 'M357 384 L317 388'] },
+  crewneck: { body: 'M158 40 L96 58 L62 200 L38 412 L80 416 L98 236 L110 150 L110 420 L290 420 L290 150 L302 236 L320 416 L362 412 L338 200 L304 58 L242 40', sleeve: 'M96 58 L62 200 L38 412 L80 416 L98 236 L110 150', stitch: [], cuffs: ['M41 380 L83 384', 'M359 380 L317 384'], band: 'M110 386 L290 386' },
 };
+const sleeveHex = g => g.sleeveColor || g.color;
+// Preloaded DPP labels: woven neck/waistband label, printed tagless neck print, and the hang tag (front + back)
+function tagCanvas(d, kind) {
+  const g = d.garment, gr = g.tagColor || '#14172B', ink = g.tagInk || '#EEF1F9', size = g.tagSize || 'M', mono = (px, sp) => `500 ${px}px "JetBrains Mono"`;
+  const txt = (x, s, px, X, Y, sp = 0, font) => { x.font = font || mono(px); x.letterSpacing = sp + 'px'; x.fillText(s, X, Y); };
+  if (kind === 'woven') return TEX.canvas(1024, 512, x => {
+    x.fillStyle = gr; x.fillRect(0, 0, 1024, 512);
+    for (let y = 0; y < 512; y += 4) { x.fillStyle = `rgba(255,255,255,${y % 8 ? .035 : .06})`; x.fillRect(0, y, 1024, 2); } // weft
+    x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(0, 0, 1024, 26); x.fillRect(0, 486, 1024, 26); // folded selvedges
+    x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
+    Mark.draw(x, 430, 215, 360, 250, ink);
+    txt(x, "DON'T POSTPONE PASSION", 30, 430, 400, 8);
+    x.strokeStyle = ink; x.lineWidth = 5; x.strokeRect(760, 150, 170, 170); txt(x, size, 0, 845, 240, 0, `400 ${size.length > 2 ? 64 : 96}px "Archivo Black"`);
+  });
+  if (kind === 'printed') return TEX.canvas(1024, 1024, x => {
+    const c = lum(g.color) > .5 ? '#14172B' : '#EEF1F9'; x.fillStyle = c; x.textAlign = 'center'; x.textBaseline = 'middle';
+    Mark.draw(x, 512, 250, 520, 330, c);
+    txt(x, "DON'T POSTPONE PASSION", 36, 512, 470, 10);
+    txt(x, size, 0, 512, 620, 0, '400 150px "Archivo Black"');
+    txt(x, (FABRICS[g.fabric]?.comp || '').toUpperCase().slice(0, 44), 26, 512, 770, 2);
+    txt(x, d.styleNo || '', 30, 512, 840, 6);
+  });
+  const hole = x => { x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(256, 70, 22, 0, Math.PI * 2); x.fill(); x.globalCompositeOperation = 'source-over'; };
+  if (kind === 'hang') return TEX.canvas(512, 896, x => {
+    x.fillStyle = gr; x.fillRect(0, 0, 512, 896); hole(x);
+    x.fillStyle = ink; x.strokeStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
+    Mark.draw(x, 256, 270, 340, 220, ink);
+    txt(x, "DON'T POSTPONE PASSION", 22, 256, 420, 6);
+    x.globalAlpha = .45; x.lineWidth = 2; x.beginPath(); x.moveTo(60, 480); x.lineTo(452, 480); x.stroke(); x.globalAlpha = 1;
+    txt(x, (d.name || '').toUpperCase().slice(0, 22), 0, 256, 545, 2, '400 40px "Archivo Black"');
+    txt(x, d.styleNo || '', 26, 256, 605, 6);
+    txt(x, 'SIZE ' + size, 34, 256, 690, 8);
+    if (d.msrp) txt(x, '$' + d.msrp, 0, 256, 790, 0, '400 54px "Archivo Black"');
+  });
+  return TEX.canvas(512, 896, x => { // hang tag back: mark + barcode keyed to the style number
+    x.fillStyle = gr; x.fillRect(0, 0, 512, 896); hole(x);
+    x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
+    Mark.draw(x, 256, 230, 160, 110, ink);
+    x.fillStyle = '#f4f3ef'; x.fillRect(86, 560, 340, 200); x.fillStyle = '#111';
+    let h = [...String(d.styleNo || 'DPP')].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381);
+    for (let bx = 106; bx < 406;) { h = (h * 1103515245 + 12345) >>> 0; const bw = 2 + (h >>> 28) % 4; if ((h >>> 20) & 1) x.fillRect(bx, 580, bw, 130); bx += bw + 2; }
+    x.font = mono(22); x.fillText(d.styleNo || '', 256, 735);
+    x.fillStyle = ink; txt(x, "DON'T POSTPONE PASSION", 20, 256, 830, 6);
+  });
+}
 FLAT.hoodie = FLAT.crewneck;
 function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null } = {}) {
   if (isBottom(d.category) || d.category === 'socks' || isAcc(d.category)) return bottomsFlat(d, side, stroke);
@@ -986,6 +1031,7 @@ function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null 
       : '';
   }
   s += `<path d="${F.body} ${neckScoop}Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  if (sleeveHex(g).toLowerCase() !== fill.toLowerCase()) [0, 1].forEach(m => s += `<path d="${F.sleeve}Z" fill="${sleeveHex(g)}" stroke="${stroke}" stroke-width="${sw}"${m ? ' transform="matrix(-1 0 0 1 400 0)"' : ''}/>`);
   s += `<path d="M158 40 Q200 ${front ? 54 : 46} 242 40 ${front ? 'Q200 100 158 40' : 'Q200 54 158 40'}Z" fill="${dark}" stroke="${stroke}" stroke-width="${sw * .8}"/>`;
   if (d.category !== 'hoodie' || !front) s += `<path d="${rib}" stroke="${stroke}" stroke-width="${sw * .8}"/><path d="M158 40 ${neckScoop.replace('Q', 'Q')}" stroke="${stroke}" stroke-width="${sw * .8}"/>`;
   if (d.category === 'hoodie' && !front) s += `<path d="M146 64 C128 -4 272 -4 254 64 C246 116 154 116 146 64Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/><path d="M200 -2 L200 108" stroke="${stroke}" stroke-width="${sw * .7}" stroke-dasharray="3 3"/>`;
@@ -1344,7 +1390,7 @@ const DIAL_STYLES = {
 const NUMERALS = { index: 'Baton indices', arabic: 'Arabic', roman: 'Roman', california: 'California', none: 'None · minimal' };
 const HANDS = { baton: 'Baton', dauphine: 'Dauphine', sword: 'Sword', mercedes: 'Mercedes', pencil: 'Pencil' };
 const STRAPS = { woodlinks: 'Wood links · 3-piece', oyster: 'Oyster-style 3-link', jubilee: 'Jubilee-style 5-link', integrated: 'Integrated H-link', mesh: 'Milanese mesh', leather: 'Leather', rubber: 'FKM rubber', nato: 'NATO nylon' };
-const WATCH_DEFAULT = { dia: 42, shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', bezelColor: '#14172B', bezelColor2: '#B98A4A', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', strapColor: '#2b1d14', strapColor2: '#B98A4A', crownGuards: '', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM' };
+const WATCH_DEFAULT = { dia: 42, shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', bezelColor: '#14172B', bezelColor2: '#B98A4A', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', markers: 'applied', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', strapColor: '#2b1d14', strapColor2: '#B98A4A', crownGuards: '', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM' };
 const watchSpec = d => ({ ...WATCH_DEFAULT, ...d.watch });
 const WATCH_PRESETS = [
   ['The Teranga · wood', { shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', crownGuards: '', movement: 'Miyota 2035 · quartz', wr: '3 ATM' }],
@@ -1446,11 +1492,34 @@ function handGeo(style, L, w) {
   const g = new THREE.ExtrudeGeometry(shapes, { depth: .012, bevelEnabled: false, curveSegments: 24 }); g.rotateX(-Math.PI / 2); return g;
 }
 // Dial artwork. `fit` shrinks the layout for rectangular/tonneau dials.
-function dialCanvas(d, W, fit = 1) {
+// Hour positions a subdial, date window or open-heart aperture covers
+function dialBlocked(W) {
+  const chrono = /panda/.test(W.dialStyle), heart = W.dialStyle === 'openheart';
+  return new Set([...(W.date === '3' || chrono ? [3] : []), ...(W.date === '6' || chrono ? [6] : []), ...(chrono || heart ? [9] : [])]);
+}
+// Kind of marker at each hour (california mixes roman, arabic and batons)
+function hourKind(W, pos) { const k = W.numerals; return k !== 'california' ? k : (pos >= 4 && pos <= 8) ? 'arabic' : (pos === 3 || pos === 9) ? 'index' : 'roman'; }
+const ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+// Printed hour markers; textOnly draws just the numerals (batons and dots are 3D geometry when applied)
+function dialHours(x, W, c, R, fit, textOnly) {
+  const blocked = dialBlocked(W);
+  for (let hNum = 0; hNum < 12; hNum++) {
+    const pos = hNum || 12, a = hNum / 12 * Math.PI * 2; if (blocked.has(pos)) continue;
+    const kind = hourKind(W, pos);
+    if (kind === 'none') { if (pos % 3 === 0 && !textOnly) { x.beginPath(); x.arc(c + Math.sin(a) * R * .88, c - Math.cos(a) * R * .88, 9, 0, Math.PI * 2); x.fill(); } continue; }
+    if (kind === 'index') { if (!textOnly) { x.lineWidth = pos === 12 ? 22 : 14; const r1 = R * (pos === 12 ? .72 : .75); x.beginPath(); x.moveTo(c + Math.sin(a) * r1, c - Math.cos(a) * r1); x.lineTo(c + Math.sin(a) * R * .93, c - Math.cos(a) * R * .93); x.stroke(); } continue; }
+    x.save(); x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = kind === 'roman' ? `400 ${Math.round(84 * fit)}px "Instrument Serif"` : `400 ${Math.round(68 * fit)}px "Archivo Black"`; x.letterSpacing = '0px';
+    x.fillText(kind === 'roman' ? ROMAN[hNum] : String(pos), c + Math.sin(a) * R * .72, c - Math.cos(a) * R * .72); x.restore();
+  }
+}
+// layer 'relief': only the applied numerals + mark, white on transparent (alpha for the raised 3D layers)
+function dialCanvas(d, W, fit = 1, layer = '') {
   return TEX.canvasHi(1024, (x, w) => {
-    const c = w / 2, R = c * fit, st = W.dialStyle, dial = W.dial, ink = W.index, skel = st === 'skeleton', heart = st === 'openheart';
-    const chrono = st === 'panda' || st === 'rpanda';
+    const c = w / 2, R = c * fit, st = W.dialStyle, dial = W.dial, skel = st === 'skeleton', heart = st === 'openheart';
+    const chrono = st === 'panda' || st === 'rpanda', relief = layer === 'relief', applied = relief || (W.markers || 'applied') === 'applied', ink = relief ? '#ffffff' : W.index;
     x.clearRect(0, 0, w, w);
+    if (relief) { x.fillStyle = ink; dialHours(x, W, c, R, fit, true); if (!skel) Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink); return; }
     if (!skel) { x.fillStyle = dial; x.fillRect(0, 0, w, w); }
     const over = (fn) => { x.save(); fn(); x.restore(); };
     if (st === 'classic' || st === 'enamel' || chrono) over(() => { const g = x.createRadialGradient(c, c * .7, 40, c, c, c); g.addColorStop(0, `rgba(255,255,255,${st === 'enamel' ? .14 : .07})`); g.addColorStop(1, 'rgba(0,0,0,.16)'); x.fillStyle = g; x.fillRect(0, 0, w, w); });
@@ -1468,25 +1537,14 @@ function dialCanvas(d, W, fit = 1) {
     if (hole) over(() => { x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2); x.fill(); x.globalCompositeOperation = 'source-over'; x.strokeStyle = ink; x.lineWidth = 8; x.beginPath(); x.arc(hole.x, hole.y, hole.r + 4, 0, Math.PI * 2); x.stroke(); });
     const sub = chrono ? [[R * .46, 0], [-R * .46, 0], [0, R * .46]] : [];
     sub.forEach(([dx, dy]) => over(() => { const sc = st === 'panda' ? ink : '#EEF1F9', sx = c + dx, sy = c + dy, r = R * .2; x.fillStyle = sc; x.beginPath(); x.arc(sx, sy, r, 0, Math.PI * 2); x.fill(); x.strokeStyle = st === 'panda' ? dial : ink; x.lineWidth = 3; for (let i = 0; i < 30; i++) { const a = i / 30 * Math.PI * 2, r1 = i % 5 ? r * .82 : r * .7; x.beginPath(); x.moveTo(sx + Math.sin(a) * r1, sy - Math.cos(a) * r1); x.lineTo(sx + Math.sin(a) * r * .94, sy - Math.cos(a) * r * .94); x.stroke(); } x.lineWidth = 5; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + r * .5, sy - r * .55); x.stroke(); }));
-    const blocked = new Set([...(W.date === '3' || chrono ? [3] : []), ...(W.date === '6' || chrono ? [6] : []), ...(chrono ? [9] : []), ...(heart ? [9] : [])]);
     x.strokeStyle = ink; x.fillStyle = ink;
     if (W.numerals !== 'none') for (let i = 0; i < 60; i++) { // minute track
       if (i % 5 === 0) continue; const a = i / 60 * Math.PI * 2; x.lineWidth = 3; x.beginPath(); x.moveTo(c + Math.sin(a) * R * .89, c - Math.cos(a) * R * .89); x.lineTo(c + Math.sin(a) * R * .94, c - Math.cos(a) * R * .94); x.stroke();
     }
-    const ROM = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-    for (let hNum = 0; hNum < 12; hNum++) {
-      const pos = hNum || 12, a = hNum / 12 * Math.PI * 2; if (blocked.has(pos)) continue;
-      const nx = c + Math.sin(a) * R * .72, ny = c - Math.cos(a) * R * .72;
-      let kind = W.numerals; if (kind === 'california') kind = (pos >= 4 && pos <= 8) ? 'arabic' : (pos === 3 || pos === 9) ? 'index' : 'roman';
-      if (kind === 'none') { if (pos % 3 === 0) { x.beginPath(); x.arc(c + Math.sin(a) * R * .88, c - Math.cos(a) * R * .88, 9, 0, Math.PI * 2); x.fill(); } continue; }
-      if (kind === 'index') { x.lineWidth = pos === 12 ? 22 : 14; const r1 = R * (pos === 12 ? .72 : .75); x.beginPath(); x.moveTo(c + Math.sin(a) * r1, c - Math.cos(a) * r1); x.lineTo(c + Math.sin(a) * R * .93, c - Math.cos(a) * R * .93); x.stroke(); continue; }
-      x.save(); x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.font = kind === 'roman' ? `400 ${Math.round(84 * fit)}px "Instrument Serif"` : `400 ${Math.round(68 * fit)}px "Archivo Black"`; x.letterSpacing = '0px';
-      x.fillText(kind === 'roman' ? ROM[hNum] : String(pos), nx, ny); x.restore();
-    }
+    if (!applied) dialHours(x, W, c, R, fit, false);
     if (W.date === '3' || W.date === '6') over(() => { const p = W.date === '3' ? [c + R * .68, c] : [c, c + R * .68]; x.fillStyle = '#f7f5f0'; x.strokeStyle = ink; x.lineWidth = 4; x.fillRect(p[0] - 42, p[1] - 30, 84, 60); x.strokeRect(p[0] - 42, p[1] - 30, 84, 60); x.fillStyle = '#111'; x.font = '600 40px "JetBrains Mono"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(new Date().getDate()), p[0], p[1] + 2); });
     if (!skel) {
-      Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink);
+      if (!applied) Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink);
       x.textAlign = 'center'; x.textBaseline = 'middle';
       x.font = `500 ${Math.round(24 * fit)}px "JetBrains Mono"`; x.letterSpacing = '6px';
       const mv = String(W.movement).toUpperCase(), label = mv.includes('GMT') ? 'GMT AUTOMATIC' : mv.includes('CHRONO') ? 'CHRONOGRAPH' : mv.includes('AUTO') ? 'AUTOMATIC' : 'QUARTZ';
@@ -1727,8 +1785,8 @@ const Studio = {
     this.resize(); this.build(); Panels.studio();
   },
   clear() {
-    this.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map && m.map.userData.own) m.map.dispose(); m.dispose(); }); } });
-    this.root.clear(); this.decals = []; this.dial = null; this.hands = null; this.lcd = null; this.wheels = null; this.torso = null; this.modelMeshes = null;
+    this.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { [m.map, m.alphaMap].forEach(t => { if (t && t.userData.own) t.dispose(); }); m.dispose(); }); } });
+    this.root.clear(); this.decals = []; this.dial = null; this.hands = null; this.lcd = null; this.wheels = null; this.torso = null; this.modelMeshes = null; this.slv = null;
   },
   build() {
     const d = S.current; if (!d || !this.ok) return;
@@ -1811,6 +1869,8 @@ const Studio = {
     this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: H, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
     if ((d.category === 'pants' || d.category === 'shorts') && g.doubleWB === '1') this.addSecondWaistband(d, box);
     if (d.category === 'socks' && !g.model) this.paintSockZones(d, box);
+    this.slv = isTop(d.category) ? this.sleeveZones(d, box) : null;
+    if (isTop(d.category) || isBottom(d.category)) this.addTags(d, box);
     this.updateDecals();
   },
   // Sock zones painted in the shader by world position: heel cup, toe, cuff band, athletic stripes.
@@ -1845,6 +1905,128 @@ const Studio = {
             }`);
       });
     });
+  },
+  // Sleeves on one-piece meshes. Arms held out: the torso edge is where the run of fabric outward from centre front
+  // ends in the lower body (per side); beyond it, narrowing toward the shoulder like a set-in armhole, is sleeve.
+  // Arms down against the body (no gap): use the mesh's own panels instead. Sleeve panels sit off-centre and either
+  // reach the outer edge up to the shoulder or sit far out (cuffs). Painted in the shader so washes and distress layer on top.
+  sleeveZones(d, box) {
+    const g = d.garment, v = new THREE.Vector3(), hem = box.min.y, hps = this.P.h / 2, bin = .04, xT = [0, 0];
+    let maxX = 0;
+    const W = this.modelMeshes.map(m => { m.updateMatrixWorld(true); const p = m.geometry.attributes.position, wp = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); wp[i * 3] = v.x; wp[i * 3 + 1] = v.y; wp[i * 3 + 2] = v.z; maxX = Math.max(maxX, Math.abs(v.x)); } return wp; });
+    const each = fn => W.forEach((wp, mi) => { const n = wp.length / 3, st = Math.max(1, Math.floor(n / 30000)); for (let i = 0; i < n; i += st) fn(wp, i, mi); });
+    for (let y0 = hem + .05 * (hps - hem); y0 < hem + .45 * (hps - hem); y0 += .05) [1, -1].forEach((s, si) => {
+      const occ = new Uint8Array(90); each((wp, i) => { const y = wp[i * 3 + 1], ax = s * wp[i * 3]; if (y >= y0 && y < y0 + .1 && ax >= 0 && ax < 3.6) occ[Math.floor(ax / bin)] = 1; });
+      let k = 0, miss = 0; for (; k < 90; k++) { if (occ[k]) miss = 0; else if (++miss > 1) break; }
+      xT[si] = Math.max(xT[si], (k - miss + 1) * bin);
+    });
+    const yA = hps - .9, bnd = (s, y) => (s > 0 ? xT[0] : xT[1]) + .02 - THREE.MathUtils.smoothstep(y, yA, hps) * .08;
+    const panel = Math.min(...xT) < .4 || Math.max(...xT) > .88 * maxX, flag = W.map(wp => new Int8Array(wp.length / 3)); // ±1 = sleeve on that side
+    if (panel) {
+      this.modelMeshes.forEach((m, mi) => {
+        const ix = m.geometry.index, wp = W[mi], n = wp.length / 3; if (!ix) return;
+        const par = new Int32Array(n).map((_, i) => i), f = i => { while (par[i] !== i) i = par[i] = par[par[i]]; return i; };
+        for (let t = 0; t < ix.count; t += 3) { const a = f(ix.getX(t)); par[f(ix.getX(t + 1))] = a; par[f(ix.getX(t + 2))] = a; }
+        const C = new Map(); for (let i = 0; i < n; i++) { const r = f(i), x = wp[i * 3]; let c = C.get(r); if (!c) C.set(r, c = { n: 0, sx: 0, x0: 9, x1: -9, y1: -9 }); c.n++; c.sx += x; c.x0 = Math.min(c.x0, x); c.x1 = Math.max(c.x1, x); c.y1 = Math.max(c.y1, wp[i * 3 + 1]); }
+        const side = new Map(); C.forEach((c, r) => { const cx = c.sx / c.n, s = Math.sign(cx), off = s > 0 ? c.x0 > 0 : c.x1 < 0, reach = s > 0 ? c.x1 : -c.x0; if (off && ((reach > .85 * maxX && c.y1 > hps - 1.2) || Math.abs(cx) > .7 * maxX)) side.set(r, s); });
+        for (let i = 0; i < n; i++) flag[mi][i] = side.get(f(i)) || 0;
+      });
+      if (!flag.some(fl => fl.some(Boolean))) return null;
+    } else W.forEach((wp, mi) => { for (let i = 0; i < wp.length / 3; i++) { const x = wp[i * 3], s = x > 0 ? 1 : -1; if (s * x > bnd(s, wp[i * 3 + 1])) flag[mi][i] = s; } });
+    // sampled points for the logo + torso extent (hang tag)
+    const pts = [], fl = []; let tx = [0, 0], tHem = 9;
+    each((wp, i, mi) => { const x = wp[i * 3], y = wp[i * 3 + 1], s = flag[mi][i]; pts.push(x, y, wp[i * 3 + 2]); fl.push(s); if (!s) { tHem = Math.min(tHem, y); if (y < hem + .3 * (hps - hem)) tx[x > 0 ? 0 : 1] = Math.max(tx[x > 0 ? 0 : 1], Math.abs(x)); } });
+    const S = { panel, xT, hps, yA, bnd, pts, fl, torsoX: panel ? (tx[0] + tx[1]) / 2 : (xT[0] + xT[1]) / 2, torsoHem: tHem < 9 ? tHem : hem };
+    const col = sleeveHex(g);
+    if (col.toLowerCase() !== g.color.toLowerCase()) {
+      const U = { uXT: { value: new THREE.Vector2(xT[0], xT[1]) }, uSA: { value: yA }, uSH: { value: hps }, uSlv: { value: new THREE.Color(col) } };
+      this.modelMeshes.forEach((m, mi) => {
+        if (panel) { m.geometry.setAttribute('aSlv', new THREE.BufferAttribute(Float32Array.from(flag[mi], Math.abs), 1)); m.material.defines = { ...(m.material.defines || {}), SLV_PANEL: '' }; }
+        addPatch(m.material, 'sleeves' + (panel ? 'P' : ''), sh => {
+          Object.assign(sh.uniforms, U);
+          sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSlp; varying float vSlv;\n#ifdef SLV_PANEL\nattribute float aSlv;\n#endif')
+            .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSlp = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#ifdef SLV_PANEL\nvSlv = aSlv;\n#else\nvSlv = 0.0;\n#endif');
+          sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSlp; varying float vSlv; uniform vec2 uXT; uniform float uSA, uSH; uniform vec3 uSlv;')
+            .replace('#include <map_fragment>', `#include <map_fragment>
+              #ifdef SLV_PANEL
+              float slv = step(.5, vSlv);
+              #else
+              float sb = (vSlp.x > 0. ? uXT.x : uXT.y) + .02 - smoothstep(uSA, uSH, vSlp.y) * .08, slv = smoothstep(sb - .006, sb + .006, abs(vSlp.x));
+              #endif
+              diffuseColor.rgb = mix(diffuseColor.rgb, uSlv, slv);`);
+        });
+      });
+    }
+    return S;
+  },
+  // Sleeve logo: find the sleeve's axis (armhole centroid → cuff), set the logo on its outer face and project it as a decal
+  sleeveLogos(d) {
+    const g = d.garment, S = this.slv; if (!S || !g.sleeveLogo || g.sleeveLogo === 'none') return;
+    const word = g.sleeveLogo === 'word', sleeve = sleeveHex(g), ink = g.sleeveLogoColor || (lum(sleeve) > .5 ? '#14172B' : '#EEF1F9');
+    let art = TEX.canvas(1024, 1024, x => {
+      if (!word) return Mark.draw(x, 512, 512, 960, 960, ink);
+      x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '400 120px "Archivo Black"'; x.letterSpacing = '4px';
+      const t = "DON'T POSTPONE PASSION", k = Math.min(1, 980 / x.measureText(t).width); x.translate(512, 512); x.scale(k, k); x.fillText(t, 0, 0);
+    });
+    const stitch = /embroider/i.test(g.sleeveTech || ''); if (stitch) art = stitchify(art, g.sleeveTech, sleeve);
+    const tex = new THREE.CanvasTexture(art); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 16;
+    const sides = g.sleeveSide === 'both' ? [1, -1] : g.sleeveSide === 'right' ? [-1] : [1]; // wearer's left sits at +x (front faces +z)
+    sides.forEach(s => {
+      const P = S.pts, root = new THREE.Vector3(), sl = []; let rn = 0, top = -9;
+      for (let i = 0; i < P.length; i += 3) if (S.fl[i / 3] === s && (S.panel || s * P[i] - S.bnd(s, P[i + 1]) > .03)) { sl.push(i); top = Math.max(top, P[i + 1]); }
+      sl.forEach(i => { if (S.panel ? P[i + 1] > top - .2 : s * P[i] - S.bnd(s, P[i + 1]) < .15) { root.x += P[i]; root.y += P[i + 1]; root.z += P[i + 2]; rn++; } }); // armhole end of the sleeve
+      if (rn < 10) return; root.divideScalar(rn);
+      const dist = sl.map(i => [Math.hypot(P[i] - root.x, P[i + 1] - root.y, P[i + 2] - root.z), i]).sort((a, b) => b[0] - a[0]).slice(0, Math.max(5, Math.floor(sl.length * .06)));
+      const tip = new THREE.Vector3(); dist.forEach(([, i]) => tip.add(new THREE.Vector3(P[i], P[i + 1], P[i + 2]))); tip.divideScalar(dist.length);
+      const u = tip.clone().sub(root), len = u.length(); u.normalize();
+      const w = word ? Math.min(num(g.sleeveLogoSize || 3) * 4, (len - .12) * 10) / 10 : num(g.sleeveLogoSize || 3) / 10;
+      const t = word ? .06 + w / 2 : clamp(num(g.sleeveDrop ?? 2.5) / 10 - .05 + w / 2, w / 2, Math.max(w / 2, len - w / 2 - .04));
+      const c = root.clone().addScaledVector(u, t), rej = a => a.clone().addScaledVector(u, -a.dot(u));
+      let n = rej(new THREE.Vector3(s, 0, 0)); if (n.length() < .3) n = rej(new THREE.Vector3(0, 1, 0)); n.normalize().add(new THREE.Vector3(0, 0, .55)).normalize(); // outer face, turned a little toward the viewer
+      const hit = new THREE.Raycaster(c.clone().addScaledVector(n, 3), n.clone().negate()).intersectObjects(this.modelMeshes, false)[0]; if (!hit) return;
+      // decal basis: z = projection (outward), wordmark reads shoulder → cuff, the mark stands upright toward the shoulder
+      const z = n; let x, y;
+      if (word) { x = u.clone().addScaledVector(z, -u.dot(z)).normalize(); y = z.clone().cross(x); }
+      else { y = u.clone().negate().addScaledVector(z, u.dot(z)).normalize(); x = y.clone().cross(z); }
+      const e = new THREE.Euler().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+      this.modelMeshes.forEach(tg => {
+        const m = this.detailDecal(hit.point, new THREE.Vector3(w, w, .2), tex, 0, false, stitch && 2.2, tg, e);
+        if (!m.geometry.attributes.position?.count) { this.root.remove(m); m.geometry.dispose(); m.material.dispose(); return; }
+        this.decals.push(m);
+      });
+    });
+  },
+  // Labels: woven DPP label (or printed tagless) conformed to the inside back neck / waistband, plus an optional hang tag
+  addTags(d, box) {
+    const g = d.garment, tag = g.tag || 'woven', top = isTop(d.category), cz = (box.min.z + box.max.z) / 2, V = THREE.Vector3;
+    const backZ = (x, y) => { const h = new THREE.Raycaster(new V(x, y, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false).filter(h => h.point.z < cz).sort((a, b) => b.point.z - a.point.z)[0]; return h ? h.point.z : null; };
+    const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.own = true; return t; };
+    if (tag !== 'none') {
+      const woven = tag === 'woven', w = woven ? .25 : .3, h = woven ? .125 : .3, yc = (top ? this.P.h / 2 - .1 : box.max.y - .06) - h / 2 - (woven ? 0 : .02);
+      const geo = new THREE.PlaneGeometry(w, h, 6, 1), p = geo.attributes.position; let ok = true;
+      for (let i = 0; i < p.count; i++) { const z = backZ(p.getX(i), yc + p.getY(i)); if (z === null) { ok = false; break; } p.setZ(i, z + (woven ? .009 : .004)); }
+      if (ok) {
+        geo.computeVertexNormals(); const t = texOf(tagCanvas(d, woven ? 'woven' : 'printed'));
+        const m = this.add(geo, new THREE.MeshStandardMaterial({ map: t, roughness: woven ? .62 : .9, ...(woven ? { bumpMap: t, bumpScale: .6 } : { alphaTest: .35, polygonOffset: true, polygonOffsetFactor: -2 }) }), woven);
+        m.position.y = yc;
+      }
+    }
+    if (g.hangTag === '1') {
+      const xa = top ? (this.slv ? this.slv.torsoX * .72 : .7) : (box.max.x * .5), ya = top ? (this.slv ? this.slv.torsoHem : box.min.y) + .16 : box.max.y - .07;
+      const hit = new THREE.Raycaster(new V(xa, ya, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0];
+      if (hit) {
+        const a = hit.point.clone(), cw = .2, ch = .35, card = new THREE.Group(); this.root.add(card);
+        const edge = new THREE.MeshStandardMaterial({ color: g.tagColor || '#14172B', roughness: .8 });
+        const face = c => new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .55, alphaTest: .5 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, .005), [edge, edge, edge, edge, face(tagCanvas(d, 'hang')), face(tagCanvas(d, 'hangBack'))]); body.castShadow = body.receiveShadow = true; card.add(body);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(.011, .0028, 10, 28), new THREE.MeshStandardMaterial({ color: '#c9c6bf', metalness: 1, roughness: .3 })); ring.position.set(0, ch / 2 - .025, .003); card.add(ring);
+        card.position.set(a.x + .01, a.y - .12 - ch / 2, a.z + .045); card.rotation.set(.05, .3, .06); card.updateMatrixWorld(true);
+        const hole = ring.getWorldPosition(new V());
+        const curve = new THREE.CatmullRomCurve3([a.clone().add(new V(0, 0, .004)), a.clone().lerp(hole, .5).add(new V(-.008, 0, .03)), hole.clone().add(new V(0, -.004, .002)), hole.clone().add(new V(.006, .006, -.006))]);
+        this.add(new THREE.TubeGeometry(curve, 40, .0028, 6, false), new THREE.MeshStandardMaterial({ color: '#111214', roughness: .7 }));
+        const pin = this.add(new THREE.CapsuleGeometry(.004, .05, 4, 8), new THREE.MeshStandardMaterial({ color: '#d4d2cc', metalness: 1, roughness: .25 })); pin.position.copy(a).add(new V(0, 0, .006)); pin.rotation.z = Math.PI / 2 - .2;
+      }
+    }
   },
   // Double waistband: a second (plaid by default) band stacked above the main one, like boxers worn high under the waist.
   // Traced per angle from the model's own waist line (height + radius), tucked just inside, with a rolled bound top edge.
@@ -1959,7 +2141,7 @@ const Studio = {
   },
   detailDecal(pos, size, tex, rotZ = 0, back = false, bump = false, target = this.torso, yaw = null) {
     target.updateMatrixWorld(true);
-    const geo = new DecalGeometry(target, pos, new THREE.Euler(0, yaw ?? (back ? Math.PI : 0), rotZ), size);
+    const geo = new DecalGeometry(target, pos, yaw instanceof THREE.Euler ? yaw : new THREE.Euler(0, yaw ?? (back ? Math.PI : 0), rotZ), size);
     const mat = new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: .85, sheen: .3, side: THREE.DoubleSide, ...(bump ? { bumpMap: tex, bumpScale: bump === true ? 3 : bump } : {}) });
     const m = new THREE.Mesh(geo, mat); m.receiveShadow = true; m.renderOrder = 2; this.root.add(m); return m;
   },
@@ -1991,6 +2173,7 @@ const Studio = {
         this.decals.push(m);
       });
     });
+    this.sleeveLogos(d);
   },
   /* ---------- duffle (hard good: procedural like the watch, prints like a garment) ---------- */
   // 1 unit = 10 in. Barrel weekender: superellipse section with a flatter base, piped end panels, wrap-under handle straps.
@@ -2110,6 +2293,7 @@ const Studio = {
     const finish = DIAL_STYLES[W.dialStyle] || DIAL_STYLES.classic;
     const dial = mk(dialGeo(), new THREE.MeshPhysicalMaterial({ map: dialTex, roughness: finish.rough, metalness: finish.metal, clearcoat: W.dialStyle === 'enamel' ? 1 : .2, envMapIntensity: .55, alphaTest: open ? .4 : 0, side: THREE.DoubleSide }));
     dial.rotation.x = -Math.PI / 2; dial.position.y = DIAL_Y;
+    if ((W.markers || 'applied') === 'applied') this.appliedMarkers(d, W, G, grp, mk, dialGeo, DIAL_Y);
     // rehaut: the angled chapter ring between dial and crystal (round cases)
     if (!hd && (W.shape === 'round' || W.shape === 'cushion')) mk(new THREE.LatheGeometry(V2([[dialR - .005, DIAL_Y + .002], [dialR + .05, TOP + .03]]), 160), new THREE.MeshStandardMaterial({ color: shade(W.dial, lum(W.dial) > .5 ? -.08 : .1), roughness: .6, metalness: .2, side: THREE.DoubleSide }));
     this.balance = null; this.wheels = [];
@@ -2215,6 +2399,42 @@ const Studio = {
   },
   // Openworked calibre for skeleton / open-heart dials: plate ring, gear train, bridges with Geneva stripes,
   // jewels, blued screws, pallet fork and a beating balance. Layout in dial units (r .76), -z = 12 o'clock.
+  // Applied hour markers: faceted polished batons (lume-filled on dark dials), domed dots, and numerals + mark
+  // raised as stacked cut-out layers with a darker edge. Same layout as the printed dial (canvas c ↔ dialR).
+  appliedMarkers(d, W, G, grp, mk, dialGeo, y0) {
+    const R = G.dialR * G.fit, blocked = dialBlocked(W), lumeOn = lum(W.dial) < .45;
+    const metal = new THREE.MeshPhysicalMaterial({ color: W.index, metalness: .92, roughness: .13, clearcoat: .6, clearcoatRoughness: .1, envMapIntensity: 1.25 });
+    const lume = new THREE.MeshStandardMaterial({ color: '#e9ecdc', roughness: .7, emissive: '#b8d3b0', emissiveIntensity: .06 });
+    const rr = (hw, hh, r) => { const s = new THREE.Shape(); s.moveTo(-hw + r, -hh); s.lineTo(hw - r, -hh); s.quadraticCurveTo(hw, -hh, hw, -hh + r); s.lineTo(hw, hh - r); s.quadraticCurveTo(hw, hh, hw - r, hh); s.lineTo(-hw + r, hh); s.quadraticCurveTo(-hw, hh, -hw, hh - r); s.lineTo(-hw, -hh + r); s.quadraticCurveTo(-hw, -hh, -hw + r, -hh); return s; };
+    const bar = (len, wid, ht) => { const b = .0035, g = new THREE.ExtrudeGeometry(rr(wid / 2 - b, len / 2 - b, wid * .1), { depth: ht - b, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 4 }); g.rotateX(-Math.PI / 2); g.translate(0, b, 0); return g; };
+    const place = (m, a, r, y) => { m.position.set(Math.sin(a) * r, y, -Math.cos(a) * r); m.rotation.y = -a; return m; };
+    let text = false;
+    for (let hNum = 0; hNum < 12; hNum++) {
+      const pos = hNum || 12, a = hNum / 12 * Math.PI * 2; if (blocked.has(pos)) continue;
+      const kind = hourKind(W, pos);
+      if (kind === 'index') {
+        const twin = pos === 12, len = R * (twin ? .21 : .18), wid = G.dialR * (twin ? .036 : .05), rc = R * .93 - len / 2, ht = .014;
+        (twin ? [-1, 1] : [0]).forEach(s => {
+          const off = s * wid * .75, g = new THREE.Group(); place(g, a, rc, y0 + .0005); mk(bar(len, wid, ht), metal, g).position.x = off;
+          if (lumeOn) { const lg = new THREE.ExtrudeGeometry(rr(wid * .26, len * .4, wid * .08), { depth: .0015, bevelEnabled: false }); lg.rotateX(-Math.PI / 2); mk(lg, lume, g).position.set(off, ht + .0002, 0); }
+          grp.add(g);
+        });
+      } else if (kind === 'none') {
+        if (pos % 3) continue;
+        const r = G.dialR * (pos === 12 ? .04 : .032), dot = mk(new THREE.CylinderGeometry(r * .82, r, .012, 40), metal); place(dot, a, R * .88, y0 + .006);
+        if (lumeOn) mk(new THREE.CylinderGeometry(r * .55, r * .55, .002, 32), lume, dot).position.y = .0065;
+      } else text = true;
+    }
+    // numerals + DPP mark: 4 stacked cut-outs, darker below so the edge reads as thickness
+    if (text || W.dialStyle !== 'skeleton') {
+      const t = new THREE.CanvasTexture(dialCanvas(d, W, G.fit, 'relief')); t.userData.own = true; t.anisotropy = 16;
+      const n = 4, step = .003;
+      for (let i = 0; i < n; i++) {
+        const top = i === n - 1, m = mk(dialGeo(), new THREE.MeshPhysicalMaterial({ color: top ? W.index : shade(W.index, lum(W.index) > .5 ? -.42 : -.2), alphaMap: t, alphaTest: .5, metalness: .9, roughness: top ? .2 : .32, clearcoat: top ? .5 : 0, envMapIntensity: top ? 1 : .8 }));
+        m.rotation.x = -Math.PI / 2; m.position.y = y0 + .0015 + i * step; m.castShadow = i === 0;
+      }
+    }
+  },
   buildMovement(W, grp, mk, k, y0, steel) {
     const gold = /gold|rose|bronze/.test(W.caseMat), mv = new THREE.Group(); mv.scale.setScalar(k); mv.position.y = y0; grp.add(mv);
     const M = (c, r, m = 1) => new THREE.MeshPhysicalMaterial({ color: c, metalness: m, roughness: r });
@@ -2418,6 +2638,7 @@ const Panels = {
           <div style="margin-top:10px">${this.colorField('watch.dial', 'Dial color', W.dial)}</div>
           <div class="grid2" style="margin-top:12px">${cp('watch.index', 'Indices / hands', W.index)}${cp('watch.accent', 'Seconds hand', W.accent)}</div>
           <div class="grid2" style="margin-top:10px">${this.select('watch.numerals', 'Numerals', W.numerals, kv(NUMERALS))}${this.select('watch.hands', 'Hands', W.hands, kv(HANDS))}</div>
+          <div style="margin-top:10px">${this.select('watch.markers', 'Hour markers + logo', W.markers || 'applied', [['applied', 'Applied · raised 3D'], ['printed', 'Printed · flat']])}</div>
           <div class="grid3" style="margin-top:10px">${this.select('watch.date', 'Date', W.date, [['none', 'None'], ['3', '3 o\'clock'], ['6', '6 o\'clock']])}<div class="fld"><label>Edition N°</label><input class="in mono" type="number" min="1" max="${d.edition || 150}" data-bind="watch.editionNo" data-num value="${W.editionNo}"></div><div class="fld"><label>Cap</label><input class="in mono" type="number" min="1" data-bind="edition" data-num value="${d.edition || 150}"></div></div></div>
         <div class="sec"${hide}><h4><em>E</em>Bracelet / strap</h4>${this.select('watch.strap', 'Type', W.strap, kv(STRAPS))}
           ${W.strap === 'woodlinks' ? `<div class="grid2" style="margin-top:10px">${this.select('watch.strapWood', 'Center links', W.strapWood, woods)}${this.select('watch.strapAccent', 'Side links', W.strapAccent, woods)}</div>` : ''}
@@ -2450,7 +2671,16 @@ const Panels = {
           <div style="margin-top:10px">${this.range(`place.${s}.top`, 'Zone top below HPS', P.top, .5, 14, .125, v => frac(v) + '"')}</div>
           <div style="margin-top:10px">${this.range(`place.${s}.dx`, 'Offset from CF', P.dx, -6, 6, .125, v => frac(v) + '"')}</div>
           <div class="grid2" style="margin-top:10px">${this.range(`place.${s}.s`, 'Scale', P.s, .2, 1.6, .01, v => Math.round(v * 100) + '%')}${this.range(`place.${s}.r`, 'Rotate', P.r, -45, 45, 1, v => v + '°')}</div>
-          <button class="btn sm block" style="margin-top:12px" data-goart="${s}">Edit ${s} artwork</button></div>`; }).join('')}`;
+          <button class="btn sm block" style="margin-top:12px" data-goart="${s}">Edit ${s} artwork</button></div>`; }).join('')}
+        ${isTop(d.category) ? `<div class="sec"><h4><em>S</em>Sleeves</h4>
+          <div class="fld"><label>Sleeve color</label><div class="row"><input type="color" data-bind="garment.sleeveColor" value="${sleeveHex(g)}"><button class="btn sm" data-copy="garment.sleeveColor">= Body</button></div></div>
+          <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveLogo', 'Sleeve logo', g.sleeveLogo || 'none', [['none', 'None'], ['mark', 'DPP mark'], ['word', 'Wordmark · down sleeve']])}${this.select('garment.sleeveSide', 'Side (as worn)', g.sleeveSide || 'left', [['left', 'Left'], ['right', 'Right'], ['both', 'Both']])}</div>
+          ${g.sleeveLogo && g.sleeveLogo !== 'none' ? `<div class="grid2" style="margin-top:10px">${this.range('garment.sleeveLogoSize', g.sleeveLogo === 'word' ? 'Size · length 4×' : 'Logo width', num(g.sleeveLogoSize) || 3, 1, 5, .25, v => frac(v) + '"')}${g.sleeveLogo === 'mark' ? this.range('garment.sleeveDrop', 'Below shoulder seam', num(g.sleeveDrop ?? 2.5), .5, 12, .25, v => frac(v) + '"') : '<div></div>'}</div>
+          <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveTech', 'Technique', g.sleeveTech || 'Screen print', [['Screen print', 'Screen print'], ['Flat embroidery', 'Flat embroidery']])}<div class="fld"><label>Logo color</label><div class="row"><input type="color" data-bind="garment.sleeveLogoColor" value="${g.sleeveLogoColor || (lum(sleeveHex(g)) > .5 ? '#14172B' : '#EEF1F9')}"></div></div></div>` : ''}</div>` : ''}
+        ${isTop(d.category) || isBottom(d.category) ? `<div class="sec"><h4><em>T</em>Labels &amp; tags</h4>
+          <div class="grid2">${this.select('garment.tag', isTop(d.category) ? 'Neck label' : 'Waistband label', g.tag || 'woven', [['woven', 'Woven · DPP'], ['printed', 'Printed tagless'], ['none', 'None']])}${this.select('garment.hangTag', 'Hang tag', g.hangTag || '', [['', 'No'], ['1', 'Yes · DPP']])}</div>
+          <div class="grid3" style="margin-top:10px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.tagColor" value="${g.tagColor || '#14172B'}"></div><div class="fld"><label>Ink</label><input type="color" data-bind="garment.tagInk" value="${g.tagInk || '#EEF1F9'}"></div>${this.select('garment.tagSize', 'Size', g.tagSize || 'M', ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => [s, s]))}</div>
+          <div class="grid2" style="margin-top:10px;align-items:end"><img id="tagPrev" alt="Label preview" style="width:100%;border-radius:3px"><img id="hangPrev" alt="Hang tag preview" style="width:44%;justify-self:center;border-radius:3px"></div></div>` : ''}`;
     }
     R.innerHTML = `<div class="sec"><h4><em>E</em>Output</h4>
         <button class="btn primary block" id="sRenders">Save renders to tech pack</button>
@@ -2477,6 +2707,7 @@ const Panels = {
       };
       inp.click();
     };
+    tagPreview(d);
     const rm = $('#mdlRm'); if (rm) rm.onclick = () => { d.garment.model = ''; touch(); Studio.build(); this.studio(); };
     $$('[data-preset]', L).forEach(b => b.onclick = () => { const [s, i] = b.dataset.preset.split(':'); Object.assign(d.place[s], PLACE_PRESETS[s][i][1]); touch(); Studio.updateDecals(); this.studio(); });
     $('#sPng').onclick = () => Studio.exportPNG();
@@ -2507,6 +2738,7 @@ function followBody(d, path, v) {
   if (path !== 'garment.color' || !/^#[0-9a-f]{6}$/i.test(v)) return;
   const g = d.garment, old = g.color.toLowerCase();
   if (g.trim.toLowerCase() === old) g.trim = v; if (g.stitch.toLowerCase() === old) g.stitch = v;
+  if ((g.sleeveColor || '').toLowerCase() === old) g.sleeveColor = v;
 }
 function formatOut(path, v) {
   if (path.endsWith('.s')) return Math.round(v * 100) + '%';
@@ -2515,10 +2747,16 @@ function formatOut(path, v) {
   return v;
 }
 const rebuildSoon = debounce(() => Studio.build(), 120);
+function tagPreview(d) {
+  const a = $('#tagPrev'), b = $('#hangPrev'); if (!a || !d) return;
+  const printed = d.garment.tag === 'printed'; a.src = tagCanvas(d, printed ? 'printed' : 'woven').toDataURL(); a.style.background = printed ? d.garment.color : ''; a.style.width = printed ? '70%' : '100%';
+  b.src = tagCanvas(d, 'hang').toDataURL();
+}
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle|pantStyle|bagSize|hardware)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^garment\.tag(Color|Ink|Size)$/.test(path)) tagPreview(S.current);
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -2983,11 +3221,14 @@ const TechPack = {
         ['Bezel', W.shape === 'round' ? BEZEL_STYLES[W.bezelStyle] + (/diver|gmt|tachy/.test(W.bezelStyle) ? ' · ' + sw(W.bezelColor) + (W.bezelStyle === 'gmt' ? ' / ' + sw(W.bezelColor2) : '') : '') : 'Fitted frame'],
         ['Dial', `${DIAL_STYLES[W.dialStyle].label} · ${sw(W.dial)}`],
         ['Numerals / hands', `${NUMERALS[W.numerals]} · ${HANDS[W.hands]} · ${sw(W.index)}`],
+        ...(W.head === 'shock' ? [] : [['Hour markers', (W.markers || 'applied') === 'applied' ? `Applied, polished${lum(W.dial) < .45 ? ', lume-filled' : ''}; applied DPP mark at 12` : 'Printed; printed DPP mark at 12']]),
         ['Seconds / date', `${sw(W.accent)} · date ${W.date === 'none' ? 'none' : 'at ' + W.date}`],
         ['Movement', W.movement], ['Crystal / WR', `${W.crystal} · ${W.wr}`],
         ['Strap', STRAPS[W.strap] + (W.strap === 'woodlinks' ? `: ${WOODS[W.strapWood].label} / ${WOODS[W.strapAccent].label}` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ' · ' + sw(W.strapColor) : '')],
         ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)]]; })()
-      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? [['Waistband 2', `Stacked above main band · ${frac(num(g.wb2H) || 1.75)}" · ${g.wb2Pattern === 'plaid' ? 'plaid' : g.wb2Color}`]] : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`]];
+      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? [['Waistband 2', `Stacked above main band · ${frac(num(g.wb2H) || 1.75)}" · ${g.wb2Pattern === 'plaid' ? 'plaid' : g.wb2Color}`]] : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`],
+        ...(isTop(d.category) ? [['Sleeves', `<span class="tp-sw" style="background:${sleeveHex(g)}"></span>${sleeveHex(g).toUpperCase()}${sleeveHex(g).toLowerCase() === g.color.toLowerCase() ? ' · self' : ' · contrast'}`], ['Sleeve logo', !g.sleeveLogo || g.sleeveLogo === 'none' ? 'None' : `${g.sleeveLogo === 'word' ? "DON'T POSTPONE PASSION wordmark, shoulder to cuff" : `DPP mark ${frac(num(g.sleeveLogoSize) || 3)}" wide, ${frac(num(g.sleeveDrop ?? 2.5))}" below shoulder seam`} · ${g.sleeveSide === 'both' ? 'both sleeves' : g.sleeveSide === 'right' ? 'right sleeve' : 'left sleeve'} · ${g.sleeveTech || 'Screen print'}`]] : []),
+        ...(isTop(d.category) || isBottom(d.category) ? [['Main label', `${{ woven: 'Woven DPP label', printed: 'Printed tagless', none: 'None' }[g.tag || 'woven']}${(g.tag || 'woven') === 'none' ? '' : ` · size ${g.tagSize || 'M'} · <span class="tp-sw" style="background:${g.tagColor || '#14172B'}"></span>${(g.tagColor || '#14172B').toUpperCase()} / ${(g.tagInk || '#EEF1F9').toUpperCase()}`}`], ['Hang tag', g.hangTag === '1' ? 'DPP hang tag 2" × 3 1/2", style no. + size + barcode, string + safety pin' : 'None']] : [])];
     return {
       title: 'Materials & BOM', body: `<div class="tp-grid" style="grid-template-columns:1fr 2.2fr">
         <div><h3>Specification <em>from 3D Studio</em></h3><div class="tp-kv">${spec.map(([k, v]) => `<label>${k}</label><div>${v}</div>`).join('')}</div>
@@ -3128,12 +3369,15 @@ function promptSpec(d) {
   const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
   const parts = [`a ${fit}-fit ${noun} in ${colorName(g.color)} (${g.color.toUpperCase()}), ${f.label.split('·')[0].trim().toLowerCase()} (${f.gsm} gsm, ${f.comp.toLowerCase()})`, build];
   if (g.trim.toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(g.trim)} rib trim`);
+  if (isTop(d.category) && sleeveHex(g).toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(sleeveHex(g))} (${sleeveHex(g).toUpperCase()}) sleeves`);
+  if (isTop(d.category) && g.sleeveLogo && g.sleeveLogo !== 'none') parts.push(g.sleeveLogo === 'word' ? `"DON'T POSTPONE PASSION" running down the ${g.sleeveSide === 'both' ? 'sleeves' : 'sleeve'}` : `the DPP logo on the ${g.sleeveSide === 'both' ? 'upper sleeves' : 'upper sleeve'}`);
+  if (g.hangTag === '1') parts.push(`a ${colorName(g.tagColor || '#14172B')} DPP hang tag on a black string`);
   if (FINISHES[g.finish]?.phrase) parts.push(FINISHES[g.finish].phrase);
   if (DISTRESS[g.distress]?.phrase) parts.push(DISTRESS[g.distress].phrase);
   return parts.join(', ');
 }
 function promptGraphics(d) {
-  if (d.category === 'watch') return 'The DPP logo printed small at 12 o\'clock on the dial.';
+  if (d.category === 'watch') return (watchSpec(d).markers || 'applied') === 'applied' && watchSpec(d).head !== 'shock' ? 'The DPP logo as a small applied polished-metal emblem at 12 o\'clock, with raised applied hour markers.' : 'The DPP logo printed small at 12 o\'clock on the dial.';
   return ['front', 'back'].map(side => {
     const L = d.artwork[side].filter(l => !l.hidden); if (!L.length) return '';
     const P = d.place[side], bb = artBBox(d, side);
