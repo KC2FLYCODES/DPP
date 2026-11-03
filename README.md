@@ -2,12 +2,45 @@
 
 The internal design room for Don't Postpone Passion. Use it to prototype tees, fleece and the Teranga wood watch in 3D, build print artwork, turn reference photos into blanks, and output manufacturer tech packs.
 
-**Preview:** GitHub Pages URL in the repo sidebar. First visit on each device asks you to set a PIN.
+**Preview:** GitHub Pages URL in the repo sidebar. With the team cloud on, everyone signs in with Google (or email). Without it, each device asks for its own PIN.
 
 ## Where your work lives
-Designs save **in your browser on that device** (IndexedDB). They don't sync between people or machines yet.
-To hand work to someone: open the design, go to **Tech Pack → Export JSON**, and send the file. They load it with **Settings → Import**. Use **Settings → Export full backup** often.
+**Team cloud on** (a `cloud-config.json` file sits next to `index.html`): designs, artwork images, renders, notes and reviews sync live between everyone on the studio list. Each device also keeps a copy, so the studio still opens and saves offline and catches up when it reconnects. The first time a device signs in, it uploads any designs it had stored locally.
+**Team cloud off:** designs save in this browser only. To hand work over, use **Tech Pack → Export JSON** and **Settings → Import**.
+Either way, run **Settings → Export full backup** now and then.
 
+## Working together
+- **Who's here:** a monogram in the header (and on Library cards) shows a teammate who has the same design open.
+- **Review:** use **Send for review** in the header. The reviewer gets a count on the Library tab and a **Needs review** filter. **Approve** moves the status one stage on (Concept → Sampling → Approved → Production; Revision → Approved). **Changes** sends it back with a note: Sampling and later stages drop to Revision, and the note goes into the thread. Every action is written to the tech pack revision log.
+- **Notes on the model:** in 3D Studio, press **N** (or the **Note** button) and click the piece to pin a note there. Numbered pins stay on the model. Clicking a pin or a note flies the camera back to the view it was written from. Notes support replies and **Resolve**. Use the field under the list for a general note with no pin. Library cards show the open-note count.
+- **Two people editing the same design:** if a teammate saves while you have it open, a bar asks whether to **Load theirs** or **Keep mine**. Review decisions and status changes always come through live.
+
+## Logos, text & patches anywhere
+In 3D Studio, under **P · Logos, text & patches**, add a logo, any text, an image or a patch, then click the garment where it goes. There's no limit on how many you add.
+- **Each item:** set its width in inches, rotation, color and font. Use **Move** to click a new spot, or **Duplicate** to drop a copy.
+- **Wrap around curves:** turn this on so the art bends round the side seam, a sleeve or the hood instead of stretching.
+- **Made as:** screen print, puff, embroidery, and so on. A patch can be woven, chenille, embroidered, leather or PVC, in a rectangle, rounded, circle, shield or die-cut to the art. Backing and edge colors are both editable.
+- **Tech pack:** every placement is listed on the Artwork page with its location, inches from HPS and CF, size and colors.
+
+## Fonts
+Text in the Artwork tab and 3D text placements share one font list: 17 built-in fonts, including Bebas Neue, Oswald, Bungee, Pirata One (gothic), Permanent Marker and Rock Salt. Choose **+ Upload a font file…** (TTF, OTF, WOFF or WOFF2) to add your own. It's saved with the design and syncs to the team.
+
+## Fit is true to size
+Switching Boxy / Regular / Oversized rewrites the POM: chest, body length, shoulder, sleeve and armhole. The 3D model then reshapes to those numbers at the **View size** you pick. The chest is measured on the mesh and matched in inches; sleeves lengthen and widen; oversized drops the shoulder. The stage label shows the live numbers. Left and right sleeves can be different colors.
+
+## Team cloud setup (one time, about 15 minutes, free plan)
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) and click **Add project**. Name it `dpp-studio`; Analytics is optional. The free Spark plan is enough: no Cloud Storage is used, because files are stored in Firestore.
+2. **Build → Firestore Database → Create database**, production mode, region `us-east1`.
+3. **Firestore → Rules:** paste in the contents of `firestore.rules`, then **Publish**.
+4. **Build → Authentication → Get started.** Enable **Google**. Enable **Email/Password** too if anyone needs a non-Google login; create that person's account under **Users**.
+5. **Authentication → Settings → Authorized domains:** add `kc2flycodes.github.io`.
+6. **Firestore → Data → Start collection** named `members`. Add one document per person. The **document ID** is their sign-in email, lowercase. Give each document a string field `name` (e.g. `Karim`, `Kendrick`). Only those emails get in.
+7. **Project settings → Your apps → Web (</>)**: register the app and copy the `firebaseConfig` object. Save it as `cloud-config.json` in the repo root, as JSON with quoted keys:
+   `{"apiKey":"…","authDomain":"…","projectId":"…","storageBucket":"…","messagingSenderId":"…","appId":"…"}`
+   This config is public by design. Access is enforced by the rules and the `members` list, not by hiding the key. Also restrict the key to `kc2flycodes.github.io` under Google Cloud → APIs & Services → Credentials.
+8. Upload `cloud-config.json` to the repo. Reload the studio and sign in.
+
+Free-tier headroom: saves are batched (one write per design every few seconds of activity), so two people working all day stay far below the 20K writes/day limit.
 ## Tabs
 | | |
 |---|---|
@@ -50,4 +83,5 @@ To use your own (CLO, Marvelous, marketplace), go to 3D Studio → Piece → **U
 
 ## Files
 `index.html` · `style.css` · `script.js` · `assets/` (logo, favicon, models). No build step. Three.js loads from jsDelivr.
-`dpp-studio-demo.html` is a single-file version of the app. 3D garments only load when it sits next to the `assets/` folder.
+`firestore.rules` holds the team cloud security rules. `experimental/team-harness.html` is the two-user sync test (needs the local servers on :8787 and :8788).
+`dpp-studio-demo.html` is a single-file version of the app (device-only mode). 3D garments only load when it sits next to the `assets/` folder.

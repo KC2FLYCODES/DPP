@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261030h">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:wdth,wght@62..125,100..900&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=UnifrakturMaguntia&family=Bebas+Neue&family=Oswald:wght@400;700&family=Rubik+Mono+One&family=Bungee&family=Syne:wght@700;800&family=Space+Grotesk:wght@500;700&family=Pirata+One&family=Playfair+Display:wght@700;900&family=Permanent+Marker&family=Rock+Salt&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20261103b">
 <script>window.__errs = []; addEventListener("error", e => __errs.push(e.message)); addEventListener("unhandledrejection", e => __errs.push(String(e.reason && e.reason.stack || e.reason)));</script>
 <script type="importmap">
 {"imports":{
@@ -66,6 +66,7 @@
         <button data-f="all" class="on">All</button><button data-f="tops">Tops</button><button data-f="bottoms">Bottoms</button><button data-f="acc">Socks &amp; acc.</button><button data-f="watch">Watches</button>
       </div>
       <select class="in" id="libStatus" style="width:150px"><option value="">All statuses</option></select>
+      <button class="btn" id="libReview" title="Designs waiting on your approval">Needs review</button>
       <input class="in" id="libSearch" placeholder="Search name, style no, drop…">
       <button class="btn" id="btnPrompt">Image prompt</button>
       <button class="btn primary" id="btnNew">New design</button>
@@ -82,9 +83,12 @@
         <div class="stage-tools">
           <div class="seg" id="viewPresets"><button data-v="front">Front</button><button data-v="three">3/4</button><button data-v="side">Side</button><button data-v="back">Back</button></div>
           <div class="seg"><button id="btnSpin">Turntable</button></div>
+          <div class="seg"><button id="btnNote" title="Pin a note on the model (N)">Note</button></div>
           <div style="flex:1"></div>
           <div class="seg" id="bgPresets"><button data-bg="#121527" class="on">Studio</button><button data-bg="#EEF1F9">Pale</button><button data-bg="#8d8a84">Concrete</button></div>
         </div>
+        <div class="pins" id="pins"></div>
+        <div class="note-hint" id="noteHint">Click the piece to pin a note · <kbd>Esc</kbd> to cancel</div>
         <div class="stage-foot"><div class="big" id="stageLabel"></div><span class="cap">Drag to orbit · scroll to zoom · right-drag to pan</span></div>
       </div>
     </div>
@@ -143,6 +147,6 @@
 <input type="file" id="fileImg" accept="image/*" hidden>
 <input type="file" id="fileJson" accept="application/json,.json" hidden>
 
-<script type="module" src="script.js?v=20261030h"></script>
+<script type="module" src="script.js?v=20261103b"></script>
 </body>
 </html>
