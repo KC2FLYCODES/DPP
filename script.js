@@ -112,6 +112,7 @@ const CATS = {
   socks: { label: 'Socks', code: 'SK', msrp: null },
   scarf: { label: 'Scarf', code: 'SC', msrp: null },
   duffle: { label: 'Duffle', code: 'DF', msrp: null },
+  satchel: { label: 'Mini satchel', code: 'MS', msrp: null },
   balaclava: { label: 'Balaclava', code: 'BL', msrp: null },
   watch: { label: 'Watch', code: 'WT', msrp: 221 }, // The Teranga, Drop 001 — price per draft site
 };
@@ -181,8 +182,17 @@ const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Miyota 
 const TOPS = ['tee', 'longsleeve', 'crewneck', 'hoodie'], BOTTOMS = ['pants', 'shorts', 'boxers'];
 const isTop = c => TOPS.includes(c), isBottom = c => BOTTOMS.includes(c);
 const PATTERNS = { solid: 'Solid', plaid: 'Plaid / tartan', gingham: 'Gingham check', pinstripe: 'Pinstripe', camo: 'Woodland camo' };
-const ACCESSORIES = ['scarf', 'balaclava', 'duffle'], isAcc = c => ACCESSORIES.includes(c);
+const ACCESSORIES = ['scarf', 'balaclava', 'duffle', 'satchel'], isAcc = c => ACCESSORIES.includes(c), isBag = c => c === 'duffle' || c === 'satchel';
 function bottomsPOM(cat) {
+  if (cat === 'satchel') return { unit: 'in', sizes: ['ONE'], base: 'ONE', rows: [
+    row({ code: 'A', desc: 'Width, side to side at base', tol: .25, base: 11.75, grade: 0 }),
+    row({ code: 'B', desc: 'Height, base to top of body', tol: .25, base: 8, grade: 0 }),
+    row({ code: 'C', desc: 'Depth (gusset width)', tol: .125, base: 4.125, grade: 0 }),
+    row({ code: 'D', desc: 'Flap depth from top edge', tol: .125, base: 2.875, grade: 0 }),
+    row({ code: 'E', desc: 'Front pocket, width × height', tol: .125, base: 9.75, grade: 0 }),
+    row({ code: 'F', desc: 'Strap drop, top of body to strap apex (as shipped)', tol: .5, base: 16.5, grade: 0 }),
+    row({ code: 'G', desc: 'Strap width (webbing)', tol: .0625, base: 1.25, grade: 0 }),
+    row({ code: 'H', desc: 'Strap length, adjustable max', tol: .5, base: 48, grade: 0 })] };
   if (cat === 'duffle') return { unit: 'in', sizes: ['Mini', 'Weekender', 'Large'], base: 'Weekender', rows: [row({ code: 'A', desc: 'Length, end panel to end panel', tol: .25, base: 22, grade: 4 }), row({ code: 'B', desc: 'Height at centre, base to zip', tol: .25, base: 11, grade: 2 }), row({ code: 'C', desc: 'Depth (end panel width)', tol: .25, base: 10.5, grade: 2 }), row({ code: 'D', desc: 'Handle drop, zip to top of handle', tol: .25, base: 8.5, grade: .5 }), row({ code: 'E', desc: 'Handle strap width', tol: .0625, base: 1.5, grade: 0 }), row({ code: 'F', desc: 'Shoulder strap length, adjustable max', tol: .5, base: 52, grade: 0 }), row({ code: 'G', desc: 'Shoulder strap width', tol: .0625, base: 1.25, grade: 0 }), row({ code: 'H', desc: 'Zip opening length', tol: .25, base: 20, grade: 4 })] };  if (cat === 'scarf') return { unit: 'in', sizes: ['OS'], base: 'OS', rows: [row({ code: 'A', desc: 'Drape height as styled (3D reference)', tol: .5, base: 16, grade: 0 }), row({ code: 'S1', desc: 'Length, end to end', tol: 1, base: 70, grade: 0 }), row({ code: 'S2', desc: 'Width', tol: .5, base: 12, grade: 0 }), row({ code: 'S3', desc: 'Hood depth (wrap style)', tol: .5, base: 13, grade: 0 }), row({ code: 'S4', desc: 'Edge finish width', tol: .0625, base: .25, grade: 0 })] };
   if (cat === 'balaclava') return { unit: 'in', sizes: ['S/M', 'L/XL'], base: 'S/M', rows: [row({ code: 'A', desc: 'Total height, crown to hem', tol: .5, base: 13, grade: .5 }), row({ code: 'B1', desc: 'Head ½, relaxed', tol: .25, base: 10, grade: .5 }), row({ code: 'E1', desc: 'Eye opening width', tol: .25, base: 6.5, grade: .25 }), row({ code: 'E2', desc: 'Eye opening height', tol: .125, base: 2.5, grade: 0 }), row({ code: 'N1', desc: 'Neck ½, relaxed', tol: .25, base: 6.5, grade: .25 }), row({ code: 'H1', desc: 'Hem width ½ (bib)', tol: .5, base: 9, grade: .5 })] };
   if (cat === 'socks') return {
@@ -205,6 +215,13 @@ function bottomsPOM(cat) {
   return { unit: 'in', sizes: S, base, rows: rows.map(([code, desc, tol, b, gr]) => row({ code, desc, tol, base: b, grade: gr })) };
 }
 function bottomsBOM(cat) {
+  if (cat === 'satchel') return [row({ component: 'Shell', material: '1680D ballistic nylon, PU-coated back (per fabric choice)', supplier: '', spec: 'Ink #14172B lab dip', qty: .6, uom: 'yd', cost: 0 }),
+    row({ component: 'Webbing + gussets', material: 'Nylon webbing, 1.25 in, heavy weave', supplier: '', spec: 'Deep #0A0B15; strap, anchors, side gussets, pocket', qty: 2, uom: 'yd', cost: 0 }),
+    row({ component: 'Lining', material: '210D nylon, printed DPP jacquard', supplier: '', spec: 'With slip pocket', qty: .5, uom: 'yd', cost: 0 }),
+    row({ component: 'Hardware', material: 'D-rings ×2, slider ×1, finish per hardware', supplier: '', spec: 'Brass by default, 1.25 in ID', qty: 3, uom: 'pc', cost: 0 }),
+    row({ component: 'Zipper', material: '#5 coil, front pocket', supplier: '', spec: '10 in, pull finish per hardware', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Logo', material: 'DPP mark, heat-transfer / rubberized', supplier: '', spec: 'Gold #B98A4A on flap', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Thread', material: 'Bonded nylon #69', supplier: '', spec: 'Flap topstitch in gold #B98A4A', qty: 1, uom: 'cone', cost: 0 })];
   if (cat === 'duffle') return [row({ component: 'Shell', material: 'Per fabric choice (pebble / smooth full-grain / suede / waxed canvas / ballistic)', supplier: '', spec: '1.4 mm, chrome-tanned', qty: 14, uom: 'sq ft', cost: 0 }), row({ component: 'Trim leather', material: 'Smooth full-grain, edge-painted', supplier: '', spec: 'Handles, straps, piping, tag', qty: 5, uom: 'sq ft', cost: 0 }), row({ component: 'Lining', material: 'Cotton twill, printed DPP jacquard', supplier: '', spec: 'With slip + zip pocket', qty: 1.25, uom: 'yd', cost: 0 }), row({ component: 'Zipper', material: '#8 metal, two-way', supplier: '', spec: '20 in, finish per hardware', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'D-rings', material: 'Solid brass, plated per hardware', supplier: '', spec: '1.5 in', qty: 6, uom: 'pc', cost: 0 }), row({ component: 'Snap hooks', material: 'Swivel snap hook', supplier: '', spec: '1.25 in', qty: 2, uom: 'pc', cost: 0 }), row({ component: 'Rivets / feet', material: 'Double-cap rivets, base studs', supplier: '', spec: '', qty: 12, uom: 'pc', cost: 0 }), row({ component: 'Shoulder pad', material: 'Leather over foam, non-slip back', supplier: '', spec: '6 × 2 in', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Logo stamp', material: 'Brass deboss die / foil', supplier: '', spec: 'From artwork file', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Cotton dust bag + tissue', supplier: '', spec: '', qty: 1, uom: 'pc', cost: 0 })];  if (cat === 'scarf') return [row({ component: 'Body', material: 'Per fabric choice (jersey / brushed knit / wool blend)', supplier: '', spec: 'Cut on grain', qty: 2, uom: 'yd', cost: 0 }), row({ component: 'Edge finish', material: 'Rolled hem / overlock', supplier: '', spec: 'Per S4', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Woven label', material: 'Damask, DPP mark', supplier: '', spec: 'Corner', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Recycled sleeve', supplier: '', spec: 'Folded 10 × 10 in', qty: 1, uom: 'pc', cost: 0 })];
   if (cat === 'balaclava') return [row({ component: 'Body', material: 'Rib knit 95% cotton / 5% spandex or merino', supplier: '', spec: 'Per fabric choice', qty: .4, uom: 'yd', cost: 0 }), row({ component: 'Eye binding', material: 'Self-fabric binding 3/8 in', supplier: '', spec: 'Clean finish', qty: .4, uom: 'yd', cost: 0 }), row({ component: 'Woven label', material: 'Damask, DPP mark', supplier: '', spec: 'Back neck / side', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Packaging', material: 'Header card + polybag', supplier: '', spec: '', qty: 1, uom: 'pc', cost: 0 })];
   const lbl = [row({ component: 'Main label', material: 'Woven damask', supplier: '', spec: 'DPP mark, inside back waistband', qty: 1, uom: 'pc', cost: 0 }), row({ component: 'Care / content label', material: 'Printed satin', supplier: '', spec: 'Left side seam', qty: 1, uom: 'pc', cost: 0 })];
@@ -233,6 +250,7 @@ function bottomsBOM(cat) {
   return b;
 }
 function bottomsConstruction(cat) {
+  if (cat === 'satchel') return [row({ area: 'Body', method: 'Turned construction, rounded corners, side gussets', spi: '8', notes: 'Bound inside seams.' }), row({ area: 'Flap', method: 'Faced, single-needle topstitch 1/4 in from edge', spi: '8', notes: 'Gold thread line across flap.' }), row({ area: 'Front pocket', method: 'Patch pocket with #5 coil zip', spi: '8', notes: '' }), row({ area: 'Strap anchors', method: 'Webbing tabs bar-tacked through D-rings', spi: '', notes: 'Load-bearing; box-X stitch.' }), row({ area: 'Strap', method: 'Webbing with slider, folded + bar-tacked ends', spi: '', notes: 'Adjustable to 48 in.' }), row({ area: 'Logo', method: 'Heat transfer (rubberized) on flap', spi: '', notes: 'Wash test before bulk.' })];
   if (cat === 'duffle') return [row({ area: 'Body', method: 'Turned construction, piped end panels', spi: '8', notes: 'Bonded nylon thread #138.' }), row({ area: 'Handles', method: 'Rolled over cord core, hand-stitched closure', spi: '7', notes: 'Riveted through D-ring tabs.' }), row({ area: 'Handle straps', method: 'Edge-painted, topstitched, wrap under base', spi: '8', notes: 'Load-bearing; reinforce at base.' }), row({ area: 'Logo', method: 'Heat deboss / emboss / foil stamp', spi: '', notes: 'Die from artwork; test on offcut first.' }), row({ area: 'Base', method: 'Board stiffener + 4 metal feet', spi: '', notes: '' })];  if (cat === 'scarf') return [row({ area: 'Edges', method: 'Rolled hem or 3-thread overlock', spi: '14', notes: 'Hood seam if wrap style.' }), row({ area: 'Finish', method: 'Garment wash, press', spi: '', notes: '' })];
   if (cat === 'balaclava') return [row({ area: 'Crown / back', method: 'Flatlock seams', spi: '14', notes: 'No ridge against the head.' }), row({ area: 'Eye opening', method: 'Self binding, coverstitch', spi: '12', notes: 'Per E1/E2.' }), row({ area: 'Hem', method: 'Coverstitch 3/4 in', spi: '12', notes: '' })];
   if (cat === 'socks') return [row({ area: 'Knit', method: '200-needle circular knit, terry sole', spi: '', notes: 'Y-heel.' }), row({ area: 'Toe', method: 'Hand-linked', spi: '', notes: 'Seamless feel.' }), row({ area: 'Cuff', method: '1×1 rib, spandex plated', spi: '', notes: 'No dig-in.' }), row({ area: 'Finish', method: 'Boarding + pairing', spi: '', notes: 'Pair numbers match header card.' })];
@@ -250,6 +268,11 @@ function bottomsFlat(d, side, stroke) {
   const g = d.garment, fill = g.color, front = side === 'front';
   let s = `<svg viewBox="0 -40 400 480" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round">`;
   if (d.category === 'balaclava') return s + `<path d="M200 10 C120 10 90 80 92 170 C94 250 110 300 100 380 L300 380 C290 300 306 250 308 170 C310 80 280 10 200 10Z" fill="${fill}"/>` + (front ? `<path d="M140 150 C160 128 240 128 260 150 C250 178 150 178 140 150Z" fill="#1a1a1a"/><path d="M140 150 C160 128 240 128 260 150 C250 178 150 178 140 150Z" stroke-dasharray="3 2.5"/>` : '<path d="M200 14 V376" stroke-dasharray="3 2.5"/>') + '<path d="M104 360 H296" stroke-dasharray="3 2.5"/></svg>';
+  if (d.category === 'satchel') { const t = g.trim || shade(fill, -.3), st = g.stitch || '#B98A4A';
+    return s + (front ? `<path d="M74 196 C70 40 330 40 326 196" stroke="${t}" stroke-width="12" fill="none"/><path d="M74 196 C70 40 330 40 326 196" fill="none"/><rect x="62" y="186" width="22" height="34" rx="4" fill="${t}"/><rect x="316" y="186" width="22" height="34" rx="4" fill="${t}"/>
+      <rect x="80" y="196" width="240" height="164" rx="30" fill="${fill}"/><path d="M90 200 H310 C312 230 306 252 296 254 H104 C94 252 88 230 90 200Z" fill="${shade(fill, .05)}"/><path d="M104 244 H296" stroke="${st}" stroke-width="2"/>
+      <rect x="104" y="262" width="192" height="82" rx="12" fill="${t}"/><path d="M118 280 H282" stroke-width="2"/><rect x="270" y="275" width="10" height="12" rx="2" fill="#c9a24a"/><text x="200" y="232" text-anchor="middle" font-family="Archivo Black" font-size="16" fill="${st}" stroke="none">DPP</text>`
+      : `<path d="M74 196 C70 40 330 40 326 196" stroke="${t}" stroke-width="12" fill="none"/><rect x="80" y="196" width="240" height="164" rx="30" fill="${fill}"/><path d="M92 210 H308" stroke-dasharray="3 2.5"/><text x="200" y="420" text-anchor="middle" font-size="12" fill="${stroke}" stroke="none">BACK PANEL</text>`) + '</svg>'; }
   if (d.category === 'duffle') { const t = g.trim && g.trim !== '#EEF1F9' ? g.trim : shade(fill, -.06);
     return s + (front ? `<path d="M150 200 C150 90 250 90 250 200" stroke="${t}" stroke-width="9" fill="none"/><path d="M150 200 C150 90 250 90 250 200" fill="none"/><path d="M40 230 C40 190 70 175 110 172 L290 172 C330 175 360 190 360 230 L360 360 C360 375 350 382 335 382 L65 382 C50 382 40 375 40 360Z" fill="${fill}"/><path d="M48 232 C48 196 74 183 110 180 L290 180 C326 183 352 196 352 232" stroke-dasharray="3 2.5"/><rect x="138" y="172" width="22" height="210" fill="${t}"/><rect x="240" y="172" width="22" height="210" fill="${t}"/><path d="M141 176 V378 M157 176 V378 M243 176 V378 M259 176 V378" stroke-dasharray="3 2.5"/><circle cx="149" cy="196" r="5"/><circle cx="251" cy="196" r="5"/><path d="M262 214 l36 18 v52 l-36 0Z" fill="${t}"/><path d="M40 250 C10 300 60 420 200 430 C340 420 390 300 360 250" fill="none" stroke-width="2.2"/>`
       : `<path d="M90 120 C90 70 310 70 310 120 L310 360 C310 375 300 382 285 382 L115 382 C100 382 90 375 90 360Z" fill="${fill}"/><path d="M100 128 C100 84 300 84 300 128 L300 356 C300 368 292 372 282 372 L118 372 C108 372 100 368 100 356Z" stroke-dasharray="3 2.5"/><path d="M200 60 V100" stroke-width="2.4"/><circle cx="200" cy="200" r="8"/><text x="200" y="420" text-anchor="middle" font-size="12" fill="${stroke}" stroke="none">END PANEL</text>`) + '</svg>'; }
@@ -399,11 +422,11 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { color: cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', trim: cat === 'duffle' ? '' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75, sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', hangTag: '' },
+    garment: { ...(cat === 'satchel' ? { hardware: 'gold' } : {}), color: cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', trim: cat === 'duffle' ? '' : cat === 'satchel' ? '#0A0B15' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : cat === 'satchel' ? '#B98A4A' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', satchel: 'ballistic', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75, sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', hangTag: '' },
     watch: { ...WATCH_DEFAULT },
-    place: cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
-    artwork: cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
-    colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : cat === 'duffle' ? '#1b1b1e' : '#EEF1F9', pantone: '', notes: '' })],
+    place: cat === 'satchel' ? { front: { dx: 0, top: .35, s: .17, r: 0, tech: 'Heat transfer' }, back: { dx: 0, top: 2, s: .3, r: 0, tech: 'Heat transfer' } } : cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
+    artwork: cat === 'satchel' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark · gold', w: 900, h: 900 / (Mark.aspect || 1), color: '#B98A4A' }], back: [] } : cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
+    colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', pantone: '', notes: '' })],
     bom: presetBOM(cat), pom: presetPOM(cat), construction: presetConstruction(cat),
     labels: isW ? 'Dial: DPP mark at 12, edition N° at 6.\nCaseback: N° ___ / 150 and engraving text.\nCertificate card numbered to match caseback.'
       : 'Main label: woven DPP mark, centered back neck, 1/2" below seam.\nCare label: left side seam, 4" above hem.\nHang tag: drop name + unit number, attached via safety pin through main label.',
@@ -1401,7 +1424,7 @@ const Studio = {
     { const sc = this.key.shadow.camera, rr = box.getSize(new THREE.Vector3()).length() * .62; Object.assign(sc, { left: -rr, right: rr, top: rr, bottom: -rr }); sc.updateProjectionMatrix(); this.key.shadow.radius = 3; } // tight shadow frustum = crisp shadows
     this.frame(box);
     const fq = c => frac(pomAt(d, c)) + '"', sizeNote = this.fitInfo ? ` · size ${esc(d.garment.viewSize || d.pom.base)} · chest ½ ${fq('B')} · body ${fq('A')} · sleeve ${fq('G1')}` : '';
-    $('#stageLabel').innerHTML = `${esc(d.name)}<span>${esc(d.styleNo)} · ${CATS[d.category].label}${d.category === 'watch' ? ' · ' + d.watch.dia + ' mm' : ' · ' + (FITS[d.garment.fit]?.label || '')}${sizeNote}</span>`;
+    $('#stageLabel').innerHTML = `${esc(d.name)}<span>${esc(d.styleNo)} · ${CATS[d.category].label}${d.category === 'watch' ? ' · ' + d.watch.dia + ' mm' : d.category === 'satchel' ? ` · ${frac(pomAt(d, 'A'))}" × ${frac(pomAt(d, 'B'))}" × ${frac(pomAt(d, 'C'))}"` : isAcc(d.category) ? '' : ' · ' + (FITS[d.garment.fit]?.label || '')}${sizeNote}</span>`;
   },
   frame(box) {
     const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
@@ -1429,6 +1452,12 @@ const Studio = {
   // Real garment meshes (CLO / Marvelous / marketplace GLB) take priority over the procedural fallback.
   buildGarment(d) {
     if (d.category === 'duffle') return this.buildDuffle(d);
+    if (d.category === 'satchel') {
+      const m = Models.peek(d);
+      if (m === undefined) { Models.load(d).then(() => { if (S.current === d && S.view === 'studio') { this.build(); Panels.studio(); } }); return; }
+      if (m) return this.buildSatchel(d, m);
+      toast('Satchel model missing (assets/models/satchel.glb)', true); return;
+    }
     const model = Models.peek(d);
     if (model === undefined) { Models.load(d).then(() => { if (S.current === d && S.view === 'studio') { this.build(); Panels.studio(); } }); if (isBottom(d.category)) return; } // bottoms have no fallback shape: wait for the model
     if (model) return this.buildFromModel(d, model);
@@ -1846,6 +1875,64 @@ const Studio = {
     rc.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), this.camera);
     const hit = rc.intersectObjects(this.modelMeshes || [], false)[0]; if (!hit) { toast('Click on the piece itself'); return; }
     const cb = this.pick; this.endPick(); cb(hit);
+  },
+  /* ---------- mini satchel (assets/models/satchel.glb, modelled Z-up in metres) ---------- */
+  // Each part keeps its role from the source materials: shell, webbing trim, hardware, flap stitch.
+  // The source's abstract sport mark is dropped; the DPP mark goes on the flap through the normal print pipeline.
+  buildSatchel(d, scene) {
+    const g = d.garment, obj = SkeletonUtils.clone(scene);
+    if (!g.model) obj.rotation.x = -Math.PI / 2; // Z-up source: strap up, front pocket toward camera
+    const holder = new THREE.Group(); holder.add(obj); this.root.add(holder); holder.updateMatrixWorld(true);
+    const nm = o => (o.name || '').replace(/_/g, ' ').trim(); // GLTFLoader turns spaces into underscores
+    const named = n => { let f = null; obj.traverse(o => { if (!f && o.isMesh && nm(o) === n) f = o; }); return f; };
+    const body = named('Soft rounded satchel body');
+    // true size: body width = POM A (1 unit = 10 in)
+    const bw = body ? new THREE.Box3().setFromObject(body).getSize(new THREE.Vector3()).x : new THREE.Box3().setFromObject(obj).getSize(new THREE.Vector3()).x;
+    obj.scale.multiplyScalar(((pomAt(d, 'A') || 11.75) / 10) / bw); holder.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(body || obj), c = bb.getCenter(new THREE.Vector3());
+    obj.position.sub(new THREE.Vector3(c.x, c.y, c.z)); holder.updateMatrixWorld(true); // body centred at the origin
+    const fab = FABRICS[g.fabric] ? g.fabric : 'ballistic';
+    const HW = { gunmetal: ['#5b5f66', .32], steel: ['#d2d4d8', .22], gold: ['#c9a24a', .26], black: ['#26272b', .45] }[g.hardware || 'gold'];
+    const shell = this.fabricMat(g.color, fab, false, 6, 4, g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null);
+    const trim = this.fabricMat(g.trim || shade(g.color, -.3), 'ballistic', false, 10, 3); trim.roughness = .78;
+    const metal = new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] });
+    const thread = new THREE.MeshStandardMaterial({ color: g.stitch || '#B98A4A', roughness: .6 });
+    this.modelMeshes = [];
+    const drop = [], seg = [];
+    obj.traverse(o => {
+      if (!o.isMesh) return;
+      const n = nm(o);
+      if (/Abstract sport mark/i.test(n)) { drop.push(o); return; }
+      if (/Shoulder strap segment (\d+)/i.test(n)) { seg[+n.match(/(\d+)$/)[1]] = o; return; }
+      if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+      const src = (Array.isArray(o.material) ? o.material[0] : o.material)?.name || '';
+      o.material = /hardware/i.test(src) ? metal : /logo/i.test(src) || /stitch/i.test(n) ? thread : /trim/i.test(src) ? trim : shell;
+      o.castShadow = o.receiveShadow = true;
+      if (o.material === shell || /pocket|gusset/i.test(n)) this.modelMeshes.push(o); // print targets: body, flap, pocket, gussets
+    });
+    // Strap: the source is 8 straight boxes. Replace with one smooth webbing band through the same path, D-ring to D-ring.
+    const segs = seg.filter(Boolean);
+    if (segs.length >= 3) {
+      holder.updateMatrixWorld(true);
+      const ctr = o => new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+      const ringL = named('Left D ring'), ringR = named('Right D ring');
+      const pts = [...(ringL ? [ctr(ringL)] : []), ...segs.map(ctr), ...(ringR ? [ctr(ringR)] : [])]; // segments are numbered along the arch
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal'), N = 160, w = (pomAt(d, 'G') || 1.25) / 10, th = .012;
+      const pos = [], idx = [], ax = new THREE.Vector3(0, 0, 1);
+      for (let i = 0; i <= N; i++) {
+        const t = i / N, p = curve.getPointAt(t), tg = curve.getTangentAt(t), nr = tg.clone().cross(ax).normalize();
+        [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(([sa, so]) => { const q = p.clone().addScaledVector(ax, sa * w / 2).addScaledVector(nr, so * th / 2); pos.push(q.x, q.y, q.z); });
+      }
+      for (let i = 0; i < N; i++) for (let k = 0; k < 4; k++) { const a = i * 4 + k, b = i * 4 + (k + 1) % 4, cc = a + 4, e = b + 4; idx.push(a, cc, b, b, cc, e); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+      const strap = this.add(geo, trim); strap.name = 'Shoulder strap (webbing)';
+      segs.forEach(o => drop.push(o));
+    }
+    drop.forEach(o => o.parent.remove(o));
+    const flap = named('Top flap'); this.torso = flap || body || this.modelMeshes[0];
+    const top = bb.max.y - c.y;
+    this.P = { w: (bb.max.x - bb.min.x) / 4, d: bb.max.z - c.z, h: top * 2, rise: 0, neckR: .2, side: false };
+    this.updateDecals();
   },
   /* ---------- duffle (hard good: procedural like the watch, prints like a garment) ---------- */
   // 1 unit = 10 in. Barrel weekender: superellipse section with a flatter base, piped end panels, wrap-under handle straps.
@@ -2325,12 +2412,12 @@ const Panels = {
         <div class="fld"><label>Silhouette</label><div class="seg" data-segbind="category">${(isTop(d.category) ? TOPS : isBottom(d.category) ? BOTTOMS : [d.category]).map(c => `<button data-v="${c}" class="${c === d.category ? 'on' : ''}">${CATS[c].label.replace('Long Sleeve', 'L/S')}</button>`).join('')}</div></div>
         ${d.category === 'socks' ? `<div class="fld" style="margin-top:10px"><label>Style</label><div class="seg" data-segbind="garment.sockStyle">${[['crew', 'Crew'], ['noshow', 'No-show']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.sockStyle || 'crew') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
           <div class="grid2" style="margin-top:10px">${this.select('garment.sockAccent', 'Contrast heel & toe', g.sockAccent ?? '1', [['1', 'Yes'], ['', 'No']])}${g.sockStyle === 'noshow' ? '' : this.select('garment.sockCuff', 'Contrast cuff', g.sockCuff || '', [['1', 'Yes'], ['', 'No']])}</div>
-          ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : d.category === 'duffle' ? `<div class="fld" style="margin-top:10px"><label>Size</label><div class="seg" data-segbind="garment.bagSize">${[['mini', 'Mini 16"'], ['weekender', 'Weekender 22"'], ['large', 'Large 26"']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.bagSize || 'weekender') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+          ${g.sockStyle === 'noshow' ? '' : `<div class="grid2" style="margin-top:10px">${this.select('garment.stripes', 'Cuff stripes', String(g.stripes || 0), [['0', 'None'], ['1', '1 stripe'], ['2', '2 stripes'], ['3', '3 stripes'], ['4', '4 stripes']])}<div class="fld"><label>Stripe color</label><div class="row"><input type="color" data-bind="garment.stripeCol" value="${g.stripeCol || '#B98A4A'}"><span class="mono">${(g.stripeCol || '#B98A4A').toUpperCase()}</span></div></div></div>`}` : isBag(d.category) ? `${d.category === 'duffle' ? `<div class="fld" style="margin-top:10px"><label>Size</label><div class="seg" data-segbind="garment.bagSize">${[['mini', 'Mini 16"'], ['weekender', 'Weekender 22"'], ['large', 'Large 26"']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.bagSize || 'weekender') ? 'on' : ''}">${v}</button>`).join('')}</div></div>` : ''}
           <div class="fld" style="margin-top:10px"><label>Hardware</label><div class="seg" data-segbind="garment.hardware">${[['gunmetal', 'Gunmetal'], ['steel', 'Steel'], ['gold', 'Brass'], ['black', 'Matte black']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.hardware || 'gunmetal') ? 'on' : ''}">${v}</button>`).join('')}</div></div>
-          <div class="fld" style="margin-top:10px"><label>Trim leather (handles, straps, piping)</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color}"><span class="mono">${(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color).toUpperCase()}</span></div></div>` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
+          <div class="fld" style="margin-top:10px"><label>${d.category === 'satchel' ? 'Webbing trim (strap, gussets, pocket)' : 'Trim leather (handles, straps, piping)'}</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color}"><span class="mono">${(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color).toUpperCase()}</span></div></div>` : `<div class="fld" style="margin-top:10px"><label>Fit</label><div class="seg" data-segbind="garment.fit">${Object.entries(FITS).map(([k, v]) => `<button data-v="${k}" class="${k === g.fit ? 'on' : ''}">${v.label}</button>`).join('')}</div></div>`}
         ${isTop(d.category) && d.pom?.sizes?.length > 1 ? `<div class="grid2" style="margin-top:10px">${this.select('garment.viewSize', 'View size', g.viewSize || d.pom.base, d.pom.sizes.map(s => [s, s + (s === d.pom.base ? ' · base' : '')]))}<div class="fld"><label>True to size</label><p class="hint" style="margin:2px 0 0">3D matches the POM at this size: chest, body and sleeve.</p></div></div>` : ''}
         ${d.category === 'pants' ? `<div class="fld" style="margin-top:10px"><label>Cut</label><div class="seg" data-segbind="garment.pantStyle">${[['straight', 'Straight'], ['slim', 'Slim']].map(([k, v]) => `<button data-v="${k}" class="${k === (g.pantStyle || 'straight') ? 'on' : ''}">${v}</button>`).join('')}</div></div>` : ''}
-        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).filter(([k, v]) => k === g.fabric || (v.for === 'any' && d.category !== 'duffle') || (isAcc(d.category) && d.category !== 'duffle' && v.for === 'acc') || v.for === (d.category === 'duffle' ? 'bag' : isTop(d.category) || isAcc(d.category) ? 'top' : d.category === 'socks' ? 'socks' : d.category === 'boxers' ? 'boxers' : 'bottom')).map(([k, v]) => [k, v.label]))}</div>
+        <div style="margin-top:10px">${this.select('garment.fabric', 'Fabric', g.fabric, Object.entries(FABRICS).filter(([k, v]) => k === g.fabric || (v.for === 'any' && !isBag(d.category)) || (isAcc(d.category) && !isBag(d.category) && v.for === 'acc') || v.for === (isBag(d.category) ? 'bag' : isTop(d.category) || isAcc(d.category) ? 'top' : d.category === 'socks' ? 'socks' : d.category === 'boxers' ? 'boxers' : 'bottom')).map(([k, v]) => [k, v.label]))}</div>
         <div class="grid2" style="margin-top:10px">${this.select('garment.finish', 'Wash / finish', g.finish || 'none', Object.entries(FINISHES).map(([k, v]) => [k, v.label]))}${this.select('garment.distress', 'Distressing', g.distress || 'none', Object.entries(DISTRESS).map(([k, v]) => [k, v.label]))}</div>
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
           <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
@@ -3084,9 +3171,9 @@ function promptSpec(d) {
     if (W.head === 'shock') return `a chunky shock-resistant sports wristwatch in matte ${colorName(W.strapColor)} (${W.strapColor}) resin with an integrated resin strap, rounded-square raised bezel with four exposed ${CASE_MATS[W.caseMat]?.label.toLowerCase() || 'steel'} screws and moulded grip ribs, four guarded pushers; recessed ${colorName(W.dial)} face with ${W.display === 'anadigi' ? 'analog hands over a small' : 'a large'} ${W.lcd === 'neg' ? 'negative (dark) ' : ''}seven-segment LCD, ${colorName(W.accent)} accent print, small DPP mark. No other brand names or logos. Flat mineral glass, rugged and technical`;
     return `a ${W.dia} mm ${CASE_SHAPES[W.shape].toLowerCase()} wristwatch in ${mat}${bez}${W.crownGuards ? ', crown guards' : ''}; ${colorName(W.dial)} (${W.dial}) ${dialTxt}, ${NUMERALS[W.numerals].toLowerCase()}, ${HANDS[W.hands].toLowerCase()} hands in ${colorName(W.index)}, ${colorName(W.accent)} seconds hand${W.date !== 'none' ? `, date window at ${W.date} o'clock` : ''}; ${strapTxt}. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" on the dial. Sapphire crystal with crisp reflections, precise machining, realistic metal finishing`;
   }
-  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks', scarf: 'wrap scarf with hood', balaclava: 'knit balaclava', duffle: 'barrel weekender duffle bag' }[d.category];
+  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks', scarf: 'wrap scarf with hood', balaclava: 'knit balaclava', duffle: 'barrel weekender duffle bag', satchel: 'mini crossbody satchel' }[d.category];
   const f = FABRICS[g.fabric], fit = FITS[g.fit].label.toLowerCase();
-  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
+  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', satchel: 'soft rounded body with a top flap, zip front pocket, webbing side gussets, adjustable webbing shoulder strap on D-rings, a thin gold topstitch line across the flap', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
   const parts = [`a ${fit}-fit ${noun} in ${colorName(g.color)} (${g.color.toUpperCase()}), ${f.label.split('·')[0].trim().toLowerCase()} (${f.gsm} gsm, ${f.comp.toLowerCase()})`, build];
   if (g.trim.toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(g.trim)} rib trim`);
   if (isTop(d.category)) {

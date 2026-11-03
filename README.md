@@ -60,6 +60,13 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 - **Bottoms:** pants in straight or slim cut, shorts, boxer briefs. **Double waistband** (pants and shorts): a second band stacked above the main one, plaid by default. It follows the garment's own waist line, and its height, plaid colors or solid color are editable.
 - **Accessories:** hooded wrap scarf, balaclava (merino rib by default; polar fleece and chunky knit also available)
 - **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping.
+- **Mini satchel:** 11¾ × 8 × 4⅛ in crossbody (`assets/models/satchel.glb`). Every part keeps its own role:
+  - shell color and fabric
+  - webbing trim for the strap, gussets and pocket
+  - hardware finish (brass by default)
+  - flap stitch color
+
+  The strap is rebuilt as one smooth webbing band. The DPP mark sits in gold on the flap, and logos, text and patches can go anywhere on it.
 - **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
 - **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets.
