@@ -424,7 +424,10 @@ const DB = {
     return new Promise((res, rej) => {
       const r = indexedDB.open('dpp-studio', 2);
       r.onupgradeneeded = () => { const d = r.result, has = n => d.objectStoreNames.contains(n); ['designs', 'assets', 'comments'].forEach(n => { if (!has(n)) d.createObjectStore(n, { keyPath: 'id' }); }); };
-      r.onsuccess = () => { this.db = r.result; res(); }; r.onerror = () => rej(r.error);
+      // An older tab holding the previous version blocks the upgrade: say so instead of hanging silently.
+      r.onblocked = () => toast('Close other DPP Studio tabs to finish updating, then this page continues on its own', true);
+      // …and this tab steps aside when a newer version needs the database.
+      r.onsuccess = () => { this.db = r.result; this.db.onversionchange = () => { this.db.close(); toast('DPP Studio was updated in another tab. Reloading…'); setTimeout(() => location.reload(), 1200); }; res(); }; r.onerror = () => rej(r.error);
     });
   },
   req(store, mode, fn) {
