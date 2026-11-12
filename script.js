@@ -1669,6 +1669,7 @@ const Studio = {
     });
     this.torso = biggest; this.wb2 = null;
     this.waist = null;
+    if (d.category === 'shorts' && !g.model) this.splitDrawcord(d, box);
     if (isBottom(d.category)) { this.openWaist(box); let W = this.traceWaist(box); if (W && this.cutInside(W, box)) W = this.traceWaist(box) || W; this.waist = W; }
     this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: H, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
     this.fitInfo = null;
@@ -1921,6 +1922,39 @@ const Studio = {
       const hit = new THREE.Raycaster(new V(xa, ya, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0];
       if (hit) this.addHangTag(d, hit.point.clone());
     }
+  },
+  // The shorts model has its drawcords fused into the one mesh. Find them as loose pieces (narrow, tall, in front of
+  // the body), move their triangles to a mesh of their own with a cord material, and finish them with metal tips
+  // and eyelets where they leave the waistband. No cords found = nothing changes.
+  splitDrawcord(d, box) {
+    const g = d.garment, m = this.torso, src = m?.geometry; if (!src?.index) return; m.updateMatrixWorld(true);
+    const P = src.attributes.position, ix = src.index.array, n = P.count, V = THREE.Vector3, v = new V();
+    src.computeBoundingBox(); const q = 1 / (src.boundingBox.getSize(new V()).length() * 4e-4), key = new Map(), id = new Int32Array(n); let u = 0;
+    for (let i = 0; i < n; i++) { const k = Math.round(P.getX(i) * q) + ',' + Math.round(P.getY(i) * q) + ',' + Math.round(P.getZ(i) * q); let w = key.get(k); if (w === undefined) { w = u++; key.set(k, w); } id[i] = w; }
+    const par = new Int32Array(u).map((_, i) => i), find = a => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+    for (let t = 0; t < ix.length; t += 3) { const a = find(id[ix[t]]); par[find(id[ix[t + 1]])] = a; par[find(id[ix[t + 2]])] = a; }
+    const comps = new Map(), wp = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const r = find(id[i]); v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); wp.set([v.x, v.y, v.z], i * 3); let c = comps.get(r); if (!c) comps.set(r, c = { r, n: 0, b: new THREE.Box3() }); c.n++; c.b.expandByPoint(v); }
+    const W = box.max.x - box.min.x, H = box.max.y - box.min.y, cz = (box.min.z + box.max.z) / 2, all = [...comps.values()];
+    const cords = all.filter(c => c.n < n * .2 && c.b.max.x - c.b.min.x < W * .1 && c.b.max.y - c.b.min.y > H * .15 && c.b.min.z > cz);
+    if (!cords.length) return;
+    const tips = all.filter(c => !cords.includes(c) && c.n < 400 && c.b.max.y - c.b.min.y < H * .1 && c.b.min.z > cz && cords.some(k => c.b.min.x > k.b.min.x - W * .04 && c.b.max.x < k.b.max.x + W * .04));
+    const isCord = new Set([...cords, ...tips].map(c => c.r)), keep = [], cut = [];
+    for (let t = 0; t < ix.length; t += 3) (isCord.has(find(id[ix[t]])) ? cut : keep).push(ix[t], ix[t + 1], ix[t + 2]);
+    const body = src.clone(); body.setIndex(keep); m.geometry = body; // never edit the cached model geometry
+    const cg = src.clone(); cg.setIndex(cut);
+    const col = g.trim && g.trim.toUpperCase() !== '#EEF1F9' ? g.trim : shade(g.color, lum(g.color) > .5 ? -.22 : .28); // untouched trim = tonal cord
+    const cm = this.fabricMat(col, 'twill', false, 30, 18); fabricFX(cm, { tile: 26, finish: 'none', distress: 'none', seed: 0, cat: 1, woven: true, box, bleach: '#eeece6' }); cm.bumpScale = 2.2; cm.roughness = .92;
+    const cord = new THREE.Mesh(cg, cm); cord.position.copy(m.position); cord.quaternion.copy(m.quaternion); cord.scale.copy(m.scale); cord.castShadow = cord.receiveShadow = true; cord.name = 'Drawcord'; m.parent.add(cord);
+    const metal = new THREE.MeshStandardMaterial({ color: '#9a9ca1', metalness: 1, roughness: .28, envMapIntensity: 2 });
+    cords.forEach(c => {
+      const lo = new V(), hi = new V(); let nl = 0, nh = 0, ymin = c.b.min.y;
+      tips.forEach(t => { if (t.b.min.x > c.b.min.x - W * .04 && t.b.max.x < c.b.max.x + W * .04) ymin = Math.min(ymin, t.b.min.y); });
+      for (let i = 0; i < n; i++) { if (find(id[i]) !== c.r) continue; const y = wp[i * 3 + 1]; if (y < c.b.min.y + .03) { lo.x += wp[i * 3]; lo.z += wp[i * 3 + 2]; nl++; } if (y > c.b.max.y - .02) { hi.x += wp[i * 3]; hi.z += wp[i * 3 + 2]; nh++; } }
+      if (nl) { const ag = this.add(new THREE.CylinderGeometry(.017, .015, .085, 20), metal); ag.position.set(lo.x / nl, ymin + .035, lo.z / nl); } // crimped metal tip
+      if (nh) { const x = hi.x / nh, y = c.b.max.y - .012, hit = new THREE.Raycaster(new V(x, y + .03, box.max.z + 2), new V(0, 0, -1)).intersectObject(m, false)[0], z = hit ? hit.point.z : hi.z / nh - .01;
+        const ey = this.add(new THREE.TorusGeometry(.026, .008, 10, 28), metal); ey.position.set(x, y, z + .003); ey.scale.z = .6; } // eyelet where the cord leaves the casing
+    });
   },
   // Marketplace bottoms ship with a flat cap closing the waist. Cut it out so the opening reads as an opening:
   // flat (up/down-facing) triangles near the top, flood-filled outward from the ones on the garment's axis.
@@ -2698,7 +2732,8 @@ const Studio = {
       this.hands = { h: hand(.42, .07, W.index, TOP + .012, W.hands), m: hand(.62, .05, W.index, TOP + .03, W.hands), s: hand(.68, .014, W.accent, TOP + .048, 'baton') };
       mk(new THREE.CylinderGeometry(.03, .03, .05, 24), hm(W.index)).position.y = TOP + .03;
     }
-    this.buildStrap({ ...W, strap: 'rubber', shape: 'round' }, grp, mk, { metal, polished, steel: metal }, { halfZ: 1.12, strapW: 1.14 });
+    const strapResin = resin.clone(); strapResin.bumpScale = .12; strapResin.side = THREE.DoubleSide; // the strap is the same urethane as the case
+    this.buildStrap({ ...W, strap: 'rubber', shape: 'round' }, grp, mk, { metal, polished, steel: metal, band: strapResin }, { halfZ: 1.12, strapW: 1.14, shock: true });
   },
   // Openworked calibre for skeleton / open-heart dials: plate ring, gear train, bridges with Geneva stripes,
   // jewels, blued screws, pallet fork and a beating balance. Layout in dial units (r .76), -z = 12 o'clock.
@@ -2823,18 +2858,23 @@ const Studio = {
     };
     const tuck = [[0, -.15, G.halfZ + .05], ...base.slice(1, -1).map(v => v.toArray()), [0, -.15, -(G.halfZ + .05)]].map(p => new THREE.Vector3(...p));
     if (t === 'leather' || t === 'rubber' || t === 'mesh') {
-      const curve = new THREE.CatmullRomCurve3(tuck), w0 = G.strapW || (integ ? 1.15 : 1.02), th = t === 'mesh' ? .06 : t === 'rubber' ? .16 : .145;
-      band(curve, w0, th, t === 'mesh' ? meshMat(M.metal) : strapMat(t, W.strapColor, W.strapColor2));
+      const curve = new THREE.CatmullRomCurve3(tuck), w0 = G.strapW || (integ ? 1.15 : 1.02), sh = !!G.shock, th = t === 'mesh' ? .06 : t === 'rubber' ? (sh ? .19 : .16) : .145;
+      band(curve, w0, th, t === 'mesh' ? meshMat(M.metal) : M.band || strapMat(t, W.strapColor, W.strapColor2));
       if (t === 'mesh') { const { p, q } = Q(curve, .5); const cl = mk(new RoundedBoxGeometry(w0 * .86, .09, .55, 3, .03), M.polished); cl.position.copy(p); cl.quaternion.copy(q); return; }
       const wb = widthAt(w0, .5) / 2, keeperMat = new THREE.MeshPhysicalMaterial({ color: W.strapColor, roughness: t === 'rubber' ? .8 : .55, sheen: .2 });
-      loop(curve, .5, wb + .05, th / 2 + .05, .024, M.polished, .015);                     // buckle frame
+      loop(curve, .5, wb + .05, th / 2 + .05, sh ? .034 : .024, M.polished, .015);         // buckle frame
       const { p, T } = Q(curve, .5), N = new THREE.Vector3().crossVectors(X, T).normalize();
       const prong = mk(new THREE.CylinderGeometry(.014, .014, .17, 10), M.polished);         // prong lying on the strap
-      prong.position.copy(p).addScaledVector(N, th / 2 + .02).addScaledVector(T, .08); prong.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), T);
-      [.465, .44].forEach(u => loop(curve, u, widthAt(w0, u) / 2 + .016, th / 2 + .016, .015, keeperMat)); // keepers
+      prong.position.copy(p).addScaledVector(N, -(th / 2 + .02)).addScaledVector(T, .08); /* N points at the wrist, the prong lies on the outer face */ prong.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), T);
+      if (sh) { // moulded resin strap: one wide ribbed keeper, grip ridges stepping down from each lug
+        loop(curve, .455, widthAt(w0, .455) / 2 + .03, th / 2 + .03, .034, M.band);
+        [0, 1].forEach(s => { for (let i = 0; i < 6; i++) { const u = s ? 1 - (.085 + i * .02) : .085 + i * .02, h = Q(curve, u), n = new THREE.Vector3().crossVectors(h.T, X).normalize(); /* T x X points away from the wrist */
+          const r = mk(new RoundedBoxGeometry(widthAt(w0, u) * .9, .04, .052, 2, .015), M.band); r.position.copy(h.p).addScaledVector(n, th / 2 * pad(u) + .006); r.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, n, h.T)); } });
+      } else [.465, .44].forEach(u => loop(curve, u, widthAt(w0, u) / 2 + .016, th / 2 + .016, .015, keeperMat)); // keepers
       { const holeM = new THREE.MeshStandardMaterial({ color: '#050506', roughness: .95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), rimM = new THREE.MeshStandardMaterial({ color: shade(W.strapColor, -.35), roughness: .7, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), Z = new THREE.Vector3(0, 0, 1);
-        for (let i = 0; i < 6; i++) { const u = .56 + i * .034, h = Q(curve, u), n = new THREE.Vector3().crossVectors(X, h.T).normalize(), at = h.p.clone().addScaledVector(n, th / 2 * pad(u) + .0012), q = new THREE.Quaternion().setFromUnitVectors(Z, n); // round punched holes, 2.4 mm, with a pressed rim
-          [[.043, rimM, 0], [.03, holeM, .0006]].forEach(([r, m, l]) => { const c = mk(new THREE.CircleGeometry(r, 24), m); c.position.copy(at).addScaledVector(n, l); c.quaternion.copy(q); c.castShadow = false; }); } }
+        for (let i = 0; i < (sh ? 10 : 6); i++) { const u = .56 + i * (sh ? .025 : .034), h = Q(curve, u), n0 = new THREE.Vector3().crossVectors(X, h.T).normalize(); // round punched holes, 2.4 mm, with a pressed rim, showing on both faces of the strap
+          [1, -1].forEach(sd => { const n = n0.clone().multiplyScalar(sd), at = h.p.clone().addScaledVector(n, th / 2 * pad(u) + .0012), q = new THREE.Quaternion().setFromUnitVectors(Z, n);
+            [[.043, rimM, 0], [.03, holeM, .0006]].forEach(([r, m, l]) => { const c = mk(new THREE.CircleGeometry(r, 24), m); c.position.copy(at).addScaledVector(n, l); c.quaternion.copy(q); c.castShadow = false; }); }); } }
       return;
     }
     if (t === 'nato') {
