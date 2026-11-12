@@ -682,7 +682,7 @@ const FABRICS = {
   ballistic: { label: 'Ballistic nylon · 1680D', gsm: 400, comp: '1680D ballistic nylon, PU-coated back', rough: .5, sheen: .25, bump: 1.4, weave: 'canvas', k: 3, for: 'bag' },
   linen: { label: 'Linen · 7 oz', gsm: 237, comp: '100% European linen', rough: .88, sheen: .15, bump: 1, weave: 'linen', tint: 1, k: 1.2, for: 'bottom' },
   modal: { label: 'Micro modal · 190 gsm', gsm: 190, comp: '92% modal / 8% elastane', rough: .55, sheen: .7, bump: .3, for: 'boxers' },
-  merino: { label: 'Merino rib · 2×2, 240 gsm', gsm: 240, comp: '100% extra-fine merino wool, 2×2 rib', rough: .96, sheen: .55, bump: 1.3, knit: 'rib', k: 1.8, for: 'acc' },
+  merino: { label: 'Merino rib · 2×2, 240 gsm', gsm: 240, comp: '100% extra-fine merino wool, 2×2 rib', rough: .96, sheen: .8, bump: 2.1, knit: 'rib', k: 1.8, for: 'acc' },
   polar: { label: 'Polar fleece · 280 gsm', gsm: 280, comp: '100% recycled polyester, double-brushed anti-pill', rough: .99, sheen: 1, bump: .35, knit: 'fleece', for: 'acc' },
   cableknit: { label: 'Chunky knit · 5 gg', gsm: 0, comp: '70% wool / 30% nylon, 5-gauge', rough: .97, sheen: .5, bump: 2.4, knit: 'rib', k: .6, for: 'acc' },
   sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9, for: 'socks' },
@@ -690,7 +690,7 @@ const FABRICS = {
 const FITS = { boxy: { label: 'Boxy', w: 1.14, h: 2.5, drop: .14 }, regular: { label: 'Regular', w: 1.0, h: 2.72, drop: 0 }, oversized: { label: 'Oversized', w: 1.24, h: 2.82, drop: .26 } };
 const WOODS = {
   walnut: { label: 'Black walnut', a: '#6a4329', b: '#2f1b10' },
-  maple: { label: 'Hard maple', a: '#dcbd8e', b: '#a9824f' },
+  maple: { label: 'Hard maple', a: '#cfad7c', b: '#94703f' },
   ebony: { label: 'Ebony', a: '#33281f', b: '#0f0a07' },
   zebrawood: { label: 'Zebrawood', a: '#d0ae78', b: '#3c2717' },
   sandalwood: { label: 'Red sandalwood', a: '#93503a', b: '#4f2416' },
@@ -1387,21 +1387,40 @@ const TEX = {
   wood(sp) {
     const k = 'wood' + sp; if (this._c[k]) return this._c[k];
     const W = WOODS[sp] || WOODS.walnut, zebra = sp === 'zebrawood';
-    const c = this.canvas(1024, 512, (x, w, h) => {
+    const c = this.canvas(1024, 1024, (x, w, h) => {
       x.fillStyle = W.a; x.fillRect(0, 0, w, h);
-      const [br, bg, bb] = hexToRgb(W.b);
-      for (let n = 0; n < (zebra ? 46 : 150); n++) {
-        const y0 = Math.random() * h, amp = 4 + Math.random() * 14, f = .004 + Math.random() * .01, ph = Math.random() * 7;
-        x.strokeStyle = `rgba(${br},${bg},${bb},${zebra ? .55 + Math.random() * .35 : .08 + Math.random() * .3})`;
-        x.lineWidth = zebra ? 3 + Math.random() * 6 : .6 + Math.random() * 2.4;
+      const [br, bg, bb] = hexToRgb(W.b), [lr, lg, lb] = hexToRgb(shade(W.a, .16));
+      // broad growth bands (light and dark), then fine grain lines, then open pores
+      for (let n = 0; n < 30; n++) { const y = Math.random() * h, t = 16 + Math.random() * 90, dk = Math.random() < .55, c0 = dk ? `${br},${bg},${bb}` : `${lr},${lg},${lb}`, gr = x.createLinearGradient(0, y - t, 0, y + t);
+        gr.addColorStop(0, `rgba(${c0},0)`); gr.addColorStop(.5, `rgba(${c0},${dk ? .3 : .24})`); gr.addColorStop(1, `rgba(${c0},0)`); x.fillStyle = gr; x.fillRect(0, y - t, w, t * 2); }
+      for (let n = 0; n < (zebra ? 70 : 560); n++) {
+        const y0 = Math.random() * h, amp = 3 + Math.random() * 12, f = .003 + Math.random() * .008, ph = Math.random() * 7;
+        x.strokeStyle = `rgba(${br},${bg},${bb},${zebra ? .55 + Math.random() * .35 : .05 + Math.random() * .26})`;
+        x.lineWidth = zebra ? 3 + Math.random() * 7 : .5 + Math.random() * 1.8;
         x.beginPath(); for (let i = 0; i <= w; i += 8) { const y = y0 + Math.sin(i * f + ph) * amp + Math.sin(i * f * 3.1 + ph) * amp * .3; i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke();
       }
+      x.fillStyle = `rgba(${br},${bg},${bb},.45)`; for (let n = 0; n < 6000; n++) x.fillRect(Math.random() * w, Math.random() * h, 3 + Math.random() * 13, .8);
       const im = x.getImageData(0, 0, w, h), p = im.data;
       for (let i = 0; i < p.length; i += 4) { const v = (Math.random() - .5) * 14; p[i] += v; p[i + 1] += v; p[i + 2] += v; }
       x.putImageData(im, 0, 0);
     });
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16; return (this._c[k] = t);
   },
+  // brushed metal: fine parallel scratches (rot turns them 90 degrees, for links brushed along the bracelet)
+  brushed(rot) { const k = 'brushed' + (rot ? 'R' : ''); if (this._c[k]) return this._c[k];
+    const c = this.canvas(256, 256, (x, w, h) => { x.fillStyle = '#808080'; x.fillRect(0, 0, w, h); for (let i = 0; i < 1500; i++) { const v = Math.random() < .5 ? 255 : 0, y = Math.random() * h, x0 = Math.random() * w, l = 40 + Math.random() * 200, t = .6 + Math.random(); x.fillStyle = `rgba(${v},${v},${v},${.05 + Math.random() * .16})`; x.fillRect(x0, y, l, t); x.fillRect(x0 - w, y, l, t); } });
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rot ? 2 : 6, rot ? 2 : 6); if (rot) { t.center.set(.5, .5); t.rotation = Math.PI / 2; } t.anisotropy = 8; return (this._c[k] = t); },
+  // leather hide: soft tonal blotches that multiply the dye colour
+  mottle() { if (this._c.mottle) return this._c.mottle;
+    const c = this.canvas(512, 512, (x, w, h) => { x.fillStyle = '#f2f2f2'; x.fillRect(0, 0, w, h); for (let i = 0; i < 280; i++) { const px = Math.random() * w, py = Math.random() * h, r = 16 + Math.random() * 70, gr = x.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, Math.random() < .6 ? 'rgba(165,165,165,.24)' : 'rgba(255,255,255,.3)'); gr.addColorStop(1, 'rgba(200,200,200,0)'); x.fillStyle = gr; x.beginPath(); x.arc(px, py, r, 0, 7); x.fill(); } });
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return (this._c.mottle = t); },
+  // 2x2 rib with the knit loops drawn in: raised wales carry rows of stitches, the valleys stay smooth
+  ribKnit() { if (this._c.ribK) return this._c.ribK;
+    const c = this.canvas(128, 128, (x, w, h) => { const im = x.getImageData(0, 0, w, h), p = im.data;
+      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const rib = Math.sin(i / 16 * Math.PI * 2), col = Math.floor(i / 4), ph = (j + (col % 2) * 4) % 8 / 8, loop = Math.sin(ph * Math.PI), wale = Math.abs(Math.sin(i / 4 * Math.PI));
+        const v = 128 + rib * 62 + (rib > -.2 ? (loop - .5) * 46 * wale : 0) + (Math.random() - .5) * 18, o = (j * w + i) * 4; p[o] = p[o + 1] = p[o + 2] = clamp(v, 0, 255); p[o + 3] = 255; }
+      x.putImageData(im, 0, 0); });
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return (this._c.ribK = t); },
   carbon() {
     if (this._c.carbon) return this._c.carbon;
     const c = this.canvas(512, 512, (x, w, h) => { x.fillStyle = '#141415'; x.fillRect(0, 0, w, h); for (let i = 0; i < 1400; i++) { const v = 30 + Math.random() * 70 | 0; x.fillStyle = `rgba(${v},${v},${v + 4},.75)`; x.save(); x.translate(Math.random() * w, Math.random() * h); x.rotate(Math.random() * 6.3); x.beginPath(); x.moveTo(0, 0); x.lineTo(6 + Math.random() * 26, Math.random() * 6); x.lineTo(Math.random() * 18, 4 + Math.random() * 14); x.fill(); x.restore(); } });
@@ -1664,11 +1683,13 @@ const caseHex = W => W.caseMat === 'wood' ? (WOODS[W.caseWood] || WOODS.walnut).
 function watchMat(key, species, bz) {
   if (key === '_bz') return new THREE.MeshPhysicalMaterial({ color: bz.c, metalness: 1, roughness: bz.r });
   const m = CASE_MATS[key] || CASE_MATS.steel;
-  if (key === 'wood' || m.kind === 'wood') return new THREE.MeshPhysicalMaterial({ map: TEX.wood(species || 'walnut'), roughness: .5, clearcoat: .55, clearcoatRoughness: .35 });
+  if (key === 'wood' || m.kind === 'wood') { const t = TEX.wood(species || 'walnut'); return new THREE.MeshPhysicalMaterial({ map: t, bumpMap: t, bumpScale: .35, roughness: .6, clearcoat: .28, clearcoatRoughness: .5 }); } // oiled, open-grain finish
   if (m.kind === 'ceramic') return new THREE.MeshPhysicalMaterial({ color: m.c, metalness: 0, roughness: m.r, clearcoat: 1, clearcoatRoughness: .06 });
   if (m.kind === 'carbon') return new THREE.MeshPhysicalMaterial({ map: TEX.carbon(), roughness: .4, metalness: .15, clearcoat: 1, clearcoatRoughness: .08 });
-  return new THREE.MeshPhysicalMaterial({ color: m.c, metalness: 1, roughness: m.r, clearcoat: m.r < .2 ? .3 : 0 });
+  return new THREE.MeshPhysicalMaterial({ color: m.c, metalness: 1, roughness: m.r, clearcoat: m.r < .2 ? .3 : 0, ...(m.r >= .3 ? { bumpMap: TEX.brushed(), bumpScale: .12, anisotropy: .5 } : {}) }); // brushed grades carry real brush lines
 }
+// polished twin of a brushed metal: same alloy, no brush lines
+const polishOf = (m, r) => { const p = m.clone(); p.roughness = r; p.bumpMap = null; p.anisotropy = 0; return p; };
 function strapMat(type, c1, c2) {
   // UV: x = around the strap (x .5 = top face, .25/.75 = edges), y = along the strap (y = t·H, buckle at .5)
   const k = ['strap2', type, c1, c2].join(':');
@@ -1865,7 +1886,7 @@ function fabricFX(mat, o) {
             else if (h > th - .035) col = mix(col, uThread, uWoven > .5 ? .75 : .3);
           }
         }
-        diffuseColor.rgb = gl_FrontFacing ? col : col * .58; // inside of the garment reads as shadowed (neck, eye and leg openings)`);
+        diffuseColor.rgb = gl_FrontFacing ? col : col * (uCat == 2. ? .3 : .58); // inside of the garment reads as shadowed (neck, eye and leg openings)`);
   });
 }
 // Seven-segment LCD digit, italic like a real module; unlit segments stay faintly visible
@@ -2073,7 +2094,7 @@ const Studio = {
   fabricMat(hex, fabric, rib, rx = 30, ry = 18, surf = null) {
     const f = FABRICS[fabric] || FABRICS.jersey;
     const kk = f.k || 1; // woven fabrics carry their own texture scale
-    const bump = TEX.repeat(rib || f.knit === 'rib' ? TEX.rib() : f.weave ? TEX.weave(f.weave) : TEX.knit(f.knit || (fabric === 'waffle' ? 'waffle' : fabric === 'fleece' ? 'fleece' : 'jersey')), rib ? rx * 3 : rx * kk, rib ? 1 : ry * kk);
+    const bump = TEX.repeat(rib ? TEX.rib() : f.knit === 'rib' ? TEX.ribKnit() : f.weave ? TEX.weave(f.weave) : TEX.knit(f.knit || (fabric === 'waffle' ? 'waffle' : fabric === 'fleece' ? 'fleece' : 'jersey')), rib ? rx * 3 : rx * kk, rib ? 1 : ry * kk);
     bump.userData.own = true;
     const tint = !rib && f.tint && !surf ? TEX.repeat(TEX.weaveTint(f.weave), rx * kk / 6, ry * kk / 6) : null; if (tint) tint.userData.own = true;
     return new THREE.MeshPhysicalMaterial({ color: hex, roughness: f.rough, sheen: f.sheen, sheenRoughness: .75, sheenColor: new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), .3), side: THREE.DoubleSide, bumpMap: bump, bumpScale: (rib ? 1.4 : f.bump), ...(tint ? { map: tint } : {}),
@@ -2084,6 +2105,7 @@ const Studio = {
   buildGarment(d) {
     if (d.category === 'duffle') return this.buildDuffle(d);
     if (d.category === 'satchel') {
+      if (!d.garment.model) return this.buildSatchelPro(d); // built in code; an uploaded GLB still goes through the model path
       const m = Models.peek(d);
       if (m === undefined) { Models.load(d).then(() => { if (S.current === d && S.view === 'studio') { this.build(); Panels.studio(); } }); return; }
       if (m) return this.buildSatchel(d, m);
@@ -2349,8 +2371,8 @@ const Studio = {
       }
     }
     if (g.hangTag === '1') {
-      const s = cat === 'watch' ? H * .4 / .35 : 1, lo = box.min.y + .52 * s, hi = box.max.y - .02 * s;
-      const spots = { duffle: [[.2, .6], [.1, .5]], satchel: [[.22, .3], [.1, .25]], socks: [[.3, .8], [-.3, .8], [.2, .7]], watch: [[.2, .62], [0, .62], [-.2, .62], [.1, .75]] }[cat] || [[.2, .55], [.1, .5], [0, .5], [-.15, .5]];
+      const s = cat === 'watch' ? H * .24 / .35 : cat === 'balaclava' ? .8 : 1, lo = box.min.y + .52 * s, hi = box.max.y - .02 * s; // watch: a small swing tag off the strap, clear of the dial
+      const spots = { duffle: [[.2, .6], [.1, .5]], satchel: [[.22, .3], [.1, .25], [.1, .2]], socks: [[.3, .8], [-.3, .8], [.2, .7]], watch: [[-.14, .34], [.14, .34], [0, .34], [0, .45]], balaclava: [[.16, .3], [.05, .3], [0, .34]] }[cat] || [[.2, .55], [.1, .5], [0, .5], [-.15, .5]];
       const hits = spots.map(([fx, fy]) => front(cx + W * fx, clamp(box.min.y + H * fy, lo, Math.max(lo, hi)))).filter(Boolean);
       const hit = cat === 'socks' ? hits.sort((p, q) => q.point.z - p.point.z)[0] : hits[0]; // a pair: tag the sock nearest the viewer, so the string stays short
       if (hit) {
@@ -2764,6 +2786,76 @@ const Studio = {
     this.P = { w: (bb.max.x - bb.min.x) / 4, d: bb.max.z - c.z, h: top * 2, rise: 0, neckR: .2, side: false };
     this.updateDecals();
   },
+  // Mini satchel built in code (1 unit = 10 in): boxed body with piped edges, a bound flap that wraps over the top, a zip
+  // pocket below it, webbing tabs with D-rings and a crossbody strap with a slider. Body width = POM A.
+  buildSatchelPro(d) {
+    const g = d.garment, V = THREE.Vector3, W = (pomAt(d, 'A') || 11.75) / 10, H = W * .68, D = W * .35, bev = D * .16;
+    const fab = FABRICS[g.fabric] ? g.fabric : 'ballistic', f = FABRICS[fab];
+    const HW = { gunmetal: ['#5b5f66', .32], steel: ['#d2d4d8', .22], gold: ['#c9a24a', .26], black: ['#26272b', .45] }[g.hardware || 'gold'];
+    const shell = this.fabricMat(g.color, fab, false, 6, 4, g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null);
+    const trim = this.fabricMat(g.trim || shade(g.color, -.3), 'ballistic', false, 10, 3);
+    const metal = new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1], envMapIntensity: 2.4 });
+    const fx = { finish: g.finish || 'none', distress: 'none', seed: 0, cat: 2, woven: !f.leather, box: new THREE.Box3(new V(-W / 2, -H / 2, -D / 2), new V(W / 2, H / 2, D / 2)), bleach: '#eeece6' };
+    if (f.leather) { shell.bumpMap = TEX.repeat(TEX.grain(fab), 1, 1); shell.bumpMap.userData.own = true; shell.bumpScale = f.bump * 2; shell.clearcoat = (f.coat || 0) + .1; shell.clearcoatRoughness = .45; }
+    fabricFX(shell, { ...fx, tile: f.leather ? 5 : 7 * (f.k || 1) }); if (!f.leather) shell.bumpScale *= 1.5;
+    fabricFX(trim, { ...fx, woven: true, tile: 13 }); trim.bumpScale = 2.4; trim.roughness = .92; trim.sheen = .15;
+    const threadMat = new THREE.MeshStandardMaterial({ color: g.stitch || '#B98A4A', roughness: .6, alphaMap: TEX.stitch(), alphaTest: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const rr = (w, h, r) => { const s = new THREE.Shape(), P = Math.PI; s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -P / 2, 0); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, P / 2); s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, P / 2, P); s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, P, P * 1.5); return s; };
+    const loopPts = (sh, z, ox = 0, oy = 0) => { const out = []; sh.getPoints(14).forEach(p => { const v = new V(p.x + ox, p.y + oy, z); if (!out.length || out[out.length - 1].distanceTo(v) > 1e-4) out.push(v); }); if (out[0].distanceTo(out[out.length - 1]) < 1e-4) out.pop(); return out; };
+    // body + piping on the front and back seams
+    const bg = new THREE.ExtrudeGeometry(rr(W - bev * 2, H - bev * 2, .07), { depth: D - bev * 2, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 10, curveSegments: 24 }); bg.translate(0, 0, -(D - bev * 2) / 2);
+    const body = this.add(bg, shell);
+    [-1, 1].forEach(sz => this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(loopPts(rr(W - bev * .58, H - bev * .58, .07 + bev * .71), sz * (D / 2 - bev * .29)), true), 260, .011, 8, true), trim));
+    // flap: runs up the back, over the top and down the front; s = distance along that path
+    const o = .012, hd = D / 2 + o, hh = H / 2 + o, rc = bev + o, q = Math.PI * rc / 2, sA = .1, sC = 2 * (hd - rc), tot = sA + q + sC + q + H * .5, cr = .09;
+    const prof = s => { let t = s; // → [z, y, normal z, normal y]
+      if (t < sA) return [-hd, hh - rc - sA + t, -1, 0]; t -= sA;
+      if (t < q) { const a = Math.PI - t / rc; return [-(hd - rc) + Math.cos(a) * rc, hh - rc + Math.sin(a) * rc, Math.cos(a), Math.sin(a)]; } t -= q;
+      if (t < sC) return [-(hd - rc) + t, hh, 0, 1]; t -= sC;
+      if (t < q) { const a = Math.PI / 2 - t / rc; return [hd - rc + Math.cos(a) * rc, hh - rc + Math.sin(a) * rc, Math.cos(a), Math.sin(a)]; } t -= q;
+      return [hd, hh - rc - t, 1, 0]; };
+    const flap = this.add(new ParametricGeometry((u, v, t) => { const s = v * tot, [z, y] = prof(s), rem = tot - s, hw = W / 2 + .006 - (rem < cr ? cr - Math.sqrt(Math.max(0, cr * cr - (cr - rem) ** 2)) : 0); t.set((1 - 2 * u) * hw, y, z); }, 48, 140), shell);
+    // a path on the flap given as [x, s] points → centres, normals, in-surface width axis
+    const onFlap = xs => { const pts = [], nrm = [], ax = []; xs.forEach(([x, s], i) => { const [z, y, nz, ny] = prof(s), [x2, s2] = xs[Math.min(xs.length - 1, i + 1)], [x1, s1] = xs[Math.max(0, i - 1)], l = Math.hypot(x2 - x1, s2 - s1) || 1, tx = (x2 - x1) / l, ts = (s2 - s1) / l; pts.push(new V(x, y, z)); nrm.push(new V(0, ny, nz)); ax.push(new V(-ts, -tx * nz, tx * ny)); }); return [pts, nrm, ax]; };
+    const outline = ins => { const xc = W / 2 + .006 - cr, sc = tot - cr, r = cr - ins, xs = [], P = Math.PI / 2;
+      for (let i = 0; i <= 70; i++) xs.push([-(xc + r), lerp(ins, sc, i / 70)]);
+      for (let i = 1; i <= 10; i++) xs.push([-(xc + Math.cos(i / 10 * P) * r), sc + Math.sin(i / 10 * P) * r]);
+      for (let i = 1; i < 40; i++) xs.push([lerp(-xc, xc, i / 40), sc + r]);
+      for (let i = 0; i <= 10; i++) xs.push([xc + Math.cos((1 - i / 10) * P) * r, sc + Math.sin((1 - i / 10) * P) * r]);
+      for (let i = 1; i <= 70; i++) xs.push([xc + r, lerp(sc, ins, i / 70)]);
+      return xs; };
+    this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(onFlap(outline(0))[0]), 400, .0095, 8, false), trim); // bound edge
+    { const p = onFlap(outline(.024)); this.ribbon(p[0], p[1], p[2], 0, .0052, .003, threadMat, .0115); }
+    // front zip pocket below the flap
+    const pw = W * .8, ph = H * .34, py = -H / 2 + .05 + ph / 2, pz = D / 2 + .012;
+    const pocket = this.add(new RoundedBoxGeometry(pw, ph, .05, 5, .022), trim); pocket.position.set(0, py, pz);
+    const flat = (pts3, close) => { const pts = close ? [...pts3, pts3[0]] : pts3, nrm = [], ax = []; pts.forEach((p, i) => { const b = pts[Math.min(pts.length - 1, i + 1)], a = pts[Math.max(0, i - 1)], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; nrm.push(new V(0, 0, 1)); ax.push(new V(-(b.y - a.y) / l, (b.x - a.x) / l, 0)); }); return [pts, nrm, ax]; };
+    { const zf = pz + .0255, p = flat(loopPts(rr(pw - .044, ph - .044, .02), zf, 0, py).flatMap((v, i, a) => { const n = a[(i + 1) % a.length], k = Math.max(1, Math.round(v.distanceTo(n) / .02)); return Array.from({ length: k }, (_, j) => v.clone().lerp(n, j / k)); }), true);
+      this.ribbon(p[0], p[1], p[2], 0, .0052, .003, threadMat, .0115);
+      const zy = py + ph / 2 - .05, zp = flat(Array.from({ length: 81 }, (_, i) => new V(lerp(-pw * .4, pw * .4, i / 80), zy, zf)));
+      this.ribbon(zp[0], zp[1], zp[2], 0, .046, .002, new THREE.MeshStandardMaterial({ color: shade(g.trim || g.color, -.35), roughness: .85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), 1); // tape
+      this.ribbon(zp[0], zp[1], zp[2], 0, .024, .005, new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] + .08, envMapIntensity: 2.4, alphaMap: TEX.zipTeeth(), alphaTest: .5, side: THREE.DoubleSide }), .0105); // teeth
+      [-.029, .029].forEach(k => this.ribbon(zp[0], zp[1], zp[2], k, .0052, .004, threadMat, .0115));
+      const sl = this.add(new RoundedBoxGeometry(.034, .03, .014, 2, .006), metal); sl.position.set(pw * .36, zy, zf + .009);
+      const pull = this.add(new RoundedBoxGeometry(.02, .075, .007, 2, .003), metal); pull.position.set(pw * .36 + .004, zy - .045, zf + .012); pull.rotation.z = .12; }
+    // side tabs, D-rings, crossbody strap
+    const xr = W / 2 + .03, yr = H / 2 - .02;
+    [-1, 1].forEach(sx => {
+      const tab = this.add(new RoundedBoxGeometry(.014, .2, .11, 2, .005), trim); tab.position.set(sx * (W / 2 + .005), H / 2 - .13, 0);
+      const ring = this.add(new THREE.TorusGeometry(.05, .009, 10, 32), metal); ring.position.set(sx * xr, yr, 0); ring.rotation.y = Math.PI / 2; ring.rotation.x = sx * .25;
+      const rv = this.add(new THREE.CylinderGeometry(.013, .013, .01, 18), metal); rv.rotation.z = Math.PI / 2; rv.position.set(sx * (W / 2 + .013), H / 2 - .19, 0);
+    });
+    { const curve = new THREE.CatmullRomCurve3([[-xr, yr], [-xr - .08, yr + .36], [-W * .4, yr + 1.0], [0, yr + 1.3], [W * .4, yr + 1.0], [xr + .08, yr + .36], [xr, yr]].map(([x, y]) => new V(x, y, 0)), false, 'centripetal'), N = 180, w = (pomAt(d, 'G') || 1.25) / 10, th = .014;
+      const pos = [], idx = [], ax = new V(0, 0, 1);
+      for (let i = 0; i <= N; i++) { const p = curve.getPointAt(i / N), tg = curve.getTangentAt(i / N), nr = tg.clone().cross(ax).normalize(); [[1, 1], [-1, 1], [-1, -1], [1, -1]].forEach(([sa, so]) => { const c = p.clone().addScaledVector(ax, sa * w / 2).addScaledVector(nr, so * th / 2); pos.push(c.x, c.y, c.z); }); }
+      for (let i = 0; i < N; i++) for (let k = 0; k < 4; k++) { const a = i * 4 + k, b = i * 4 + (k + 1) % 4, cc = a + 4, e = b + 4; idx.push(a, cc, b, b, cc, e); }
+      let geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo = geo.toNonIndexed(); geo.computeVertexNormals();
+      this.add(geo, trim).name = 'Shoulder strap (webbing)';
+      const tg = curve.getTangentAt(.28), sp = curve.getPointAt(.28), sld = this.add(new THREE.TorusGeometry(w * .62, .008, 8, 4), metal); sld.position.copy(sp); sld.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(tg, ax, new V().crossVectors(tg, ax))); sld.rotateZ(Math.PI / 4); sld.scale.set(.75, 1, 1); }
+    this.modelMeshes = [body, flap, pocket]; this.torso = flap;
+    this.P = { w: W / 4, d: D / 2, h: H, rise: 0, neckR: .2, side: false };
+    this.updateDecals();
+  },
   // Flat ribbon lying on a surface (stitch rows, zip tape and teeth): centres + normals + width axis, offset sideways.
   // u runs in real length (per = one tile), so stitches and teeth tile at true pitch.
   ribbon(pts, nrm, ax, off, w, lift, mat, per) {
@@ -2780,7 +2872,7 @@ const Studio = {
     const L = { mini: 1.6, weekender: 2.2, large: 2.6 }[g.bagSize] || 2.2, H = L * .5, D = L * .48;
     const leather = f.leather;
     const surf = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null;
-    const shell = leather ? new THREE.MeshPhysicalMaterial({ color: g.color, roughness: f.rough, sheen: f.sheen, sheenRoughness: .6, sheenColor: new THREE.Color(g.color).lerp(new THREE.Color('#ffffff'), .2), clearcoat: (f.coat || 0) + .12, clearcoatRoughness: .45, envMapIntensity: 1.7, bumpMap: TEX.repeat(TEX.grain(fab), 7, 9), bumpScale: f.bump * 2.4, side: THREE.DoubleSide, ...(surf ? { color: '#ffffff', map: surf.map } : {}) })
+    const shell = leather ? new THREE.MeshPhysicalMaterial({ color: g.color, roughness: f.rough, sheen: f.sheen, sheenRoughness: .6, sheenColor: new THREE.Color(g.color).lerp(new THREE.Color('#ffffff'), .2), clearcoat: (f.coat || 0) + .12, clearcoatRoughness: .45, envMapIntensity: 1.7, bumpMap: TEX.repeat(TEX.grain(fab), 7, 9), bumpScale: f.bump * 2.4, side: THREE.DoubleSide, map: TEX.mottle(), ...(surf ? { color: '#ffffff', map: surf.map } : {}) })
       : this.fabricMat(g.color, fab, false, 22, 14, surf);
     const trim = leather ? shell.clone() : new THREE.MeshPhysicalMaterial({ color: shade(g.color, -.08), roughness: .5, sheen: .2, bumpMap: TEX.repeat(TEX.grain('smooth'), 3, 1), bumpScale: .3 });
     trim.map = null; trim.color.set(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color);
@@ -2804,7 +2896,7 @@ const Studio = {
       const y = H / 2 * Math.sign(sn) * Math.abs(sn) ** (2 / n), z = D / 2 * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - .14 * Math.max(0, sn));
       return [y * s, z * s]; };
     const taper = u => 1 - .08 * Math.abs(2 * u - 1) ** 5, end = taper(0);
-    const rad = (u, v) => taper(u) * (1 + Math.sin(Math.PI * clamp(u, 0, 1)) ** .6 * (.011 * Math.sin(u * 9.4 + .6) * Math.cos(v * 3 + 1.1) + .006 * Math.sin(u * 23 + v * 5) + .008 * Math.cos(v * 2 - .4)));
+    const rad = (u, v) => taper(u) * (1 + Math.sin(Math.PI * clamp(u, 0, 1)) ** .6 * (.011 * Math.sin(u * 9.4 + .6) * Math.cos(v * 3 + 1.1) + .006 * Math.sin(u * 23 + v * 5) + .008 * Math.cos(v * 2 - .4)) - .034 * Math.sin(Math.PI * clamp(u, 0, 1)) ** 2 * Math.max(0, -Math.cos(v)) ** 3); // soft body: the crown settles between the end panels
     const body = add(new ParametricGeometry((u, v, t) => { const [y, z] = sec(v * Math.PI * 2, rad(u, v * Math.PI * 2)); t.set((u - .5) * L, y, z); }, 160, 128), shell);
     [-1, 1].forEach(sx => {
       const cap = add(new ParametricGeometry((r, v, t) => { const [y, z] = sec(v * Math.PI * 2, end * r); t.set(sx * (L / 2 + .045 * (1 - r * r)), y, z); }, 24, 96), trim);
@@ -2882,7 +2974,7 @@ const Studio = {
     const caseMat = watchMat(W.caseMat, W.caseWood);
     const cm = CASE_MATS[W.caseMat] || CASE_MATS.steel;
     const metal = cm.kind === 'metal' ? caseMat : W.caseMat === 'wood' ? (BEZELS[W.bezel]?.m ? watchMat('_bz', null, BEZELS[W.bezel]) : watchMat('wood', W.caseWood)) : watchMat('steel');
-    const polished = metal.clone(); polished.roughness = Math.min(.16, metal.roughness); polished.envMapIntensity = 1.3;
+    const polished = polishOf(metal, Math.min(.16, metal.roughness)); polished.envMapIntensity = 1.3;
     const steel = watchMat('steel');
     const G = WATCH_GEOM[W.shape] || WATCH_GEOM.round;
     const TOP = .17, DIAL_Y = .14, BZ_TOP = .255, CRY_Y = .262, MID = -.055;
@@ -2960,16 +3052,16 @@ const Studio = {
     cry.castShadow = false;
     // knurled crown + stem + guards
     const crownMat = cm.kind === 'metal' ? metal : steel;
-    const gear = new THREE.Shape(); for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2, r = i % 2 ? .08 : .088; i ? gear.lineTo(Math.cos(a) * r, Math.sin(a) * r) : gear.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
-    const cg2 = new THREE.ExtrudeGeometry(gear, { depth: .11, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 3, curveSegments: 8 }); cg2.rotateY(Math.PI / 2);
+    const gear = new THREE.Shape(); for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2, r = i % 2 ? .122 : .132; i ? gear.lineTo(Math.cos(a) * r, Math.sin(a) * r) : gear.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+    const cg2 = new THREE.ExtrudeGeometry(gear, { depth: .13, bevelEnabled: true, bevelThickness: .018, bevelSize: .014, bevelSegments: 3, curveSegments: 8 }); cg2.rotateY(Math.PI / 2);
     if (!hd) {
-    const crown = mk(cg2, crownMat); crown.position.set(G.halfX + .05, MID, 0);
-    const stem = mk(new THREE.CylinderGeometry(.04, .04, .08, 24), crownMat); stem.rotation.z = Math.PI / 2; stem.position.set(G.halfX + .01, MID, 0);
-    if (W.crownGuards) [-1, 1].forEach(s => { const gd = mk(new RoundedBoxGeometry(.13, .16, .08, 4, .035), caseMat); gd.position.set(G.halfX + .02, MID, s * .15); });
+    const crown = mk(cg2, polishOf(crownMat, Math.min(.22, crownMat.roughness))); crown.position.set(G.halfX + .05, MID, 0); // 6.5 mm crown on a 42 mm case
+    const stem = mk(new THREE.CylinderGeometry(.062, .062, .08, 24), crownMat); stem.rotation.z = Math.PI / 2; stem.position.set(G.halfX + .01, MID, 0);
+    if (W.crownGuards) [-1, 1].forEach(s => { const gd = mk(new RoundedBoxGeometry(.15, .2, .09, 4, .04), caseMat); gd.position.set(G.halfX + .02, MID, s * .2); });
     // lugs (integrated octagon has none)
     }
     if (W.shape !== 'octagon' && !hd) { const lg = lugGeo(); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => { const l = mk(lg, caseMat); l.position.set(sx * .63, 0, sz * (G.halfZ - .34)); if (sz < 0) l.rotation.y = Math.PI; }); }
-    const bm = cm.kind === 'metal' ? metal : steel, bp = bm.clone(); bp.roughness = .17; bp.envMapIntensity = 1.35; // polished, not a perfect mirror
+    const bm = cm.kind === 'metal' ? metal : steel, bp = polishOf(bm, .17); bp.envMapIntensity = 1.35; // polished, not a perfect mirror
     this.buildStrap(W, grp, mk, { metal: bm, polished: bp, steel }, hd ? { ...G, halfZ: (hd.userData.lugZ || 1.3) * dialR - .2 } : G);
     grp.scale.setScalar(sc); grp.rotation.x = .62;
   },
@@ -2977,7 +3069,7 @@ const Studio = {
   // exposed screws and grip ribs, guarded pushers, recessed face with a live LCD (digital or ana-digi), integrated resin strap.
   buildShock(d, W, grp, mk) {
     const resin = new THREE.MeshPhysicalMaterial({ color: W.strapColor, roughness: .6, clearcoat: .15, clearcoatRoughness: .55, sheen: .3, sheenRoughness: .6, sheenColor: new THREE.Color(W.strapColor).lerp(new THREE.Color('#fff'), .3) });
-    const cm = CASE_MATS[W.caseMat] || CASE_MATS.steel, metal = cm.kind === 'metal' ? watchMat(W.caseMat) : watchMat('steel'), polished = metal.clone(); polished.roughness = .18;
+    const cm = CASE_MATS[W.caseMat] || CASE_MATS.steel, metal = cm.kind === 'metal' ? watchMat(W.caseMat) : watchMat('steel'), polished = polishOf(metal, .18);
     const ext = (shape, depth, bevel) => { const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * .9, bevelSegments: 6, curveSegments: 64 }); g.rotateX(-Math.PI / 2); return g; };
     const sq = (hx, hz, p = 3.4, n = 128) => Array.from({ length: n }, (_, i) => { const a = -i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a); return new THREE.Vector2(Math.sign(c) * Math.abs(c) ** (2 / p) * hx, Math.sign(s) * Math.abs(s) ** (2 / p) * hz); });
     const at = (m, x, y, z) => { m.position.set(x, y, z); return m; };
@@ -3120,7 +3212,9 @@ const Studio = {
   },
   buildStrap(W, grp, mk, M, G) {
     const z0 = G.halfZ + .18, integ = W.shape === 'octagon';
-    const base = [[0, -.14, z0], [0, -.3, z0 + .33], [0, -.78, 1.86], [0, -1.6, 1.88], [0, -2.36, 1.48], [0, -2.78, .72], [0, -2.9, 0], [0, -2.78, -.72], [0, -2.36, -1.48], [0, -1.6, -1.88], [0, -.78, -1.86], [0, -.3, -(z0 + .33)], [0, -.14, -z0]].map(p => new THREE.Vector3(...p));
+    // wrist loop at true scale: about 64 mm across and 50 mm deep for a 42 mm case (1 unit = 20 mm)
+    const RW = Math.max(1.58, z0 + .4), half = [[0, -.14, z0], [0, -.3, z0 + .33], [0, -.8, RW], [0, -1.5, RW + .02], [0, -2.1, RW * .8], [0, -2.42, RW * .42]];
+    const base = [...half, [0, -2.52, 0], ...half.slice().reverse().map(([x, y, z]) => [x, y, -z])].map(p => new THREE.Vector3(...p));
     const X = new THREE.Vector3(1, 0, 0);
     const t = W.strap, Q = (curve, u) => ({ p: curve.getPointAt(u), T: curve.getTangentAt(u), q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u)) });
     // flat strap with rounded edges; width tapers from lug width toward the buckle
@@ -3134,7 +3228,7 @@ const Studio = {
     };
     const tuck = [[0, -.15, G.halfZ + .05], ...base.slice(1, -1).map(v => v.toArray()), [0, -.15, -(G.halfZ + .05)]].map(p => new THREE.Vector3(...p));
     if (t === 'leather' || t === 'rubber' || t === 'mesh') {
-      const curve = new THREE.CatmullRomCurve3(tuck), w0 = G.strapW || (integ ? 1.15 : 1.02), th = t === 'mesh' ? .06 : t === 'rubber' ? .13 : .11;
+      const curve = new THREE.CatmullRomCurve3(tuck), w0 = G.strapW || (integ ? 1.15 : 1.02), th = t === 'mesh' ? .06 : t === 'rubber' ? .16 : .145;
       band(curve, w0, th, t === 'mesh' ? meshMat(M.metal) : strapMat(t, W.strapColor, W.strapColor2));
       if (t === 'mesh') { const { p, q } = Q(curve, .5); const cl = mk(new RoundedBoxGeometry(w0 * .86, .09, .55, 3, .03), M.polished); cl.position.copy(p); cl.quaternion.copy(q); return; }
       const wb = widthAt(w0, .5) / 2, keeperMat = new THREE.MeshPhysicalMaterial({ color: W.strapColor, roughness: t === 'rubber' ? .8 : .55, sheen: .2 });
@@ -3155,28 +3249,32 @@ const Studio = {
     }
     // link bracelets
     const L = {
-      woodlinks: { pitch: .34, th: .17, lw: 1.02, p: [[0, .5, 'A'], [-.38, .24, 'B'], [.38, .24, 'B']] },
-      oyster: { pitch: .3, th: .12, lw: 1.02, p: [[0, .32, 'P'], [-.33, .3, 'S'], [.33, .3, 'S']] },
-      jubilee: { pitch: .2, th: .11, lw: 1.02, p: [[-.375, .25, 'S'], [.375, .25, 'S'], [-.125, .22, 'P'], [.125, .22, 'P']] },
-      integrated: { pitch: .26, th: .13, lw: integ ? 1.2 : 1.04, p: [[0, .16, 'P'], [-.3, .42, 'S'], [.3, .42, 'S']] },
+      woodlinks: { pitch: .34, th: .145, lw: 1.02, p: [[0, .5, 'A'], [-.38, .24, 'B'], [.38, .24, 'B']] },
+      oyster: { pitch: .3, th: .15, lw: 1.02, p: [[0, .32, 'S'], [-.33, .3, 'S'], [.33, .3, 'S']] }, // tool-watch bracelet: brushed across all three rows
+      jubilee: { pitch: .2, th: .13, lw: 1.02, p: [[-.375, .25, 'S'], [.375, .25, 'S'], [-.125, .22, 'P'], [.125, .22, 'P']] },
+      integrated: { pitch: .26, th: .15, lw: integ ? 1.2 : 1.04, p: [[0, .16, 'P'], [-.3, .42, 'S'], [.3, .42, 'S']] },
     }[t] || null;
     if (!L) return;
-    const mats = t === 'woodlinks' ? { A: watchMat('wood', W.strapWood), B: watchMat('wood', W.strapAccent) } : { P: M.polished, S: M.metal };
+    const brushedLink = () => { const m = M.metal.clone(); m.roughness = Math.max(.46, m.roughness + .08); m.bumpMap = TEX.brushed(true); m.bumpScale = .1; m.anisotropy = 0; return m; }; // outer links brushed along the bracelet
+    const mats = t === 'woodlinks' ? { A: watchMat('wood', W.strapWood), B: watchMat('wood', W.strapAccent) } : { P: M.polished, S: brushedLink() };
     const curve = new THREE.CatmullRomCurve3(base), len = curve.getLength(), n = Math.floor(len / L.pitch);
     // link frame: width axis stays on x so neighbouring links never roll against each other (shortest-arc rotation drifts and bands the reflections)
     const SIDE = new THREE.Vector3(1, 0, 0), frame = T => { const fz = T.clone().normalize(), fy = new THREE.Vector3().crossVectors(fz, SIDE).normalize(); return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(fy, fz), fy, fz)); };
     // machined links: flat tops, tight chamfer, rows nearly touching (wood links keep a softer edge)
     // crowned tops: tilt top-face normals outward so each link sweeps a gradient of the softbox instead of flipping light/dark row by row
-    const crown = (geo, kx = .32, kz = .2) => { geo.computeBoundingBox(); const bb = geo.boundingBox, hx = (bb.max.x - bb.min.x) / 2, hz = (bb.max.z - bb.min.z) / 2, P = geo.attributes.position, N = geo.attributes.normal, v = new THREE.Vector3();
+    const crown = (geo, kx = .2, kz = .1) => { geo.computeBoundingBox(); const bb = geo.boundingBox, hx = (bb.max.x - bb.min.x) / 2, hz = (bb.max.z - bb.min.z) / 2, P = geo.attributes.position, N = geo.attributes.normal, v = new THREE.Vector3();
       for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(N, i); if (Math.abs(v.y) < .6) continue; const sy = Math.sign(v.y); v.x += P.getX(i) / hx * kx; v.z += P.getZ(i) / hz * kz; v.y = sy; v.normalize(); N.setXYZ(i, v.x, v.y, v.z); } N.needsUpdate = true; return geo; };
-    const wood = t === 'woodlinks', geos = L.p.map(([, w]) => (g => wood ? g : crown(g))(new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * (wood ? .95 : .99), wood ? 5 : 3, wood ? Math.min(.05, L.th * .35) : Math.min(.022, L.th * .18))));
-    [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = frame(T); const e = mk(crown(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), .25, .35), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
+    const wood = t === 'woodlinks', geos = L.p.map(([, w]) => (g => wood ? g : crown(g))(new RoundedBoxGeometry(L.lw * w, L.th, L.pitch * (wood ? .965 : .99), wood ? 4 : 3, wood ? .026 : Math.min(.022, L.th * .18))));
+    // wood: every link is cut from a different spot of the board, at true grain scale
+    const vary = (g, k) => { const c = g.clone(), uv = c.attributes.uv, ox = (k * .37) % 1, oy = (k * .61) % 1; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * .14 + ox, uv.getY(i) * .1 + oy); return c; };
+    const pool = wood ? geos.map((g, j) => Array.from({ length: 6 }, (_, k) => vary(g, j * 6 + k + 1))) : null;
+    [0, 1].forEach(u => { const p = curve.getPointAt(u), T = curve.getTangentAt(u), q = frame(T); const e = mk((g => wood ? vary(g, 40 + u) : g)(crown(new RoundedBoxGeometry(L.lw * (integ ? 1 : .98), L.th * 1.15, .34, 4, .05), .12, .16)), t === 'woodlinks' ? mats.A : M.polished); e.position.copy(p).addScaledVector(T, u ? .12 : -.12).add(new THREE.Vector3(0, -.02, 0)); e.quaternion.copy(q); }); // solid end links
     for (let i = 0; i < n; i++) {
       const u = (i + .5) / n, p = curve.getPointAt(u), q = frame(curve.getTangentAt(u));
       const taper = lerp(1, t === 'integrated' ? .84 : .88, 1 - Math.abs(u - .5) * 2);
       if (Math.abs(u - .5) < .55 / n) { const c = mk(crown(new RoundedBoxGeometry(L.lw * taper, L.th * .8, L.pitch * 1.8, 3, .03), .25, .5), M.polished); c.position.copy(p); c.quaternion.copy(q); continue; }
       const link = new THREE.Group(); link.position.copy(p); link.quaternion.copy(q); link.scale.set(taper, 1, 1); grp.add(link);
-      L.p.forEach(([x, , m], j) => { const pc = mk(geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } }); // jubilee: staggered centre links
+      L.p.forEach(([x, , m], j) => { const pc = mk(wood ? pool[j][(i * 5 + j) % 6] : geos[j], mats[m], link); pc.position.x = x * L.lw; if (t === 'jubilee' && m === 'P' && i % 2) { if (x < 0) pc.position.x = 0; else pc.visible = false; } }); // jubilee: staggered centre links
     }
   },
   tickHands() {

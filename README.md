@@ -64,7 +64,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
   - The tech pack follows it: POM rows WB2–WB6, BOM rows for the yoke fabric, elastic, button and fusible, and construction rows are added and updated as you change the 3D. Supplier and unit cost typed into those rows are kept; the rest of those rows is rewritten from the spec. Turn the double waist off and the rows go.
 - **Accessories:** hooded wrap scarf, balaclava (merino rib by default; polar fleece and chunky knit also available)
 - **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping. The duffle body is grained leather with smooth straps, thread rows along the straps, zip and end panels (thread color = **Stitch**; left at the default it runs tonal), and a toothed metal zip.
-- **Mini satchel:** 11¾ × 8 × 4⅛ in crossbody (`assets/models/satchel.glb`). Every part keeps its own role:
+- **Mini satchel:** 11¾ × 8 × 4⅛ in crossbody, built in code (an uploaded GLB still works; `assets/models/satchel.glb` is no longer used by default). Boxed body with piped seams, a bound flap that wraps over the top, a zip pocket, webbing tabs with D-rings and a strap with a slider. Every part keeps its own role:
   - shell color and fabric
   - webbing trim for the strap, gussets and pocket
   - hardware finish (brass by default)
@@ -73,7 +73,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
   The strap is rebuilt as one smooth webbing band. The shell and webbing show their weave, the flap and pocket are edged with real stitch rows in the stitch color, and the front pocket has a toothed zip. The DPP mark sits in gold on the flap, and logos, text and patches can go anywhere on it.
 - **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
-- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets.
+- **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets. Drawn at true scale (1 unit = 20 mm): 6.5 mm crown, wrist loop about 64 × 50 mm, 3 mm straps and bracelets. Brushed metals carry brush lines, wood shows open grain with every link cut from a different part of the board, and the hang tag is a small swing tag off the strap.
   - **Hour markers:** applied by default. Batons and dots are raised, polished metal, with lume on dark dials. Numerals and the DPP mark at 12 are raised too. Switch to Printed for a flat dial.
   - **Skeleton and open-heart** dials show a full 3D movement: a gear train that turns, a beating balance wheel, Geneva-striped bridges, jewels and blued screws. Dark cases get a black movement.
   - **Case build** has three options:
