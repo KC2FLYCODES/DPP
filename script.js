@@ -1173,6 +1173,23 @@ const polishOf = (m, r) => { const p = m.clone(); p.roughness = r; p.bumpMap = n
 function strapMat(type, c1, c2) {
   // UV: x = around the strap (x .5 = top face, .25/.75 = edges), y = along the strap (y = t·H, buckle at .5)
   const k = ['strap2', type, c1, c2].join(':');
+  // Leather is drawn twice with the same layout: once in colour, once as relief (bm). Along the strap 1 mm is about 11 px, across it about 6 px.
+  const leather = bm => (x, w, h) => {
+    x.fillStyle = bm ? '#808080' : c1; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < (bm ? 9000 : 500); i++) { // hide: soft tonal blotches in colour, tight grain cells in relief
+      const px = Math.random() * w, py = Math.random() * h, r = bm ? 1.2 + Math.random() * 2.2 : 10 + Math.random() * 40, gr = x.createRadialGradient(px, py, 0, px, py, r), v = Math.random() < .55 ? '0,0,0' : '255,255,255';
+      gr.addColorStop(0, `rgba(${v},${bm ? .22 : .07})`); gr.addColorStop(1, `rgba(${v},0)`); x.fillStyle = gr; x.fillRect(px - r, py - r, r * 2, r * 2); }
+    x.fillStyle = bm ? '#6a6a6a' : shade(c1, -.45); [.25, .75].forEach(u => x.fillRect(u * w - 7, 0, 14, h)); // painted edges
+    [.36, .64].forEach(u => { const X0 = u * w; // saddle stitch: pressed channel, needle holes, then each thread lying slightly slanted
+      x.fillStyle = bm ? 'rgba(0,0,0,.35)' : 'rgba(0,0,0,.16)'; x.fillRect(X0 - 4, 0, 8, h);
+      for (let y = 4; y < h; y += 34) { x.fillStyle = bm ? '#000' : 'rgba(0,0,0,.6)'; x.beginPath(); x.ellipse(X0, y, 2.2, 4, 0, 0, 7); x.fill(); x.strokeStyle = bm ? '#fff' : c2; x.lineWidth = 3.6; x.lineCap = 'round'; x.beginPath(); x.moveTo(X0 - 1.2, y + 6); x.lineTo(X0 + 1.2, y + 28); x.stroke(); } });
+    for (let i = 0; i < 6; i++) { const y = (.54 + i * .034) * h; x.fillStyle = bm ? '#000' : 'rgba(0,0,0,.88)'; x.beginPath(); x.ellipse(w * .5, y, 8, 15, 0, 0, 7); x.fill(); if (!bm) { x.strokeStyle = shade(c1, .25); x.lineWidth = 1.5; x.stroke(); } } // round buckle holes
+  };
+  const mkTex = (cv, srgb) => { const t = new THREE.CanvasTexture(cv); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  if (type === 'leather') {
+    TEX._c[k] ||= mkTex(TEX.canvas(256, 2048, leather(false)), true); TEX._c[k + 'b'] ||= mkTex(TEX.canvas(256, 2048, leather(true)), false);
+    return new THREE.MeshPhysicalMaterial({ map: TEX._c[k], bumpMap: TEX._c[k + 'b'], bumpScale: 1.3, side: THREE.DoubleSide, roughness: .58, sheen: .3, sheenColor: new THREE.Color(c1).lerp(new THREE.Color('#fff'), .4), clearcoat: .16, clearcoatRoughness: .55 });
+  }
   if (!TEX._c[k]) {
     const tile = type === 'nato';
     const cv = TEX.canvas(256, tile ? 512 : 2048, (x, w, h) => {
@@ -1196,8 +1213,16 @@ function meshMat(metal) {
   if (!TEX._c.mesh) { const cv = TEX.canvas(128, 128, (x, w, h) => { x.fillStyle = '#808080'; x.fillRect(0, 0, w, h); x.strokeStyle = '#fff'; x.lineWidth = 2; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i - h, h); x.stroke(); } x.strokeStyle = '#000'; for (let i = -h; i < w * 2; i += 8) { x.beginPath(); x.moveTo(i + 4, 0); x.lineTo(i + 4 - h, h); x.stroke(); } }); const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 90); TEX._c.mesh = t; }
   const m = metal.clone(); m.bumpMap = TEX._c.mesh; m.bumpScale = 3; m.roughness = Math.max(.25, m.roughness); return m;
 }
-function handGeo(style, L, w) {
-  const t = .1, shapes = [], s = new THREE.Shape();
+// Lume inlay for a hand: a strip set into the blade (and the circle of a mercedes hand). Dauphine hands carry none.
+function handLume(style, L, w) {
+  if (style === 'dauphine') return null;
+  const shapes = [], s = new THREE.Shape(), hw = w * (style === 'pencil' ? .14 : .24), y0 = L * .3, y1 = L * (style === 'mercedes' ? .58 : style === 'sword' ? .72 : .86);
+  s.moveTo(-hw, y0); s.lineTo(-hw, y1); s.lineTo(hw, y1); s.lineTo(hw, y0); shapes.push(s);
+  if (style === 'mercedes') { const c = new THREE.Shape(); c.absarc(0, L * .74, w * .78, 0, Math.PI * 2, false); shapes.push(c); }
+  const g = new THREE.ShapeGeometry(shapes, 20); g.rotateX(-Math.PI / 2); return g;
+}
+function handGeo(style, L, w, tail = .1) {
+  const t = tail, shapes = [], s = new THREE.Shape();
   if (style === 'dauphine') { s.moveTo(0, -t); s.lineTo(w * .65, L * .2); s.lineTo(0, L); s.lineTo(-w * .65, L * .2); }
   else if (style === 'sword') { s.moveTo(-w * .4, -t); s.lineTo(-w * .55, L * .76); s.lineTo(0, L); s.lineTo(w * .55, L * .76); s.lineTo(w * .4, -t); }
   else if (style === 'pencil') { s.moveTo(-w * .3, -t); s.lineTo(-w * .3, L * .9); s.lineTo(0, L); s.lineTo(w * .3, L * .9); s.lineTo(w * .3, -t); }
@@ -1208,7 +1233,8 @@ function handGeo(style, L, w) {
   }
   else { s.moveTo(-w / 2, -t); s.lineTo(-w / 2, L); s.lineTo(w / 2, L); s.lineTo(w / 2, -t); }
   shapes.push(s);
-  const g = new THREE.ExtrudeGeometry(shapes, { depth: .012, bevelEnabled: false, curveSegments: 24 }); g.rotateX(-Math.PI / 2); return g;
+  const b = Math.min(.004, w * .22); // chamfered edges: a cut hand catches a line of light along each side
+  const g = new THREE.ExtrudeGeometry(shapes, { depth: .009, bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelOffset: -b, bevelSegments: 2, curveSegments: 24 }); g.rotateX(-Math.PI / 2); g.translate(0, b, 0); return g;
 }
 // Dial artwork. `fit` shrinks the layout for rectangular/tonneau dials.
 // Hour positions a subdial, date window or open-heart aperture covers
@@ -2540,11 +2566,16 @@ const Studio = {
       }
     }
     // hands — pivot at center, pointing to 12 (-z)
-    const handMat = c => new THREE.MeshPhysicalMaterial({ color: c, metalness: .7, roughness: .22, clearcoat: .4 });
-    const hand = (len, wid, col, y, style) => { const g = handGeo(style, len, wid); const m = mk(g, handMat(col)); m.position.y = y; return m; };
+    // hour and minute hands are polished metal with a lume inlay on dark dials; the seconds hand is lacquered, with a counterweight tail
+    const handMat = (c, paint) => new THREE.MeshPhysicalMaterial({ color: c, metalness: paint ? .25 : .65, roughness: paint ? .35 : .2, clearcoat: paint ? .6 : .4, clearcoatRoughness: .2, envMapIntensity: 1.2 }); // not a full mirror: the hands must stay readable against a dark dial
+    const lumeMat = lum(W.dial) < .45 ? new THREE.MeshStandardMaterial({ color: '#e9ecdc', roughness: .7, emissive: '#b8d3b0', emissiveIntensity: .06 }) : null;
+    const hand = (len, wid, col, y, style, sec) => { const m = mk(handGeo(style, len, wid, sec ? .24 : .1), handMat(col, sec)); m.position.y = y;
+      if (sec) { const cw = mk(new THREE.CylinderGeometry(.026, .026, .011, 24), m.material, m); cw.position.set(0, .0065, .17); }
+      else if (lumeMat) { const lg = handLume(style, len, wid); if (lg) { const l = mk(lg, lumeMat, m); l.position.y = .0172; l.castShadow = false; } }
+      return m; };
     const hl = dialR / .89;
-    this.hands = { h: hand(.5 * hl, .065, W.index, DIAL_Y + .012, W.hands), m: hand(.75 * hl, .046, W.index, DIAL_Y + .026, W.hands === 'mercedes' ? 'sword' : W.hands), s: hand(.84 * hl, .012, W.accent, DIAL_Y + .04, 'baton') };
-    mk(new THREE.CylinderGeometry(.03, .034, .05, 32), handMat(W.index)).position.y = DIAL_Y + .03;
+    this.hands = { h: hand(.5 * hl, .065, W.index, DIAL_Y + .012, W.hands), m: hand(.75 * hl, .046, W.index, DIAL_Y + .03, W.hands === 'mercedes' ? 'sword' : W.hands), s: hand(.84 * hl, .012, W.accent, DIAL_Y + .048, 'baton', true) };
+    { const cap = mk(new THREE.CylinderGeometry(.034, .04, .062, 32), handMat(W.index)); cap.position.y = DIAL_Y + .034; const dome = mk(new THREE.SphereGeometry(.034, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), cap.material, cap); dome.scale.y = .35; dome.position.y = .031; }
     // domed sapphire crystal
     const cR = hd ? dialR * 1.01 : insert ? .825 : W.shape === 'round' ? .81 : dialR, dome = .025, sR = (cR * cR + dome * dome) / (2 * dome);
     const cry = mk(W.shape === 'round' || W.shape === 'cushion' || W.shape === 'octagon' ? new THREE.SphereGeometry(sR, 128, 12, 0, Math.PI * 2, 0, Math.asin(cR / sR)) : dialGeo(),
@@ -2602,7 +2633,7 @@ const Studio = {
     const glass = mk(new THREE.CircleGeometry(R + .02, 96), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: .03, ior: 1.52, roughness: 0, clearcoat: 1, envMapIntensity: 1.4 })); glass.rotation.x = -Math.PI / 2; glass.position.y = TOP + .07; glass.castShadow = false;
     if (ana) {
       const hm = c => new THREE.MeshPhysicalMaterial({ color: c, metalness: .5, roughness: .3, clearcoat: .4 }), hand = (len, wid, col, y, st) => { const m = mk(handGeo(st, len, wid), hm(col)); m.position.y = y; return m; };
-      this.hands = { h: hand(.42, .07, W.index, TOP + .012, W.hands), m: hand(.62, .05, W.index, TOP + .024, W.hands), s: hand(.68, .014, W.accent, TOP + .036, 'baton') };
+      this.hands = { h: hand(.42, .07, W.index, TOP + .012, W.hands), m: hand(.62, .05, W.index, TOP + .03, W.hands), s: hand(.68, .014, W.accent, TOP + .048, 'baton') };
       mk(new THREE.CylinderGeometry(.03, .03, .05, 24), hm(W.index)).position.y = TOP + .03;
     }
     this.buildStrap({ ...W, strap: 'rubber', shape: 'round' }, grp, mk, { metal, polished, steel: metal }, { halfZ: 1.12, strapW: 1.14 });
