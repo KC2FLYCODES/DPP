@@ -48,7 +48,7 @@ Free-tier headroom: saves are batched (one write per design every few seconds of
 | 02 3D Studio | Silhouette, fit, fabric and colors for garments. For the watch: case, bezel, dial, edition N°, strap woods, movement. Print placement is in inches from HPS. Exports PNG and GLB. Use "Save renders" to send views to the tech pack. |
 | 03 Artwork | Layered front/back print art on a 14 × 14 in zone. Supports image, text, DPP mark and shapes. Undo with Ctrl+Z; paste images with Ctrl+V. |
 | 04 Capture | Drop or paste a photo. It cuts the background and pulls the palette. From there: build a 3D blank, crop and lift a graphic onto the artwork, or let Claude draft the spec (needs an API key in Settings). |
-| 05 Tech Pack | 5–6 editable pages: overview, BOM, graded POM, artwork placement, construction, costing and revision log. Print to PDF or export CSV. |
+| 05 Tech Pack | 5–6 editable pages: overview, BOM, graded POM, artwork placement, construction, costing and revision log. Print to PDF or export CSV. The Overview carries a **Style description** written from the 3D spec (silhouette, fabric, construction, double waist, contrast, finish, branding, size run); it rewrites itself as the design changes. The shell-fabric BOM row follows the fabric picked in 3D Studio. Table cells wrap, so long specs print in full. |
 
 ## Bugs
 Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the browser console (F12) shows red errors, include those too.
@@ -56,17 +56,21 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
   - **Sleeves:** separate sleeve color. Sleeve logo is either the DPP mark (set its width and distance below the shoulder seam) or the DON'T POSTPONE PASSION wordmark running shoulder to cuff. It can go on the left, right or both sleeves, screen printed or embroidered.
-- **Labels and tags** (tops and bottoms): every new piece comes with the woven DPP label inside the back neck or waistband. You can switch to a printed tagless label or none. An optional DPP hang tag shows style number, size, price and a barcode. Label colors and size are editable, and the panel shows a preview.
-- **Bottoms:** pants in straight or slim cut, shorts, boxer briefs. **Double waistband** (pants and shorts): a second band stacked above the main one, plaid by default. It follows the garment's own waist line, and its height, plaid colors or solid color are editable.
+- **Labels and tags** (every category, under **T · Labels & tags**): tops and bottoms carry the woven DPP label inside the back neck or waistband (or a printed tagless label, or none). Scarves and balaclavas carry a woven tab at the hem. Every piece, including socks, bags and the watch, can carry the DPP hang tag; it is on by default for accessories, bags, socks and the watch. **Tag text** is editable (leave it empty for the logo alone), **DPP logo** switches between logo + text and text only, and ground and ink colors are editable. The hang tag shows style number, size (or the edition number on a watch), price and a barcode. The panel previews both, and the tech pack lists them on the Materials page.
+- **Bottoms:** pants in straight or slim cut, shorts, boxer briefs.
+  - **Double waist** (pants and shorts, under **B · Color**): two builds.
+    - **Built-in boxer** (default): a woven yoke caught in the main waistband, gathered into a jacquard elastic that carries the wordmark and the DPP mark, with a one-button fly. Set how much shows above the waist, the elastic height, the yoke fabric (plaid, gingham, pinstripe or solid), the elastic color, the knit-in text and its color.
+    - **Second band:** a flat second waistband in the contrast fabric, edge-stitched top and bottom, with its own button.
+  - The tech pack follows it: POM rows WB2–WB6, BOM rows for the yoke fabric, elastic, button and fusible, and construction rows are added and updated as you change the 3D. Supplier and unit cost typed into those rows are kept; the rest of those rows is rewritten from the spec. Turn the double waist off and the rows go.
 - **Accessories:** hooded wrap scarf, balaclava (merino rib by default; polar fleece and chunky knit also available)
-- **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping.
+- **Bags:** barrel duffle in Mini 16", Weekender 22" or Large 26". Pebble, smooth or suede leather, waxed canvas or ballistic nylon. Gunmetal, steel, brass or matte-black hardware, and a separate trim color for the handles, straps and piping. The duffle body is grained leather with smooth straps, thread rows along the straps, zip and end panels (thread color = **Stitch**; left at the default it runs tonal), and a toothed metal zip.
 - **Mini satchel:** 11¾ × 8 × 4⅛ in crossbody (`assets/models/satchel.glb`). Every part keeps its own role:
   - shell color and fabric
   - webbing trim for the strap, gussets and pocket
   - hardware finish (brass by default)
   - flap stitch color
 
-  The strap is rebuilt as one smooth webbing band. The DPP mark sits in gold on the flap, and logos, text and patches can go anywhere on it.
+  The strap is rebuilt as one smooth webbing band. The shell and webbing show their weave, the flap and pocket are edged with real stitch rows in the stitch color, and the front pocket has a toothed zip. The DPP mark sits in gold on the flap, and logos, text and patches can go anywhere on it.
 - **Stamped logos:** Deboss (pressed), Emboss (raised) and Foil stamp are print techniques. They use the artwork's shape only and press it into the material. New duffles start with the DPP mark debossed on the front.
 - **Socks:** crew and no-show 3D models, with contrast heel and toe, a contrast cuff and 1–4 athletic cuff stripes. Logos sit on the outer side of the leg.
 - **Watches:** 5 case shapes, 11 materials, 12 dial styles and 8 strap types, plus 16 one-click style presets.

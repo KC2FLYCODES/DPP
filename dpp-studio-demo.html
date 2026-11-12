@@ -165,7 +165,9 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
 .stage-tools{position:absolute;left:14px;right:14px;top:12px;display:flex;gap:8px;align-items:center;pointer-events:none}
 .stage-tools>*{pointer-events:auto}
 .stage-tools .seg{background:rgba(10,11,21,.7);backdrop-filter:blur(6px)}
-.stage-foot{position:absolute;left:16px;bottom:14px;right:16px;display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.stage-foot{position:absolute;left:16px;bottom:14px;right:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;pointer-events:none}
+.stage-foot .big{min-width:0}
+.stage-foot .cap{flex:none;white-space:nowrap}
 .stage-foot .big{font-weight:900;font-stretch:125%;text-transform:uppercase;font-size:13px;letter-spacing:.06em;line-height:1.2}
 .stage-foot .big span{display:block;color:var(--muted);font:400 10px var(--f-mono);letter-spacing:.12em}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
@@ -227,9 +229,11 @@ input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-we
 .tp-in{width:100%;border:0;background:transparent;font:500 12px var(--f-sans);color:#14172B;outline:none;padding:1px 0;min-width:0}
 .tp-in:focus{background:#eef1f9}
 select.tp-in{appearance:none;cursor:pointer}
+textarea.tp-in{display:block;resize:none;overflow:hidden;field-sizing:content;line-height:1.4;padding:3px 0;min-height:0}
+.tp-tbl input[type=number]::-webkit-inner-spin-button{display:none}
 .tp-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
 .tp-tbl th{font:500 8.5px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:#5b6078;text-align:left;padding:6px 6px;border-bottom:1.5px solid #14172B;white-space:nowrap}
-.tp-tbl td{border-bottom:1px solid #dfe3ee;padding:2px 6px;vertical-align:middle}
+.tp-tbl td{border-bottom:1px solid #dfe3ee;padding:2px 6px;vertical-align:top}
 .tp-tbl td.num,.tp-tbl th.num{text-align:right}
 .tp-tbl td.num .tp-in{text-align:right;font-family:var(--f-mono);font-size:11px}
 .tp-tbl td.calc{font:500 11px var(--f-mono);text-align:right;color:#14172B}
@@ -248,6 +252,9 @@ select.tp-in{appearance:none;cursor:pointer}
 .tp-fig .missing{font:400 9.5px var(--f-mono);color:#a3a8bb;text-align:center;padding:10px;letter-spacing:.06em}
 .tp-note{width:100%;min-height:70px;border:1px solid #dfe3ee;background:#fff;padding:9px 10px;font:400 12px/1.55 var(--f-sans);color:#14172B;outline:none;white-space:pre-wrap}
 .tp-note:focus{border-color:#14172B}
+.tp-desc{border-top:1px solid #14172B;border-bottom:1px solid #dfe3ee;padding:9px 0 3px;columns:2;column-gap:28px}
+.tp-desc p{margin:0 0 7px;font:400 11.5px/1.55 var(--f-sans);color:#14172B;break-inside:avoid}
+.tp-desc p:first-child{font-weight:600}
 .tp-kv{display:grid;grid-template-columns:150px 1fr;border-top:1px solid #14172B}
 .tp-kv>*{border-bottom:1px solid #dfe3ee;padding:5px 6px}
 .tp-kv label{font:400 9px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:#5b6078;display:flex;align-items:center}
@@ -522,6 +529,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* =========================================================================
    0. Utilities
@@ -751,16 +762,25 @@ function bottomsBOM(cat) {
     row({ component: 'Pouch lining', material: 'Same as body', supplier: '', spec: 'Double layer', qty: .1, uom: 'yd', cost: 0 }),
     ...lbl.slice(1), row({ component: 'Packaging', material: 'Recycled box sleeve', supplier: '', spec: '1 or 3-pack', qty: 1, uom: 'pc', cost: 0 }),
   ];
-  const shell = cat === 'pants' ? '13.5 oz rigid denim, 100% cotton' : 'Heavyweight cotton twill / fleece per colorway';
-  const b = [
-    row({ component: 'Shell fabric', material: shell, supplier: '', spec: 'Per colorway', qty: cat === 'pants' ? 1.6 : .9, uom: 'yd', cost: 0 }),
-    row({ component: 'Pocketing', material: 'Cotton twill 3.5 oz', supplier: '', spec: 'Front pockets', qty: .25, uom: 'yd', cost: 0 }),
-    row({ component: 'Fly', material: 'YKK metal zipper #4.5', supplier: '', spec: 'Or elastic + drawcord', qty: 1, uom: 'pc', cost: 0 }),
-    row({ component: 'Shank button / rivets', material: 'Brass, DPP engraved', supplier: '', spec: '1 button + 6 rivets', qty: 1, uom: 'set', cost: 0 }),
-    row({ component: 'Thread', material: 'Tex 70 core-spun', supplier: '', spec: 'Contrast or tonal', qty: 1, uom: 'cone', cost: 0 }),
+  const pants = cat === 'pants';
+  return [
+    row({ component: 'Shell fabric', material: pants ? '13.5 oz rigid denim, 100% cotton' : 'Khaki chino twill, 100% cotton', supplier: '', spec: 'Per colorway', qty: pants ? 1.6 : .9, uom: 'yd', cost: 0 }),
+    row({ component: 'Pocketing', material: 'Cotton twill 3.5 oz', supplier: '', spec: pants ? 'Front pocket bags' : 'Side-seam pocket bags', qty: .25, uom: 'yd', cost: 0 }),
+    ...(pants ? [
+      row({ component: 'Fly zipper', material: 'YKK #4.5 brass, closed end', supplier: '', spec: 'Length per front rise; semi-auto lock slider', qty: 1, uom: 'pc', cost: 0 }),
+      row({ component: 'Shank button', material: 'Brass tack button, 27L, DPP engraved', supplier: '', spec: 'Waistband CF', qty: 1, uom: 'pc', cost: 0 }),
+      row({ component: 'Rivets', material: 'Brass burr rivets, 9 mm', supplier: '', spec: 'Front pocket corners + coin pocket', qty: 6, uom: 'pc', cost: 0 }),
+      row({ component: 'Waistband interlining', material: 'Woven fusible, 60 gsm', supplier: '', spec: 'Full waistband', qty: .15, uom: 'yd', cost: 0 }),
+    ] : [
+      row({ component: 'Waistband elastic', material: 'Knitted elastic, 1 3/4" wide', supplier: '', spec: 'Encased; cut 85% of waist relaxed', qty: .9, uom: 'yd', cost: 0 }),
+      row({ component: 'Drawcord', material: 'Flat cotton cord, 3/8"', supplier: '', spec: 'Tonal; knotted or metal-tipped ends', qty: 1.4, uom: 'yd', cost: 0 }),
+      row({ component: 'Eyelets', material: 'Metal grommet, 8 mm', supplier: '', spec: 'Waistband CF, 1 1/4" apart, fused behind', qty: 2, uom: 'pc', cost: 0 }),
+    ]),
+    row({ component: 'Thread', material: pants ? 'Tex 70 core-spun poly' : 'Tex 40 core-spun poly', supplier: '', spec: 'Contrast or tonal, per the Materials page', qty: 1, uom: 'cone', cost: 0 }),
     ...lbl,
+    row({ component: 'Hang tag', material: 'Uncoated 400 gsm board', supplier: '', spec: 'Style no., size, barcode', qty: 1, uom: 'pc', cost: 0 }),
+    row({ component: 'Polybag', material: 'Recycled LDPE, suffocation warning', supplier: '', spec: 'Size sticker', qty: 1, uom: 'pc', cost: 0 }),
   ];
-  return b;
 }
 function bottomsConstruction(cat) {
   if (cat === 'satchel') return [row({ area: 'Body', method: 'Turned construction, rounded corners, side gussets', spi: '8', notes: 'Bound inside seams.' }), row({ area: 'Flap', method: 'Faced, single-needle topstitch 1/4 in from edge', spi: '8', notes: 'Gold thread line across flap.' }), row({ area: 'Front pocket', method: 'Patch pocket with #5 coil zip', spi: '8', notes: '' }), row({ area: 'Strap anchors', method: 'Webbing tabs bar-tacked through D-rings', spi: '', notes: 'Load-bearing; box-X stitch.' }), row({ area: 'Strap', method: 'Webbing with slider, folded + bar-tacked ends', spi: '', notes: 'Adjustable to 48 in.' }), row({ area: 'Logo', method: 'Heat transfer (rubberized) on flap', spi: '', notes: 'Wash test before bulk.' })];
@@ -768,14 +788,29 @@ function bottomsConstruction(cat) {
   if (cat === 'balaclava') return [row({ area: 'Crown / back', method: 'Flatlock seams', spi: '14', notes: 'No ridge against the head.' }), row({ area: 'Eye opening', method: 'Self binding, coverstitch', spi: '12', notes: 'Per E1/E2.' }), row({ area: 'Hem', method: 'Coverstitch 3/4 in', spi: '12', notes: '' })];
   if (cat === 'socks') return [row({ area: 'Knit', method: '200-needle circular knit, terry sole', spi: '', notes: 'Y-heel.' }), row({ area: 'Toe', method: 'Hand-linked', spi: '', notes: 'Seamless feel.' }), row({ area: 'Cuff', method: '1×1 rib, spandex plated', spi: '', notes: 'No dig-in.' }), row({ area: 'Finish', method: 'Boarding + pairing', spi: '', notes: 'Pair numbers match header card.' })];
   if (cat === 'boxers') return [row({ area: 'Seams', method: 'Flatlock 4-needle', spi: '14', notes: 'No chafe.' }), row({ area: 'Waistband', method: 'Elastic attached 3-needle coverstitch', spi: '12', notes: '' }), row({ area: 'Leg hem', method: 'Coverstitch 3/4"', spi: '12', notes: '' })];
-  return [
-    row({ area: 'Out/inseam', method: '5-thread safety stitch, topstitched', spi: '10', notes: '' }),
-    row({ area: 'Waistband', method: 'Double-needle, belt loops ×5', spi: '10', notes: 'Double waistband: second band joined above main band, see WB2.' }),
-    row({ area: 'Fly', method: 'J-stitch, bartack at base', spi: '10', notes: '' }),
-    row({ area: 'Pockets', method: 'Bartacks at openings, rivets at stress points', spi: '', notes: '' }),
-    row({ area: 'Hem', method: 'Chainstitch 1" turn', spi: '10', notes: '' }),
-    row({ area: 'Wash', method: 'Rinse / enzyme per finish', spi: '', notes: 'Target shrinkage < 3%.' }),
+  if (cat === 'shorts') return [
+    row({ area: 'Out/inseam', method: '5-thread safety stitch, pressed to back', spi: '11', notes: '' }),
+    row({ area: 'Rise', method: '5-thread safety stitch, coverstitch topstitch', spi: '11', notes: 'Front and back rise per R1 / R2.' }),
+    row({ area: 'Waistband', method: 'Separate waistband, elastic encased, 3 rows channel stitch', spi: '11', notes: 'Finished height per WB1. Drawcord exits through 2 eyelets at CF, tacked at CB.' }),
+    row({ area: 'Pockets', method: 'Side-seam pockets, bags overlocked, openings bartacked top and bottom', spi: '', notes: 'Opening 6 1/2".' }),
+    row({ area: 'Hem', method: 'Twin-needle coverstitch, 1" turn', spi: '11', notes: '' }),
+    row({ area: 'Wash', method: 'Garment wash / enzyme per finish', spi: '', notes: 'Target shrinkage < 3%.' }),
   ];
+  return [
+    row({ area: 'Out/inseam', method: 'Inseam felled, double-needle; outseam 5-thread safety stitch, busted and topstitched to the hip', spi: '10', notes: '' }),
+    row({ area: 'Rise', method: 'Back rise felled, double-needle; yoke set with double-needle topstitch', spi: '10', notes: 'Front and back rise per R1 / R2.' }),
+    row({ area: 'Waistband', method: 'One-piece fused waistband, single-needle top and bottom, 5 belt loops bartacked top and bottom', spi: '10', notes: 'Finished height per WB1. Loops 3/8" wide, 2 1/4" long.' }),
+    row({ area: 'Fly', method: 'Zip fly, J-stitch double-needle, bartack at base and at the J curve', spi: '10', notes: 'Shank button at waistband CF; keyhole buttonhole.' }),
+    row({ area: 'Pockets', method: 'Front scoop pockets with coin pocket; back patch pockets double-needle; rivets at front pocket corners, bartacks at back pocket corners', spi: '10', notes: 'Pocket bags French-seamed.' }),
+    row({ area: 'Hem', method: 'Chainstitch, 1/2" double turn', spi: '10', notes: '' }),
+    row({ area: 'Wash', method: 'Rinse / enzyme per finish', spi: '', notes: 'Target shrinkage < 3%. Wash before attaching hang tag.' }),
+  ];
+}
+// Double-waist spec with defaults (designs from before the rebuild only stored colour, pattern and height)
+function wb2Spec(g) {
+  const style = g.wb2Style === 'band' ? 'band' : 'boxer', H = clamp(num(g.wb2H) || 1.75, .75, 4);
+  const E = style === 'boxer' ? clamp(num(g.wb2E) || 1.25, .75, Math.max(.75, H - .25)) : 0;
+  return { style, H, E, reveal: H - E, pattern: g.wb2Pattern || 'plaid', color: g.wb2Color || '#B98A4A', elastic: g.wb2Elastic || '#EEF1F9', ink: g.wb2Ink || '#14172B', text: String(g.wb2Text ?? "DON'T POSTPONE PASSION").trim().toUpperCase() };
 }
 function bottomsFlat(d, side, stroke) {
   const g = d.garment, fill = g.color, front = side === 'front';
@@ -798,7 +833,14 @@ function bottomsFlat(d, side, stroke) {
   }
   const short = d.category !== 'pants', box = d.category === 'boxers', hemY = box ? 230 : short ? 300 : 430;
   const wb2 = (g.doubleWB === '1') && !box;
-  s += wb2 ? `<rect x="104" y="-6" width="192" height="26" fill="${g.wb2Pattern === 'plaid' ? g.plaid1 : g.wb2Color}"/>` : '';
+  if (wb2) { // inner layer drawn behind the main waistband: yoke, then the elastic (or the folded second band)
+    const w = wb2Spec(g), px = 12, yT = 20 - w.H * px, yE = yT + w.E * px, fab = w.pattern === 'solid' ? w.color : g.plaid1, ln = w.pattern === 'solid' ? shade(w.color, -.3) : g.plaid2;
+    s += `<rect x="114" y="${yT}" width="172" height="${w.H * px + 6}" fill="${fab}"/>`;
+    if (w.pattern !== 'solid') s += [130, 158, 186, 214, 242, 270].map(x => `<path d="M${x} ${yE} V20" stroke="${ln}" stroke-width="2.4"/>`).join('') + (w.reveal * px > 8 ? `<path d="M114 ${(yE + 20) / 2} H286" stroke="${g.plaid3}" stroke-width="1"/>` : '');
+    if (w.style === 'boxer') s += `<rect x="112" y="${yT}" width="176" height="${w.E * px}" fill="${w.elastic}"/><path d="M112 ${yT + 3} H288 M112 ${yE - 3} H288" stroke="${w.ink}" stroke-width=".8"/><path d="M112 ${yE - 1.2} H288" stroke-dasharray="2 2" stroke-width=".8"/>${front && w.text ? `<text x="200" y="${yT + w.E * px / 2 + 2.6}" text-anchor="middle" font-family="Archivo Black" font-size="${Math.min(7.5, w.E * px * .5)}" letter-spacing=".6" fill="${w.ink}" stroke="none">${esc(w.text)}</text>` : ''}`;
+    else s += `<rect x="114" y="${yT}" width="172" height="${w.H * px}"/><path d="M116 ${yT + 3} H284 M116 17 H284" stroke-dasharray="3 2.5"/>`;
+    if (front && (w.style === 'band' ? w.H : w.reveal) * px > 7) s += `<path d="M196 ${yE} V20"/><circle cx="200" cy="${w.style === 'band' ? yT + w.H * px / 2 : (yE + 20) / 2}" r="2.6" fill="#fff"/>`;
+  }
   s += `<path d="M110 20 L290 20 L${box ? 318 : 306} ${hemY} L${box ? 214 : 212} ${hemY} L200 ${box ? 150 : 170} L${box ? 186 : 188} ${hemY} L${box ? 82 : 94} ${hemY} Z" fill="${fill}"/>`;
   s += `<path d="M110 48 L290 48"/>` + (box ? `<path d="M110 22 L290 22 M110 46 L290 46" stroke-dasharray="2 3"/>` : front ? `<path d="M200 48 L200 130" stroke-dasharray="3 2.5"/><path d="M118 48 C130 80 150 90 168 92 M282 48 C270 80 250 90 232 92"/>` : `<path d="M140 90 L180 86 L182 130 L144 134Z M260 90 L220 86 L218 130 L256 134Z"/><path d="M110 48 L200 74 L290 48"/>`);
   if (!box) for (const x of [118, 158, 200, 242, 282]) s += `<rect x="${x - 3}" y="18" width="6" height="32" fill="${fill}"/>`;
@@ -935,16 +977,13 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { ...(cat === 'satchel' ? { hardware: 'gold' } : {}), color: cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', trim: cat === 'duffle' ? '' : cat === 'satchel' ? '#0A0B15' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : cat === 'satchel' ? '#B98A4A' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', satchel: 'ballistic', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 1.75, sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', hangTag: '' },
+    garment: { ...(cat === 'satchel' ? { hardware: 'gold' } : {}), color: cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', trim: cat === 'duffle' ? '' : cat === 'satchel' ? '#0A0B15' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : cat === 'satchel' ? '#B98A4A' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', satchel: 'ballistic', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Style: 'boxer', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 2.25, wb2E: 1.25, wb2Elastic: '#EEF1F9', wb2Ink: '#14172B', wb2Text: "DON'T POSTPONE PASSION", sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', tagText: TAG_TEXT, tagLogo: '1', tagInit: 1, hangTag: isTop(cat) || isBottom(cat) ? '' : '1' },
     watch: { ...WATCH_DEFAULT },
     place: cat === 'satchel' ? { front: { dx: 0, top: .35, s: .17, r: 0, tech: 'Heat transfer' }, back: { dx: 0, top: 2, s: .3, r: 0, tech: 'Heat transfer' } } : cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: cat === 'satchel' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark · gold', w: 900, h: 900 / (Mark.aspect || 1), color: '#B98A4A' }], back: [] } : cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
     colorways: [row({ name: 'Main', hex: isW ? WOODS.walnut.a : cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', pantone: '', notes: '' })],
-    bom: presetBOM(cat), pom: presetPOM(cat), construction: presetConstruction(cat),
-    labels: isW ? 'Dial: DPP mark at 12, edition N° at 6.\nCaseback: N° ___ / 150 and engraving text.\nCertificate card numbered to match caseback.'
-      : 'Main label: woven DPP mark, centered back neck, 1/2" below seam.\nCare label: left side seam, 4" above hem.\nHang tag: drop name + unit number, attached via safety pin through main label.',
-    packaging: isW ? 'Wood presentation box, foam insert, numbered certificate, 2 spare links, link tool. Outer mailer carton.'
-      : 'Fold to 9" × 12", tissue wrap, recycled polybag with size sticker. 24 units per master carton, sorted by size.',
+    bom: tagShell(presetBOM(cat)), pom: presetPOM(cat), construction: presetConstruction(cat),
+    labels: presetLabels(cat), packaging: presetPackaging(cat),
     costing: { labor: 0, freight: 0, dutyPct: 0, overhead: 0 },
     revisions: [row({ date: today(), author: st.designer, note: 'Created' })],
     refs: [], placements: [],
@@ -1097,23 +1136,42 @@ function pomAt(d, code, size) {
   const sz = d.pom.sizes || [], i = sz.indexOf(size || d.garment?.viewSize || d.pom.base), b = sz.indexOf(d.pom.base);
   return num(r.base) + num(r.grade) * (i < 0 || b < 0 ? 0 : i - b);
 }
-// Preloaded DPP labels: woven neck/waistband label, printed tagless neck print, and the hang tag (front + back)
+// DPP tags. Every category carries one: a sewn label (inside neck / waistband, or a hem tab on scarves and balaclavas)
+// and / or a hang tag. Text, logo on or off, ground and ink are editable per design.
+const TAG_TEXT = "DON'T POSTPONE PASSION";
+const tagKinds = cat => isTop(cat) || isBottom(cat) ? ['label', 'hang'] : cat === 'scarf' || cat === 'balaclava' ? ['hem', 'hang'] : ['hang'];
+function tagSpec(d) {
+  const g = d.garment, cat = d.category, base = String(d.pom?.base || 'OS');
+  const size = isTop(cat) || isBottom(cat) ? g.tagSize || 'M' : cat === 'watch' ? '' : base.length <= 3 ? base : 'OS';
+  return { ground: g.tagColor || '#14172B', ink: g.tagInk || '#EEF1F9', logo: g.tagLogo !== '0', text: String(g.tagText ?? TAG_TEXT).trim().toUpperCase(), size,
+    sizeLine: cat === 'watch' ? `N° ${String(watchSpec(d).editionNo).padStart(3, '0')} / ${d.edition || 150}` : size === 'OS' || size === 'ONE' ? 'ONE SIZE' : 'SIZE ' + size };
+}
 function tagCanvas(d, kind) {
-  const g = d.garment, gr = g.tagColor || '#14172B', ink = g.tagInk || '#EEF1F9', size = g.tagSize || 'M', mono = (px, sp) => `500 ${px}px "JetBrains Mono"`;
+  const g = d.garment, T = tagSpec(d), gr = T.ground, ink = T.ink, size = T.size || 'OS', mono = px => `500 ${px}px "JetBrains Mono"`;
   const txt = (x, s, px, X, Y, sp = 0, font) => { x.font = font || mono(px); x.letterSpacing = sp + 'px'; x.fillText(s, X, Y); };
+  // the text line under the mark, shrunk to fit
+  const line = (x, px, X, Y, sp, maxW) => { if (!T.text) return; x.letterSpacing = sp + 'px'; let p = px + 1; do { p -= 1; x.font = mono(p); } while (x.measureText(T.text).width > maxW && p > 9); x.fillText(T.text, X, Y); };
+  // logo off: the text alone is the hero, wrapped and fitted to the space the mark and its line would take
+  const hero = (x, cx, cy, w, h) => {
+    if (!T.text) return; const words = T.text.split(/\s+/); x.letterSpacing = '1px';
+    for (let px = Math.round(h * .62); px > 10; px -= 2) {
+      x.font = `400 ${px}px "Archivo Black"`; const lines = []; let cur = '';
+      for (const wd of words) { const t = cur ? cur + ' ' + wd : wd; if (!cur || x.measureText(t).width <= w) cur = t; else { lines.push(cur); cur = wd; } } lines.push(cur);
+      if (lines.length * px * 1.1 <= h && lines.every(l => x.measureText(l).width <= w)) { lines.forEach((l, i) => x.fillText(l, cx, cy + (i - (lines.length - 1) / 2) * px * 1.1)); return; }
+    }
+  };
+  const brand = (x, cx, cy, w, h, col, px, ty, sp, maxW) => { x.fillStyle = col; if (T.logo) { Mark.draw(x, cx, cy, w, h, col); line(x, px, cx, ty, sp, maxW); } else { const top = cy - h / 2, bot = ty + px; hero(x, cx, (top + bot) / 2, maxW, bot - top); } };
   if (kind === 'woven') return TEX.canvas(1024, 512, x => {
     x.fillStyle = gr; x.fillRect(0, 0, 1024, 512);
     for (let y = 0; y < 512; y += 4) { x.fillStyle = `rgba(255,255,255,${y % 8 ? .035 : .06})`; x.fillRect(0, y, 1024, 2); } // weft
     x.fillStyle = 'rgba(0,0,0,.28)'; x.fillRect(0, 0, 1024, 26); x.fillRect(0, 486, 1024, 26); // folded selvedges
-    x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
-    Mark.draw(x, 430, 215, 360, 250, ink);
-    txt(x, "DON'T POSTPONE PASSION", 30, 430, 400, 8);
-    x.strokeStyle = ink; x.lineWidth = 5; x.strokeRect(760, 150, 170, 170); txt(x, size, 0, 845, 240, 0, `400 ${size.length > 2 ? 64 : 96}px "Archivo Black"`);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    brand(x, 430, 215, 360, 250, ink, 30, 400, 8, 640);
+    x.fillStyle = ink; x.strokeStyle = ink; x.lineWidth = 5; x.strokeRect(760, 150, 170, 170); txt(x, size, 0, 845, 240, 0, `400 ${size.length > 2 ? 64 : 96}px "Archivo Black"`);
   });
   if (kind === 'printed') return TEX.canvas(1024, 1024, x => {
-    const c = lum(g.color) > .5 ? '#14172B' : '#EEF1F9'; x.fillStyle = c; x.textAlign = 'center'; x.textBaseline = 'middle';
-    Mark.draw(x, 512, 250, 520, 330, c);
-    txt(x, "DON'T POSTPONE PASSION", 36, 512, 470, 10);
+    const c = lum(g.color) > .5 ? '#14172B' : '#EEF1F9'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    brand(x, 512, 250, 520, 330, c, 36, 470, 10, 880); x.fillStyle = c;
     txt(x, size, 0, 512, 620, 0, '400 150px "Archivo Black"');
     txt(x, (FABRICS[g.fabric]?.comp || '').toUpperCase().slice(0, 44), 26, 512, 770, 2);
     txt(x, d.styleNo || '', 30, 512, 840, 6);
@@ -1121,25 +1179,33 @@ function tagCanvas(d, kind) {
   const hole = x => { x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(256, 70, 22, 0, Math.PI * 2); x.fill(); x.globalCompositeOperation = 'source-over'; };
   if (kind === 'hang') return TEX.canvas(512, 896, x => {
     x.fillStyle = gr; x.fillRect(0, 0, 512, 896); hole(x);
-    x.fillStyle = ink; x.strokeStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
-    Mark.draw(x, 256, 270, 340, 220, ink);
-    txt(x, "DON'T POSTPONE PASSION", 22, 256, 420, 6);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    brand(x, 256, 270, 340, 220, ink, 22, 420, 6, 420); x.fillStyle = ink; x.strokeStyle = ink;
     x.globalAlpha = .45; x.lineWidth = 2; x.beginPath(); x.moveTo(60, 480); x.lineTo(452, 480); x.stroke(); x.globalAlpha = 1;
     txt(x, (d.name || '').toUpperCase().slice(0, 22), 0, 256, 545, 2, '400 40px "Archivo Black"');
     txt(x, d.styleNo || '', 26, 256, 605, 6);
-    txt(x, 'SIZE ' + size, 34, 256, 690, 8);
+    txt(x, T.sizeLine, 34, 256, 690, 8);
     if (d.msrp) txt(x, '$' + d.msrp, 0, 256, 790, 0, '400 54px "Archivo Black"');
   });
   return TEX.canvas(512, 896, x => { // hang tag back: mark + barcode keyed to the style number
     x.fillStyle = gr; x.fillRect(0, 0, 512, 896); hole(x);
     x.fillStyle = ink; x.textAlign = 'center'; x.textBaseline = 'middle';
-    Mark.draw(x, 256, 230, 160, 110, ink);
+    if (T.logo) Mark.draw(x, 256, 230, 160, 110, ink); else hero(x, 256, 300, 400, 300);
     x.fillStyle = '#f4f3ef'; x.fillRect(86, 560, 340, 200); x.fillStyle = '#111';
     let h = [...String(d.styleNo || 'DPP')].reduce((a, c) => (a * 33 + c.charCodeAt(0)) >>> 0, 5381);
     for (let bx = 106; bx < 406;) { h = (h * 1103515245 + 12345) >>> 0; const bw = 2 + (h >>> 28) % 4; if ((h >>> 20) & 1) x.fillRect(bx, 580, bw, 130); bx += bw + 2; }
-    x.font = mono(22); x.fillText(d.styleNo || '', 256, 735);
-    x.fillStyle = ink; txt(x, "DON'T POSTPONE PASSION", 20, 256, 830, 6);
+    x.font = mono(22); x.letterSpacing = '0px'; x.fillText(d.styleNo || '', 256, 735);
+    x.fillStyle = ink; if (T.logo) line(x, 20, 256, 830, 6, 420);
   });
+}
+// Tech-pack lines for the tags
+function tagRows(d) {
+  const g = d.garment, cat = d.category, T = tagSpec(d), kinds = tagKinds(cat), sw = h => `<span class="tp-sw" style="background:${h}"></span>${String(h).toUpperCase()}`;
+  const content = `${T.logo ? 'DPP mark' : 'Text only'}${T.text ? `${T.logo ? ' + ' : ' · '}“${esc(T.text)}”` : ''} · ${sw(T.ground)} / ${sw(T.ink)}`, tag = g.tag || 'woven', rows = [];
+  if (kinds.includes('label')) rows.push(['Main label', tag === 'none' ? 'None' : `${tag === 'printed' ? 'Printed tagless' : 'Woven label'} · ${content} · size ${T.size}`]);
+  if (kinds.includes('hem')) rows.push(['Hem label', tag === 'none' ? 'None' : `Woven tab 2" × 1" at the hem · ${content}`]);
+  rows.push(['Hang tag', g.hangTag === '1' ? `Card 2" × 3 1/2" · ${content} · style no., ${T.sizeLine.toLowerCase()}, barcode · ${cat === 'watch' || isBag(cat) ? 'string loop' : 'string + safety pin'}` : 'None']);
+  return rows;
 }
 FLAT.hoodie = FLAT.crewneck;
 function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null } = {}) {
@@ -1393,6 +1459,27 @@ const TEX = {
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16;
     const r = small ? 1 / scale : 3 / scale; t.repeat.set(r, r); return (this._c[k] = t);
   },
+  // Jacquard elastic waistband: knit-in wordmark and DPP mark, edge stripes, vertical rib. One tile = one repeat;
+  // n repeats fit the waist exactly and a wordmark is centred on centre front. Top 14% of the tile is the plain edge.
+  elastic(base, ink, text, n, per) {
+    const k = ['ela', base, ink, text, n, per.toFixed(3)].join(':'); if (this._c[k]) return this._c[k];
+    const Wd = 2048, Ht = 256, y0 = 36, cy = y0 + (Ht - y0) / 2, fit = x => { let px = 74; x.letterSpacing = '9px'; do { x.font = `400 ${px}px "Archivo Black"`; px -= 4; } while (text && x.measureText(text).width > Wd - 420 && px > 24); };
+    const draw = (x, c1, c2, bump) => {
+      x.fillStyle = c1; x.fillRect(0, 0, Wd, Ht);
+      if (bump) for (let i = 0; i < Wd; i += 6) { x.fillStyle = 'rgba(0,0,0,.2)'; x.fillRect(i, 0, 2, Ht); } // rib
+      x.fillStyle = c2; [y0 + 16, y0 + 28, Ht - 34, Ht - 22].forEach((y, i) => x.fillRect(0, y, Wd, i === 1 || i === 2 ? 3 : 6));
+      x.textAlign = 'center'; x.textBaseline = 'middle'; fit(x); if (text) x.fillText(text, Wd / 2, cy + 3);
+      [0, Wd].forEach(cx => Mark.draw(x, cx, cy, 170, 96, c2));
+    };
+    const mk = (cv, srgb) => { const t = new THREE.CanvasTexture(cv); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.repeat.set(n / per, 1); t.offset.set(.5, 0); t.anisotropy = 16; return t; };
+    return (this._c[k] = { map: mk(this.canvas(Wd, Ht, x => draw(x, base, ink, false)), true), bump: mk(this.canvas(Wd, Ht, x => draw(x, '#6a6a6a', '#a8a8a8', true)), false) });
+  },
+  // one lockstitch per tile, used as an alpha map on thin stitch-line strips
+  stitch() { if (this._c.stitch) return this._c.stitch; const t = new THREE.CanvasTexture(this.canvas(64, 16, x => { x.fillStyle = '#000'; x.fillRect(0, 0, 64, 16); x.fillStyle = '#fff'; x.beginPath(); x.roundRect(7, 2, 50, 12, 6); x.fill(); })); t.wrapS = THREE.RepeatWrapping; return (this._c.stitch = t); },
+  // zipper teeth: two interlocking rows per tile, used as an alpha map
+  zipTeeth() { if (this._c.zip) return this._c.zip; const t = new THREE.CanvasTexture(this.canvas(64, 64, x => { x.fillStyle = '#000'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#fff'; x.beginPath(); x.roundRect(4, 4, 24, 34, 6); x.fill(); x.beginPath(); x.roundRect(36, 26, 24, 34, 6); x.fill(); })); t.wrapS = THREE.RepeatWrapping; return (this._c.zip = t); },
+  // four-hole button face (map + bump)
+  button(col) { return this.canvas(128, 128, x => { x.fillStyle = col; x.fillRect(0, 0, 128, 128); const g = x.createRadialGradient(64, 64, 20, 64, 64, 64); g.addColorStop(0, 'rgba(0,0,0,.16)'); g.addColorStop(.62, 'rgba(0,0,0,.05)'); g.addColorStop(.7, 'rgba(255,255,255,.2)'); g.addColorStop(1, 'rgba(0,0,0,.25)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); x.fillStyle = 'rgba(0,0,0,.8)'; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { x.beginPath(); x.arc(64 + a * 11, 64 + b * 11, 5, 0, 7); x.fill(); }); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 3; x.beginPath(); x.moveTo(53, 53); x.lineTo(75, 75); x.moveTo(75, 53); x.lineTo(53, 75); x.stroke(); }); },
   // cloud field 0..1 — layered upscaled random grids (cheap fbm)
   clouds(w, h, octaves = [6, 12, 24, 48, 96]) {
     const c = this.canvas(w, h, (x) => {
@@ -1883,7 +1970,7 @@ const Studio = {
   init() {
     const host = $('#stage');
     const r = this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-    r.setPixelRatio(Math.min(Math.max(devicePixelRatio, 1.5), 2)); // supersample on 1x screens r.outputColorSpace = THREE.SRGBColorSpace;
+    r.setPixelRatio(Math.min(Math.max(devicePixelRatio, 1.5), 2)); // supersample on 1x screens
     r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = .82;
     r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
     host.prepend(r.domElement);
@@ -1895,14 +1982,22 @@ const Studio = {
     Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: .5, far: 30 }); key.shadow.bias = -.0005; key.shadow.radius = 6;
     const rim = new THREE.DirectionalLight(0xe2c792, 1.2); rim.position.set(-6, 3, -5);
     const fill = new THREE.HemisphereLight(0xffffff, 0x2a241c, .55);
-    sc.add(key, rim, fill);
+    const side = new THREE.DirectionalLight(0xdfe6ff, 0); side.position.set(-5, 2.5, 4); // cool fill from camera left, garments only
+    const lights = this.lights = new THREE.Group(); lights.add(key, rim, side); sc.add(lights, fill); this.rig = { key, rim, fill, side }; // the group turns with the camera for soft goods, so the back is lit like the front
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .32 })); this.ground.rotation.x = -Math.PI / 2; this.ground.receiveShadow = true; sc.add(this.ground);
     this.root = new THREE.Group(); sc.add(this.root);
+    // ambient occlusion for soft goods: folds, openings and layered edges pick up contact shade. Falls back to a plain render if the pass can't start.
+    try {
+      const cp = this.composer = new EffectComposer(r, new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 }));
+      cp.addPass(new RenderPass(sc, cam)); const ao = this.gtao = new GTAOPass(sc, cam, 4, 4); ao.blendIntensity = .9;
+      ao.updateGtaoMaterial({ radius: .22, distanceExponent: 1.4, thickness: 1.2, scale: 1.15, samples: 16, distanceFallOff: 1, screenSpaceRadius: false }); ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+      cp.addPass(ao); cp.addPass(new OutputPass());
+    } catch (e) { console.warn('AO pass unavailable', e); this.composer = null; }
     new ResizeObserver(() => this.resize()).observe(host); this.resize();
     const loop = () => {
       requestAnimationFrame(loop);
       if (S.view !== 'studio') return;
-      ctl.autoRotate = this.spin; ctl.update(); this.tickHands(); r.render(sc, cam); Notes.tick();
+      ctl.autoRotate = this.spin; ctl.update(); this.tickHands(); this.draw(); Notes.tick();
     };
     loop();
     // Note mode: a click (not an orbit drag) on the model pins a note there.
@@ -1915,7 +2010,24 @@ const Studio = {
     $('#btnSpin').onclick = e => { this.spin = !this.spin; e.target.classList.toggle('on', this.spin); };
     $$('#bgPresets button').forEach(b => b.onclick = () => { sc.background.set(b.dataset.bg); $$('#bgPresets button').forEach(x => x.classList.toggle('on', x === b)); });
   },
-  resize() { const h = $('#stage'); const w = h.clientWidth, ht = h.clientHeight; if (!w || !ht) return; this.renderer.setSize(w, ht, false); this.camera.aspect = w / ht; this.camera.updateProjectionMatrix(); },
+  resize() { const h = $('#stage'); const w = h.clientWidth, ht = h.clientHeight; if (!w || !ht) return; this.renderer.setSize(w, ht, false); this.sizeComposer(); this.camera.aspect = w / ht; this.camera.updateProjectionMatrix(); },
+  sizeComposer() { const r = this.renderer, c = this.composer; if (!c) return; const pr = r.getPixelRatio(); c.setPixelRatio(pr); c.setSize(r.domElement.width / pr, r.domElement.height / pr); },
+  // one frame: soft goods go through the AO composer, watches (transmission glass, mirror metal) render direct
+  draw() {
+    const cp = this.camera.position, tg = this.controls.target; this.lights.rotation.y = this.aoOn ? Math.atan2(cp.x - tg.x, cp.z - tg.z) : 0;
+    if (!(this.composer && this.aoOn)) return this.renderer.render(this.scene, this.camera);
+    const sc = this.scene, bg = sc.background; sc.background = this.preTone(bg); this.composer.render(); sc.background = bg;
+  },
+  // The composer tone-maps the whole frame, backdrop included. Feed it the colour that tone-maps back to the chosen backdrop
+  // (inverse of three's ACES filmic fit), so Studio / Pale / Concrete look the same with or without the AO pass.
+  preTone(c) {
+    const k = c.getHex() + ':' + this.renderer.toneMappingExposure; if (this._pt?.k === k) return this._pt.c;
+    const I = new THREE.Matrix3().set(.59719, .35458, .04823, .076, .90834, .01566, .0284, .13383, .83777), O = new THREE.Matrix3().set(1.60475, -.53108, -.07367, -.10208, 1.10813, -.00605, -.00327, -.07276, 1.07602);
+    const v = new THREE.Vector3(c.r, c.g, c.b).applyMatrix3(O.clone().invert());
+    const inv = t => { t = clamp(t, 0, .995); const A = 1 - t * .983729, B = .0245786 - t * .432951, C = -(.000090537 + t * .238081); return (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A); };
+    v.set(inv(v.x), inv(v.y), inv(v.z)).applyMatrix3(I.clone().invert()).multiplyScalar(.6 / this.renderer.toneMappingExposure);
+    const out = new THREE.Color().setRGB(Math.max(0, v.x), Math.max(0, v.y), Math.max(0, v.z)); this._pt = { k, c: out }; return out;
+  },
   show() {
     if (!this.ok) this.init();
     this.resize(); this.build(); Panels.studio();
@@ -1929,9 +2041,12 @@ const Studio = {
     // designs from before fit-driven specs: their POM is the boxy template — bring it to the chosen fit once
     if (isTop(d.category) && d.pom?.rows && !d.pom.fit) { applyFitPOM(d, 'boxy', d.garment.fit || 'boxy', true); touch(); }
     d.placements ||= [];
+    if (!d.garment.tagInit) { d.garment.tagInit = 1; if (!isTop(d.category) && !isBottom(d.category)) d.garment.hangTag = '1'; } // pieces from before every category carried a tag
     this.clear();
-    const isW = d.category === 'watch'; this.scene.environment = isW ? this.envStudio : this.envRoom; this.scene.environmentIntensity = isW ? 1 : .55; // softbox reflections for metal
+    const isW = d.category === 'watch'; this.scene.environment = isW ? this.envStudio : this.envRoom; this.scene.environmentIntensity = isW ? 1 : .42; // softbox reflections for metal
+    this.aoOn = !isW; { const L = this.rig; L.key.intensity = isW ? 1.7 : 2.25; L.rim.intensity = isW ? 1.2 : 1.5; L.fill.intensity = isW ? .55 : .3; L.side.intensity = isW ? 0 : .45; } // soft goods: more key-to-fill contrast so folds model
     if (isW) this.buildWatch(d); else this.buildGarment(d);
+    if (!isTop(d.category) && !isBottom(d.category)) this.addAccTags(d);
     this.root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(this.root); this.ground.position.y = box.min.y - .01;
     { const sc = this.key.shadow.camera, rr = box.getSize(new THREE.Vector3()).length() * .62; Object.assign(sc, { left: -rr, right: rr, top: rr, bottom: -rr }); sc.updateProjectionMatrix(); this.key.shadow.radius = 3; } // tight shadow frustum = crisp shadows
@@ -1942,11 +2057,14 @@ const Studio = {
   frame(box) {
     const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
     this.center = c; this.radius = Math.max(sz.x, sz.y, sz.z) * .5;
+    // fit distance: the bounding sphere (so near corners stay in frame at 3/4), with headroom for tall pieces and narrow screens
+    this.fit = Math.max(sz.length() / 2 * .9, sz.y / 2 * 1.24); this.fitWide = Math.hypot(sz.x, sz.z) / 2 * 1.1;
     this.controls.target.copy(c); this.view(this.lastView || 'three', true);
   },
   view(v, instant) {
     this.lastView = v;
-    const dist = this.radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2)) * 1.22;
+    const asp = this.camera.aspect, need = Math.max(this.fit ?? this.radius * 1.22, asp < 1 ? (this.fitWide || 0) / asp : 0);
+    const dist = need / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2));
     const dir = { front: [0, .08, 1], back: [0, .08, -1], side: [1, .08, 0], three: [.62, .2, .78] }[v];
     const p = new THREE.Vector3(...dir).normalize().multiplyScalar(dist).add(this.center);
     this.camera.position.copy(p); this.controls.target.copy(this.center); this.controls.update();
@@ -2011,7 +2129,9 @@ const Studio = {
       o.material = m; o.castShadow = o.receiveShadow = true; this.modelMeshes.push(o);
       const n = o.geometry.attributes.position.count; if (n > most) { most = n; biggest = o; }
     });
-    this.torso = biggest;
+    this.torso = biggest; this.wb2 = null;
+    this.waist = null;
+    if (isBottom(d.category)) { this.openWaist(box); let W = this.traceWaist(box); if (W && this.cutInside(W, box)) W = this.traceWaist(box) || W; this.waist = W; }
     this.P = { w: (box.max.x - box.min.x) / 4, d: box.max.z, h: H, rise: 0, neckR: .34, side: d.category === 'socks' }; // socks: logos on the outer side of each leg
     this.fitInfo = null;
     if (isTop(d.category) && d.category !== 'scarf') {
@@ -2196,13 +2316,57 @@ const Studio = {
       });
     });
   },
+  // Hang tag: card on a string from anchor point `a` on the piece. s scales it (watches are modelled at a different scale).
+  addHangTag(d, a, s = 1, zFront = null) {
+    const g = d.garment, V = THREE.Vector3, cw = .2 * s, ch = .35 * s, card = new THREE.Group(); this.root.add(card);
+    const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.own = true; return t; };
+    const edge = new THREE.MeshStandardMaterial({ color: g.tagColor || '#14172B', roughness: .8 });
+    const face = c => new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .55, alphaTest: .5 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, .005 * s), [edge, edge, edge, edge, face(tagCanvas(d, 'hang')), face(tagCanvas(d, 'hangBack'))]); body.castShadow = body.receiveShadow = true; card.add(body);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.011 * s, .0028 * s, 10, 28), new THREE.MeshStandardMaterial({ color: '#c9c6bf', metalness: 1, roughness: .3 })); ring.position.set(0, ch / 2 - .025 * s, .003 * s); card.add(ring);
+    card.position.set(a.x + .01 * s, a.y - .12 * s - ch / 2, Math.max(a.z, zFront ?? a.z) + .045 * s); card.rotation.set(.05, .3, .06); card.updateMatrixWorld(true); // zFront: the furthest-forward surface behind the card, so it hangs clear of a bulging body
+    const hole = ring.getWorldPosition(new V());
+    const curve = new THREE.CatmullRomCurve3([a.clone().add(new V(0, 0, .004 * s)), a.clone().lerp(hole, .5).add(new V(-.008 * s, 0, .03 * s)), hole.clone().add(new V(0, -.004 * s, .002 * s)), hole.clone().add(new V(.006 * s, .006 * s, -.006 * s))]);
+    this.add(new THREE.TubeGeometry(curve, 40, .0028 * s, 6, false), new THREE.MeshStandardMaterial({ color: '#111214', roughness: .7 }));
+    const pin = this.add(new THREE.CapsuleGeometry(.004 * s, .05 * s, 4, 8), new THREE.MeshStandardMaterial({ color: '#d4d2cc', metalness: 1, roughness: .25 })); pin.position.copy(a).add(new V(0, 0, .006 * s)); pin.rotation.z = Math.PI / 2 - .2;
+  },
+  // Tags for everything that isn't a top or a bottom: a woven hem tab on scarves and balaclavas, and the hang tag on
+  // any piece (socks, bags, watch included). Anchors are found by casting onto the front of whatever was built.
+  addAccTags(d) {
+    const g = d.garment, cat = d.category, V = THREE.Vector3; this.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(this.root); if (box.isEmpty()) return;
+    const meshes = []; this.root.traverse(o => { if (o.isMesh) meshes.push(o); });
+    const front = (x, y) => new THREE.Raycaster(new V(x, y, box.max.z + 5), new V(0, 0, -1)).intersectObjects(meshes, false)[0];
+    const W = box.max.x - box.min.x, H = box.max.y - box.min.y, cx = (box.min.x + box.max.x) / 2;
+    if (tagKinds(cat).includes('hem') && (g.tag || 'woven') !== 'none') {
+      const w = .2, h = .1, spots = [[.16, .1], [.1, .16], [0, .12], [-.14, .12], [.05, .25]];
+      for (const [fx, fy] of spots) {
+        const xc = cx + W * fx, yc = box.min.y + H * fy, geo = new THREE.PlaneGeometry(w, h, 6, 2), p = geo.attributes.position; let ok = true;
+        for (let i = 0; i < p.count && ok; i++) { const hit = front(xc + p.getX(i), yc + p.getY(i)); if (hit) p.setXYZ(i, xc + p.getX(i), yc + p.getY(i), hit.point.z + .006); else ok = false; }
+        if (!ok) { geo.dispose(); continue; }
+        geo.computeVertexNormals(); const t = new THREE.CanvasTexture(tagCanvas(d, 'woven')); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.own = true;
+        this.add(geo, new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: .6, roughness: .62, side: THREE.DoubleSide })); break;
+      }
+    }
+    if (g.hangTag === '1') {
+      const s = cat === 'watch' ? H * .4 / .35 : 1, lo = box.min.y + .52 * s, hi = box.max.y - .02 * s;
+      const spots = { duffle: [[.2, .6], [.1, .5]], satchel: [[.22, .3], [.1, .25]], socks: [[.3, .8], [-.3, .8], [.2, .7]], watch: [[.2, .62], [0, .62], [-.2, .62], [.1, .75]] }[cat] || [[.2, .55], [.1, .5], [0, .5], [-.15, .5]];
+      const hits = spots.map(([fx, fy]) => front(cx + W * fx, clamp(box.min.y + H * fy, lo, Math.max(lo, hi)))).filter(Boolean);
+      const hit = cat === 'socks' ? hits.sort((p, q) => q.point.z - p.point.z)[0] : hits[0]; // a pair: tag the sock nearest the viewer, so the string stays short
+      if (hit) {
+        const a = hit.point.clone(); let zf = a.z; // sample the surface the card will hang over
+        for (const dx of [-.1, 0, .1]) for (let k = 0; k <= 5; k++) { const h2 = front(a.x + dx * s, a.y - k * .094 * s); if (h2) zf = Math.max(zf, h2.point.z); }
+        this.addHangTag(d, a, s, cat === 'socks' ? Math.min(zf, a.z + .3) : zf); // socks: the toe sits far in front of the cuff and must not drag the card out on a long string
+      }
+    }
+  },
   // Labels: woven DPP label (or printed tagless) conformed to the inside back neck / waistband, plus an optional hang tag
   addTags(d, box) {
     const g = d.garment, tag = g.tag || 'woven', top = isTop(d.category), cz = (box.min.z + box.max.z) / 2, V = THREE.Vector3;
     const backZ = (x, y) => { const h = new THREE.Raycaster(new V(x, y, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false).filter(h => h.point.z < cz).sort((a, b) => b.point.z - a.point.z)[0]; return h ? h.point.z : null; };
     const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.own = true; return t; };
     if (tag !== 'none') {
-      const woven = tag === 'woven', w = woven ? .25 : .3, h = woven ? .125 : .3, yc = (top ? this.P.h / 2 - .1 : box.max.y - .06) - h / 2 - (woven ? 0 : .02);
+      const woven = tag === 'woven', w = woven ? .25 : .3, h = woven ? .125 : .3, yc = !top && this.wb2 ? this.wb2.labelY : (top ? this.P.h / 2 - .1 : box.max.y - .06) - h / 2 - (woven ? 0 : .02); // double waist: label sits on the inner yoke
       const geo = new THREE.PlaneGeometry(w, h, 6, 1), p = geo.attributes.position; let ok = true;
       for (let i = 0; i < p.count; i++) { const z = backZ(p.getX(i), yc + p.getY(i)); if (z === null) { ok = false; break; } p.setZ(i, z + (woven ? .009 : .004)); }
       if (ok) {
@@ -2214,40 +2378,161 @@ const Studio = {
     if (g.hangTag === '1') {
       const xa = top ? (this.slv ? this.slv.torsoX * .72 : .7) : (box.max.x * .5), ya = top ? (this.slv ? this.slv.torsoHem : box.min.y) + .16 : box.max.y - .07;
       const hit = new THREE.Raycaster(new V(xa, ya, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0];
-      if (hit) {
-        const a = hit.point.clone(), cw = .2, ch = .35, card = new THREE.Group(); this.root.add(card);
-        const edge = new THREE.MeshStandardMaterial({ color: g.tagColor || '#14172B', roughness: .8 });
-        const face = c => new THREE.MeshStandardMaterial({ map: texOf(c), roughness: .55, alphaTest: .5 });
-        const body = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, .005), [edge, edge, edge, edge, face(tagCanvas(d, 'hang')), face(tagCanvas(d, 'hangBack'))]); body.castShadow = body.receiveShadow = true; card.add(body);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(.011, .0028, 10, 28), new THREE.MeshStandardMaterial({ color: '#c9c6bf', metalness: 1, roughness: .3 })); ring.position.set(0, ch / 2 - .025, .003); card.add(ring);
-        card.position.set(a.x + .01, a.y - .12 - ch / 2, a.z + .045); card.rotation.set(.05, .3, .06); card.updateMatrixWorld(true);
-        const hole = ring.getWorldPosition(new V());
-        const curve = new THREE.CatmullRomCurve3([a.clone().add(new V(0, 0, .004)), a.clone().lerp(hole, .5).add(new V(-.008, 0, .03)), hole.clone().add(new V(0, -.004, .002)), hole.clone().add(new V(.006, .006, -.006))]);
-        this.add(new THREE.TubeGeometry(curve, 40, .0028, 6, false), new THREE.MeshStandardMaterial({ color: '#111214', roughness: .7 }));
-        const pin = this.add(new THREE.CapsuleGeometry(.004, .05, 4, 8), new THREE.MeshStandardMaterial({ color: '#d4d2cc', metalness: 1, roughness: .25 })); pin.position.copy(a).add(new V(0, 0, .006)); pin.rotation.z = Math.PI / 2 - .2;
-      }
+      if (hit) this.addHangTag(d, hit.point.clone());
     }
   },
-  // Double waistband: a second (plaid by default) band stacked above the main one, like boxers worn high under the waist.
-  // Traced per angle from the model's own waist line (height + radius), tucked just inside, with a rolled bound top edge.
+  // Marketplace bottoms ship with a flat cap closing the waist. Cut it out so the opening reads as an opening:
+  // flat (up/down-facing) triangles near the top, flood-filled outward from the ones on the garment's axis.
+  openWaist(box) {
+    const top = box.max.y, V = THREE.Vector3, v = new V(), e1 = new V(), e2 = new V(), n = new V();
+    const cx = (box.min.x + box.max.x) / 2, cz = (box.min.z + box.max.z) / 2, seedR = Math.min(box.max.x - box.min.x, box.max.z - box.min.z) * .27;
+    this.modelMeshes.forEach(m => {
+      const geo = m.geometry, p = geo.attributes.position, ix = geo.index; if (!ix) return; m.updateMatrixWorld(true);
+      const W = new Float32Array(p.count * 3), rep = new Int32Array(p.count).fill(-1), seen = new Map();
+      for (let i = 0; i < p.count; i++) {
+        v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); W[i * 3] = v.x; W[i * 3 + 1] = v.y; W[i * 3 + 2] = v.z;
+        if (v.y < top - .35) continue;
+        const k = Math.round(v.x * 4000) + ',' + Math.round(v.y * 4000) + ',' + Math.round(v.z * 4000); if (!seen.has(k)) seen.set(k, i); rep[i] = seen.get(k);
+      }
+      const idx = ix.array, flat = [], byV = new Map(), q = [], at = (i, o) => o.set(W[i * 3], W[i * 3 + 1], W[i * 3 + 2]);
+      for (let t = 0; t < idx.length; t += 3) {
+        const a = idx[t], b = idx[t + 1], c = idx[t + 2]; if (rep[a] < 0 || rep[b] < 0 || rep[c] < 0) continue;
+        at(a, v); n.crossVectors(at(b, e1).sub(v), at(c, e2).sub(v)).normalize(); if (Math.abs(n.y) < .6) continue;
+        const id = flat.length; flat.push(t);
+        [a, b, c].forEach(i => { const r = rep[i]; if (!byV.has(r)) byV.set(r, []); byV.get(r).push(id); });
+        if (Math.hypot((W[a * 3] + W[b * 3] + W[c * 3]) / 3 - cx, (W[a * 3 + 2] + W[b * 3 + 2] + W[c * 3 + 2]) / 3 - cz) < seedR) q.push(id);
+      }
+      if (!q.length) return;
+      const on = new Uint8Array(flat.length); q.forEach(id => on[id] = 1);
+      while (q.length) { const t = flat[q.pop()]; for (let k = 0; k < 3; k++) for (const o of byV.get(rep[idx[t + k]])) if (!on[o]) { on[o] = 1; q.push(o); } }
+      const kill = new Set(flat.filter((_, id) => on[id])), out = [];
+      for (let t = 0; t < idx.length; t += 3) if (!kill.has(t)) out.push(idx[t], idx[t + 1], idx[t + 2]);
+      const g2 = geo.clone(); g2.setIndex(out); m.geometry = g2; // the cached model geometry stays untouched
+    });
+  },
+  // Second pass once the waist is traced: anything left sitting inside the opening (sloped parts of the cap) goes too.
+  cutInside(W, box) {
+    const top = box.max.y, v = new THREE.Vector3(), { N, cx, cz } = W; let cut = 0;
+    const inside = () => { if (v.y < top - .4) return false; const f = ((Math.PI / 2 - Math.atan2(v.z - cz, v.x - cx)) / (Math.PI * 2) * N % N + N) % N; return Math.hypot(v.x - cx, v.z - cz) < W.mix(W.R, f) * .93 && v.y < W.mix(W.Y, f) + .01; };
+    this.modelMeshes.forEach(m => {
+      const geo = m.geometry, p = geo.attributes.position, ix = geo.index; if (!ix) return;
+      const In = new Uint8Array(p.count); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); In[i] = inside() ? 1 : 0; }
+      const idx = ix.array, out = []; for (let t = 0; t < idx.length; t += 3) if (!(In[idx[t]] && In[idx[t + 1]] && In[idx[t + 2]])) out.push(idx[t], idx[t + 1], idx[t + 2]);
+      if (out.length !== idx.length) { cut += (idx.length - out.length) / 3; const g2 = geo.clone(); g2.setIndex(out); m.geometry = g2; }
+    });
+    return cut;
+  },
+  // Trace the waist opening from the inside. The model is sliced into horizontal sections; a ray from the waist axis at
+  // each angle finds the inner face of the waistband (belt loops and buttons sit outside it, so they never count).
+  // Column 0 is centre front (+z) and columns run toward the viewer's right, so woven text reads left to right.
+  traceWaist(box, N = 144) {
+    const top = box.max.y, zone = .32, step = .006, v = new THREE.Vector3(), T = [];
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    this.modelMeshes.forEach(m => {
+      const p = m.geometry.attributes.position, ix = m.geometry.index; if (!ix) return; m.updateMatrixWorld(true);
+      const W = new Float32Array(p.count * 3);
+      for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); W[i * 3] = v.x; W[i * 3 + 1] = v.y; W[i * 3 + 2] = v.z; if (v.y > top - .12) { x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); } }
+      const a = ix.array;
+      for (let i = 0; i < a.length; i += 3) { const t = [0, 1, 2].flatMap(k => [W[a[i + k] * 3], W[a[i + k] * 3 + 1], W[a[i + k] * 3 + 2]]); if (Math.max(t[1], t[4], t[7]) > top - zone) T.push(t); }
+    });
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, ang = i => Math.PI / 2 - i / N * Math.PI * 2;
+    const dir = Array.from({ length: N }, (_, i) => [Math.cos(ang(i)), Math.sin(ang(i))]);
+    const K = Math.round(zone / step), hit = Array.from({ length: K }, () => new Float32Array(N).fill(Infinity));
+    const pt = [0, 0, 0, 0], fOf = (x, z) => (Math.PI / 2 - Math.atan2(z, x)) / (Math.PI * 2) * N;
+    for (let k = 0; k < K; k++) {
+      const y = top - .002 - k * step, row = hit[k];
+      for (const t of T) { // triangle ∩ plane → one segment in x/z, tested only against the rays it spans
+        if (y <= Math.min(t[1], t[4], t[7]) || y >= Math.max(t[1], t[4], t[7])) continue;
+        let n = 0;
+        for (let e = 0; e < 3 && n < 4; e++) { const A = e * 3, B = ((e + 1) % 3) * 3, ya = t[A + 1], yb = t[B + 1]; if ((ya - y) * (yb - y) < 0) { const f = (y - ya) / (yb - ya); pt[n++] = t[A] + (t[B] - t[A]) * f - cx; pt[n++] = t[A + 2] + (t[B + 2] - t[A + 2]) * f - cz; } }
+        if (n < 4) continue;
+        const px = pt[0], pz = pt[1], ex = pt[2] - px, ez = pt[3] - pz, f1 = fOf(px, pz); let df = fOf(pt[2], pt[3]) - f1; df -= Math.round(df / N) * N;
+        for (let i = Math.ceil(Math.min(f1, f1 + df)); i <= Math.max(f1, f1 + df); i++) {
+          const ii = ((i % N) + N) % N, dx = dir[ii][0], dz = dir[ii][1], den = dx * ez - dz * ex; if (Math.abs(den) < 1e-9) continue;
+          const r = (px * ez - pz * ex) / den, u = (px * dz - pz * dx) / den; if (r > .02 && u >= -1e-4 && u <= 1.0001 && r < row[ii]) row[ii] = r;
+        }
+      }
+    }
+    const Y = new Float32Array(N).fill(NaN), R = new Float32Array(N).fill(NaN), tuckK = Math.round(.14 / step);
+    for (let i = 0; i < N; i++) {
+      let k0 = -1; for (let k = 0; k < K - 1; k++) if (hit[k][i] < Infinity && hit[k + 1][i] < Infinity) { k0 = k; break; }
+      if (k0 < 0) continue;
+      let r = Infinity; for (let k = k0; k < Math.min(K, k0 + tuckK); k++) r = Math.min(r, hit[k][i]);
+      Y[i] = top - .002 - k0 * step; R[i] = r;
+    }
+    if (!R.some(r => r === r)) return null;
+    { const med = Array.from(R).filter(r => r === r).sort((a, b) => a - b); const m = med[med.length >> 1]; for (let i = 0; i < N; i++) if (R[i] < m * .6) R[i] = Y[i] = NaN; } // stray inner geometry (pocket bags, fly shield)
+    for (let pass = 0; pass < N; pass++) { let hole = false; for (let i = 0; i < N; i++) if (R[i] !== R[i]) { const a = (i + N - 1) % N, b = (i + 1) % N, s = R[a] === R[a] ? a : R[b] === R[b] ? b : -1; if (s < 0) hole = true; else { R[i] = R[s]; Y[i] = Y[s]; } } if (!hole) break; }
+    const smooth = (A, n) => { let s = Array.from(A); for (let k = 0; k < n; k++) s = s.map((r, i) => (s[(i + N - 1) % N] + 2 * r + s[(i + 1) % N]) / 4); return s; };
+    const sr = smooth(R, 4), sy = smooth(Y, 6);
+    for (let i = 0; i < N; i++) { let lo = Infinity; for (let o = -2; o <= 2; o++) lo = Math.min(lo, R[(i + o + N) % N]); sr[i] = Math.min(sr[i] * .974, lo * .988); } // always clear of the waistband
+    const S = [0]; for (let i = 0; i < N; i++) { const j = (i + 1) % N; S.push(S[i] + Math.hypot(sr[j] * dir[j][0] - sr[i] * dir[i][0], sr[j] * dir[j][1] - sr[i] * dir[i][1])); }
+    const mix = (A, f) => { const i = Math.floor(f), t = f - i; return lerp(A[((i % N) + N) % N], A[(((i + 1) % N) + N) % N], t); };
+    let p0 = 0, p1 = 0, p2 = 0; for (let i = 0; i < N; i++) { p0 += sy[i] / N; p1 += sy[i] * dir[i][1] * 2 / N; p2 += sy[i] * dir[i][0] * 2 / N; } // best-fit tilted plane through the waist line
+    return { N, cx, cz, R: sr, Y: sy, S, per: S[N], ang, mix, plane: f => p0 + p1 * Math.sin(ang(f)) + p2 * Math.cos(ang(f)) };
+  },
+  // A ring-shaped surface following the traced waist. rows: [{ y, k, off, g, v, c }] → radius = R·k + off (+ gathers·g),
+  // height = waist line + y. u runs in world units along the ring, so textures tile at true scale.
+  ringGeo(W, rows, o = {}) {
+    const { N, cx, cz, R, Y, S, ang } = W, pos = [], uv = [], col = [], idx = [], i0 = o.from ?? 0, i1 = o.to ?? N, cols = i1 - i0 + 1;
+    rows.forEach(rw => {
+      for (let c = 0; c < cols; c++) {
+        const f = i0 + c * (o.sub ?? 1), a = ang(f), r = W.mix(R, f) * (rw.k ?? 1) + (rw.off || 0) + (rw.g && o.gather ? rw.g * o.gather(f) : 0) + (o.lift ? o.lift(c / (cols - 1)) : 0);
+        const yb = W.mix(Y, f); pos.push(cx + Math.cos(a) * r, yb + rw.y + (rw.lv ? rw.lv * (W.plane(f) - yb) : 0), cz + Math.sin(a) * r); // lv: ease toward a level line (a body-hugging band) instead of the trouser waist line
+        const u = f >= 0 && f <= N ? lerp(S[Math.floor(f)], S[Math.min(N, Math.floor(f) + 1)], f - Math.floor(f)) : f / N * W.per;
+        uv.push(u * (o.uScale ?? 1) + (o.uOff || 0), rw.v); const s = (rw.c ?? 1) * (o.shadeAt ? o.shadeAt(c / (cols - 1)) : 1); col.push(s, s, s);
+      }
+    });
+    for (let j = 0; j < rows.length - 1; j++) for (let c = 0; c < cols - 1; c++) { const a = j * cols + c, b = a + 1, d = a + cols, e = d + 1; idx.push(a, b, d, b, e, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+    if (i0 === 0 && i1 === N && (o.sub ?? 1) === 1) { const nm = g.attributes.normal, a = new THREE.Vector3(), b = new THREE.Vector3(); for (let j = 0; j < rows.length; j++) { const p = j * cols, q = p + cols - 1; a.fromBufferAttribute(nm, p).add(b.fromBufferAttribute(nm, q)).normalize(); nm.setXYZ(p, a.x, a.y, a.z); nm.setXYZ(q, a.x, a.y, a.z); } } // no shading seam where the ring closes
+    return g;
+  },
+  // Double waist. 'boxer': a built-in boxer layer — woven yoke tucked inside the main waistband, gathered into a jacquard
+  // elastic that carries the wordmark, with a buttoned fly. 'band': a flat second waistband in the contrast fabric.
   addSecondWaistband(d, box) {
-    const g = d.garment, top = box.max.y, bins = 72, Y = new Float32Array(bins).fill(-1e9), R = new Float32Array(bins), v = new THREE.Vector3(), pts = [];
-    const bin = (x, z) => ((Math.round((Math.atan2(z, x) / (Math.PI * 2) + .5) * bins)) % bins + bins) % bins;
-    this.modelMeshes.forEach(m => { const p = m.geometry.attributes.position; m.updateMatrixWorld(true); for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); if (v.y < top - .3) continue; const b = bin(v.x, v.z); pts.push(b, v.y, Math.hypot(v.x, v.z)); if (v.y > Y[b]) Y[b] = v.y; } });
-    for (let i = 0; i < pts.length; i += 3) { const b = pts[i]; if (pts[i + 1] > Y[b] - .05) R[b] = Math.max(R[b], pts[i + 2]); }
-    for (let k = 0; k < 4; k++) for (let b = 0; b < bins; b++) { const p = (b + bins - 1) % bins, n = (b + 1) % bins; if (!R[b]) R[b] = Math.max(R[p], R[n]); if (Y[b] < -1e8) Y[b] = Math.max(Y[p], Y[n]); }
-    const smooth = A => { let s = Array.from(A); for (let k = 0; k < 3; k++) s = s.map((r, b) => (s[(b + bins - 1) % bins] + 2 * r + s[(b + 1) % bins]) / 4); return s; };
-    const sr = smooth(R), sy = smooth(Y), at = (A, u) => { const f = u * bins, i0 = Math.floor(f) % bins; return lerp(A[i0], A[(i0 + 1) % bins], f - Math.floor(f)); };
-    const h = num(g.wb2H || 1.75) / 10, tuck = .08, per = sr.reduce((s, r) => s + r, 0) / bins * Math.PI * 2;
-    // profile: starts inside the main band, rises to the exposed height, eases in toward the body at the top
-    const geo = new ParametricGeometry((u, w, t) => { const a = (u - .5) * Math.PI * 2, r = at(sr, u) * lerp(.985, .962, w * w); t.set(Math.cos(a) * r, at(sy, u) - tuck + w * (h + tuck), Math.sin(a) * r); }, bins * 2, 8);
-    const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * per * 2.2, uv.getY(i) * (h + tuck) * 2.2);
-    geo.computeVertexNormals();
-    const plaid = (g.wb2Pattern || 'plaid') === 'plaid', map = plaid ? TEX.pattern('plaid', g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1, true) : null;
-    const mat = this.fabricMat(plaid ? '#ffffff' : g.wb2Color, 'twill', false, 6, 2, map ? { map } : null);
-    const band = this.add(geo, mat); this.modelMeshes.push(band);
-    const ring = (dy, k) => new THREE.CatmullRomCurve3(Array.from({ length: bins }, (_, b) => { const a = (b / bins - .5) * Math.PI * 2, r = sr[b] * k; return new THREE.Vector3(Math.cos(a) * r, sy[b] + dy, Math.sin(a) * r); }), true);
-    this.add(new THREE.TubeGeometry(ring(h, .962), 160, .014, 8, true), this.fabricMat(plaid ? g.plaid1 : shade(g.wb2Color, -.25), 'twill', false, 6, 2)); // rolled binding
+    const g = d.garment, W = this.waist || this.traceWaist(box); this.wb2 = null; if (!W) return;
+    const { N, per } = W, spec = wb2Spec(g), boxer = spec.style === 'boxer', H = spec.H / 10, E = boxer ? spec.E / 10 : 0, rev = H - E, tuck = .13, th = .011;
+    const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const arc = f => Math.min(f, N - f) / N * per, lvAt = y => .7 * sm(0, H, y); // arc: distance round the waist from centre front
+    // woven yoke: straight inside the main band, easing in toward the body above it; gathers build toward the elastic
+    const gather = f => { const a = f / N * Math.PI * 2; return (Math.sin(a * 43 + 1.3) + .6 * Math.sin(a * 71 + .4) + .45 * Math.sin(a * 19 + 2.1)) / 2.05 * sm(.05, .16, arc(f)); };
+    const bodyTop = boxer ? rev + .006 : H - th / 2, kTop = boxer ? .958 : .966, rows = [];
+    for (let j = 0; j <= 14; j++) { const y = lerp(-tuck, bodyTop, j / 14), up = sm(0, Math.max(.04, bodyTop), y); rows.push({ y, lv: lvAt(y), k: lerp(.974, kTop, up), g: boxer ? .0052 * Math.pow(clamp((y + .03) / (bodyTop + .03), 0, 1), 1.4) : 0, v: (y + tuck) * 2.4, c: lerp(.5, 1, sm(-.012, .05, y)) * (boxer ? lerp(1, .8, sm(bodyTop - .035, bodyTop, y)) : 1) }); }
+    if (!boxer) { // turned top edge and a short facing down the inside
+      for (let j = 1; j <= 5; j++) { const a = j / 5 * Math.PI; rows.push({ y: H - th / 2 + Math.sin(a) * th / 2, lv: lvAt(H), k: kTop, off: -th / 2 + Math.cos(a) * th / 2, v: (H + tuck + j * .004) * 2.4, c: 1 }); }
+      rows.push({ y: H * .35, lv: lvAt(H * .35), k: kTop, off: -th, v: (H * 1.65 + tuck) * 2.4, c: .7 });
+    }
+    const pat = spec.pattern, map = pat !== 'solid' ? TEX.pattern(pat, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1, true) : null;
+    const cloth = () => { const m = this.fabricMat(map ? '#ffffff' : spec.color, 'twill', false, 6, 2, map ? { map } : null); m.vertexColors = true; return m; };
+    const body = this.add(this.ringGeo(W, rows, { gather, uScale: 2.4 }), cloth()); this.modelMeshes.push(body);
+    const thread = lum(map ? g.plaid1 : spec.color) > .55 ? shade(map ? g.plaid1 : spec.color, -.45) : shade(map ? g.plaid1 : spec.color, .55);
+    const stitch = (y, k, off, col = thread) => this.add(this.ringGeo(W, [{ y: y - .0022, lv: lvAt(y), k, off, v: 0 }, { y: y + .0022, lv: lvAt(y), k, off, v: 1 }], { uScale: 1 / .0125 }), new THREE.MeshStandardMaterial({ color: col, roughness: .7, alphaMap: TEX.stitch(), alphaTest: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), false);
+    if (boxer) {
+      // elastic: outer face, rolled top edge, inner face — one closed profile, standing slightly proud of the yoke
+      const eo = .0075, er = [{ y: rev - .004, lv: lvAt(rev), k: kTop, off: eo - .004, v: 0 }];
+      for (let j = 0; j <= 6; j++) er.push({ y: lerp(rev, H - th / 2, j / 6), lv: lvAt(lerp(rev, H, j / 6)), k: kTop, off: eo, v: lerp(.01, .86, j / 6) });
+      for (let j = 1; j <= 6; j++) { const a = j / 6 * Math.PI; er.push({ y: H - th / 2 + Math.sin(a) * th / 2, lv: lvAt(H), k: kTop, off: eo - th / 2 + Math.cos(a) * th / 2, v: .88 + j * .01 }); }
+      er.push({ y: rev + E * .15, lv: lvAt(rev + E * .15), k: kTop, off: eo - th, v: .99, c: .75 });
+      const n = Math.max(2, Math.round(per / (E * 8.4))), tex = TEX.elastic(spec.elastic, spec.ink, spec.text, n, per);
+      const em = new THREE.MeshPhysicalMaterial({ map: tex.map, bumpMap: tex.bump, bumpScale: 1.1, roughness: .82, sheen: .35, sheenRoughness: .8, sheenColor: new THREE.Color(spec.elastic).lerp(new THREE.Color('#ffffff'), .3), side: THREE.DoubleSide, vertexColors: true });
+      this.add(this.ringGeo(W, er), em);
+      const st = lum(spec.elastic) > .55 ? shade(spec.elastic, -.3) : shade(spec.elastic, .35);
+      stitch(rev + E * .1, kTop, eo + .0006, st); stitch(rev + E * .1 + .011, kTop, eo + .0006, st); // twin-needle attach
+    } else { stitch(.022, .974, .0012); stitch(H - .028, kTop, .0012); }
+    // fly: placket lapped at centre front with one button
+    const flyW = .115, halfCols = flyW / 2 / per * N, flyTop = boxer ? rev + .004 : H - th, fr = rows.filter(r => r.y <= flyTop + 1e-6 && r.y >= -.03 && !r.off).map(r => ({ ...r, g: 0, c: 1 }));
+    if (flyTop > .045 && fr.length > 1) {
+      const fly = this.add(this.ringGeo(W, fr, { from: -halfCols, to: -halfCols + 8, sub: halfCols * 2 / 8, uScale: 2.4, uOff: .37, lift: t => .006 * sm(0, .12, t) * sm(0, .3, 1 - t), shadeAt: t => lerp(.5, 1, sm(0, .16, t)) }), cloth()); // lapped edge on the left casts a shadow, the right side eases back into the yoke fly.material.polygonOffset = true; fly.material.polygonOffsetFactor = -1; fly.material.polygonOffsetUnits = -1;
+      const by = boxer ? rev / 2 + .004 : H / 2;
+      if ((boxer ? rev : H) >= .065) {
+        const br = Math.min(.026, (boxer ? rev : H) * .3), cap = new THREE.CanvasTexture(TEX.button(boxer ? '#ece8df' : '#2b2622')); cap.colorSpace = THREE.SRGBColorSpace; cap.userData.own = true;
+        const side = new THREE.MeshPhysicalMaterial({ color: boxer ? '#e3dfd5' : '#231f1c', roughness: .35, clearcoat: .6 }), face = new THREE.MeshPhysicalMaterial({ map: cap, bumpMap: cap, bumpScale: .6, roughness: .32, clearcoat: .7 });
+        const b = this.add(new THREE.CylinderGeometry(br, br, .007, 40), [side, face, side]);
+        b.rotation.x = Math.PI / 2; b.position.set(W.cx, W.Y[0] + by + lvAt(by) * (W.plane(0) - W.Y[0]), W.cz + W.R[0] * lerp(.974, kTop, sm(0, Math.max(.04, bodyTop), by)) + .011);
+      }
+    }
+    const back = Math.round(N / 2); this.wb2 = { labelY: W.Y[back] + (Math.min(bodyTop, .1) - tuck) / 2, top: W.Y[0] + H + lvAt(H) * (W.plane(0) - W.Y[0]) };
   },
   // Socks: a knit tube swept down the leg, round the heel and out to the toe
   buildSock(d) {
@@ -2441,11 +2726,52 @@ const Studio = {
       const strap = this.add(geo, trim); strap.name = 'Shoulder strap (webbing)';
       segs.forEach(o => drop.push(o));
     }
+    // Realism pass. The source meshes carry no UVs, so the weave is laid on in world space (triplanar), and the two
+    // gold bars that stood in for the flap stitch and the zip are rebuilt as real thread rows and a toothed zipper.
+    {
+      holder.updateMatrixWorld(true);
+      const V = THREE.Vector3, all = new THREE.Box3().setFromObject(obj), fk = FABRICS[fab]?.k || 1;
+      const fx = { finish: 'none', distress: 'none', seed: 0, cat: 2, woven: true, box: all, bleach: '#eeece6' };
+      fabricFX(shell, { ...fx, tile: 7 * fk }); shell.bumpScale *= 1.5; fabricFX(trim, { ...fx, tile: 13 }); trim.bumpScale = 2.4; trim.roughness = .92; trim.sheen = .15; // webbing and pocket: matte, coarse weave metal.envMapIntensity = 2.4;
+      const boxOf = o => o && new THREE.Box3().setFromObject(o), flapM = named('Top flap'), pocketM = named('Front organizer pocket');
+      const zOn = (m, x, y) => { const h = m && new THREE.Raycaster(new V(x, y, all.max.z + 2), new V(0, 0, -1)).intersectObject(m, false)[0]; return h ? h.point.z : null; };
+      // a path on the front of mesh m: [x, y] points → centres, +z normals, in-plane width axis
+      const path = (m, xy) => { const pts = [], nrm = [], ax = []; xy.forEach(([x, y], i) => { const z = zOn(m, x, y); if (z === null) return; const [x2, y2] = xy[Math.min(xy.length - 1, i + 1)], [x1, y1] = xy[Math.max(0, i - 1)], tx = x2 - x1, ty = y2 - y1, l = Math.hypot(tx, ty) || 1; pts.push(new V(x, y, z)); nrm.push(new V(0, 0, 1)); ax.push(new V(-ty / l, tx / l, 0)); }); return pts.length > 2 ? [pts, nrm, ax] : null; };
+      const line = (x0, y0, x1, y1, n = 60) => Array.from({ length: n + 1 }, (_, i) => [lerp(x0, x1, i / n), lerp(y0, y1, i / n)]);
+      // open "U" (sides + bottom) or closed rounded rectangle, inset from a box
+      const frame = (b, inset, r, closed) => { const x0 = b.min.x + inset, x1 = b.max.x - inset, y0 = b.min.y + inset, y1 = b.max.y - inset, out = [], arc = (cx, cy, a0, a1) => { for (let i = 0; i <= 10; i++) { const a = lerp(a0, a1, i / 10); out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } }, P = Math.PI;
+        out.push(...line(x0, y1 - (closed ? r : 0), x0, y0 + r, 24)); arc(x0 + r, y0 + r, P, P * 1.5); out.push(...line(x0 + r, y0, x1 - r, y0, 60)); arc(x1 - r, y0 + r, P * 1.5, P * 2); out.push(...line(x1, y0 + r, x1, y1 - (closed ? r : 0), 24));
+        if (closed) { arc(x1 - r, y1 - r, 0, P / 2); out.push(...line(x1 - r, y1, x0 + r, y1, 60)); arc(x0 + r, y1 - r, P / 2, P); }
+        return out; };
+      const threadMat = new THREE.MeshStandardMaterial({ color: g.stitch || '#B98A4A', roughness: .6, alphaMap: TEX.stitch(), alphaTest: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      const sew = (m, xy, off = 0) => { const p = path(m, xy); if (p) this.ribbon(p[0], p[1], p[2], off, .0052, .003, threadMat, .0115); };
+      const fb = boxOf(flapM), pb = boxOf(pocketM), st = named('Flap stitch line'), zt = named('Front zipper track');
+      if (fb) { sew(flapM, frame(fb, .022, .03, false)); if (st) { const y = boxOf(st).getCenter(new V()).y; [-.006, .006].forEach(o => sew(flapM, line(fb.min.x + .05, y, fb.max.x - .05, y, 80), o)); } }
+      if (pb) sew(pocketM, frame(pb, .02, .03, true));
+      if (zt && pocketM) {
+        const zb = boxOf(zt), y = zb.getCenter(new V()).y, p = path(pocketM, line(zb.min.x, y, zb.max.x, y, 90));
+        if (p) {
+          this.ribbon(p[0], p[1], p[2], 0, .05, .002, new THREE.MeshStandardMaterial({ color: shade(g.trim || g.color, -.35), roughness: .85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }), 1); // tape
+          this.ribbon(p[0], p[1], p[2], 0, .026, .005, new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] + .08, envMapIntensity: 2.4, alphaMap: TEX.zipTeeth(), alphaTest: .5, side: THREE.DoubleSide }), .0105); // teeth
+          [-.031, .031].forEach(o => this.ribbon(p[0], p[1], p[2], o, .0052, .004, threadMat, .0115));
+        }
+      }
+      [st, zt].forEach(o => o && drop.push(o));
+    }
     drop.forEach(o => o.parent.remove(o));
     const flap = named('Top flap'); this.torso = flap || body || this.modelMeshes[0];
     const top = bb.max.y - c.y;
     this.P = { w: (bb.max.x - bb.min.x) / 4, d: bb.max.z - c.z, h: top * 2, rise: 0, neckR: .2, side: false };
     this.updateDecals();
+  },
+  // Flat ribbon lying on a surface (stitch rows, zip tape and teeth): centres + normals + width axis, offset sideways.
+  // u runs in real length (per = one tile), so stitches and teeth tile at true pitch.
+  ribbon(pts, nrm, ax, off, w, lift, mat, per) {
+    const pos = [], uv = [], idx = []; let s = 0;
+    pts.forEach((p, i) => { if (i) s += p.distanceTo(pts[i - 1]); const c = p.clone().addScaledVector(ax[i], off).addScaledVector(nrm[i], lift);
+      [-1, 1].forEach(k => { const q = c.clone().addScaledVector(ax[i], k * w / 2); pos.push(q.x, q.y, q.z); uv.push(s / per, k > 0 ? 1 : 0); }); });
+    for (let i = 0; i < pts.length - 1; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals(); return this.add(geo, mat, false);
   },
   /* ---------- duffle (hard good: procedural like the watch, prints like a garment) ---------- */
   // 1 unit = 10 in. Barrel weekender: superellipse section with a flatter base, piped end panels, wrap-under handle straps.
@@ -2454,19 +2780,32 @@ const Studio = {
     const L = { mini: 1.6, weekender: 2.2, large: 2.6 }[g.bagSize] || 2.2, H = L * .5, D = L * .48;
     const leather = f.leather;
     const surf = g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null;
-    const shell = leather ? new THREE.MeshPhysicalMaterial({ color: g.color, roughness: f.rough, sheen: f.sheen, sheenRoughness: .6, sheenColor: new THREE.Color(g.color).lerp(new THREE.Color('#ffffff'), .2), clearcoat: f.coat || 0, clearcoatRoughness: .5, bumpMap: TEX.repeat(TEX.grain(fab), 5, 3), bumpScale: f.bump, side: THREE.DoubleSide, ...(surf ? { color: '#ffffff', map: surf.map } : {}) })
+    const shell = leather ? new THREE.MeshPhysicalMaterial({ color: g.color, roughness: f.rough, sheen: f.sheen, sheenRoughness: .6, sheenColor: new THREE.Color(g.color).lerp(new THREE.Color('#ffffff'), .2), clearcoat: (f.coat || 0) + .12, clearcoatRoughness: .45, envMapIntensity: 1.7, bumpMap: TEX.repeat(TEX.grain(fab), 7, 9), bumpScale: f.bump * 2.4, side: THREE.DoubleSide, ...(surf ? { color: '#ffffff', map: surf.map } : {}) })
       : this.fabricMat(g.color, fab, false, 22, 14, surf);
     const trim = leather ? shell.clone() : new THREE.MeshPhysicalMaterial({ color: shade(g.color, -.08), roughness: .5, sheen: .2, bumpMap: TEX.repeat(TEX.grain('smooth'), 3, 1), bumpScale: .3 });
     trim.map = null; trim.color.set(g.trim && g.trim !== '#EEF1F9' ? g.trim : g.color);
+    if (leather) { trim.bumpMap = TEX.repeat(TEX.grain('smooth'), 4, 2); trim.bumpScale = .5; trim.roughness = Math.min(f.rough, .42); trim.clearcoat = .4; trim.clearcoatRoughness = .35; } // straps and handles are smooth, edge-painted leather against the grained body
     const HW = { gunmetal: ['#5b5f66', .32], steel: ['#d2d4d8', .22], gold: ['#c9a24a', .26], black: ['#26272b', .45] }[g.hardware || 'gunmetal'];
-    const metal = new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] });
+    const metal = new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1], envMapIntensity: 2.4 });
     const add = (geo, mat) => this.add(geo, mat);
+    const threadCol = g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() && g.stitch.toUpperCase() !== '#EEF1F9' ? g.stitch : /* untouched default = tonal thread */ shade(g.color, lum(g.color) > .5 ? -.35 : .32);
+    const thread = new THREE.MeshStandardMaterial({ color: threadCol, roughness: .65, alphaMap: TEX.stitch(), alphaTest: .5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    // flat ribbon lying on a surface: centres + normals + width axis, offset sideways; u runs in real length so stitches and zip teeth tile true
+    const ribbon = (pts, nrm, ax, off, w, lift, mat, per) => {
+      const pos = [], uv = [], idx = []; let s = 0;
+      pts.forEach((p, i) => { if (i) s += p.distanceTo(pts[i - 1]); const c = p.clone().addScaledVector(ax[i], off).addScaledVector(nrm[i], lift);
+        [-1, 1].forEach(k => { const q = c.clone().addScaledVector(ax[i], k * w / 2); pos.push(q.x, q.y, q.z); uv.push(s / per, k > 0 ? 1 : 0); }); });
+      for (let i = 0; i < pts.length - 1; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals(); return this.add(geo, mat, false);
+    };
+    const stitch = (pts, nrm, ax, off, lift) => ribbon(pts, nrm, ax, off, .0052, lift, thread, .0115);
     // cross-section (y up, z toward camera); v = 0 sits under the bag so the UV seam hides
     const sec = (v, s = 1) => { const a = v - Math.PI / 2, c = Math.cos(a), sn = Math.sin(a), n = sn < 0 ? 4.2 : 2.3;
       const y = H / 2 * Math.sign(sn) * Math.abs(sn) ** (2 / n), z = D / 2 * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - .14 * Math.max(0, sn));
       return [y * s, z * s]; };
     const taper = u => 1 - .08 * Math.abs(2 * u - 1) ** 5, end = taper(0);
-    const body = add(new ParametricGeometry((u, v, t) => { const [y, z] = sec(v * Math.PI * 2, taper(u)); t.set((u - .5) * L, y, z); }, 96, 96), shell);
+    const rad = (u, v) => taper(u) * (1 + Math.sin(Math.PI * clamp(u, 0, 1)) ** .6 * (.011 * Math.sin(u * 9.4 + .6) * Math.cos(v * 3 + 1.1) + .006 * Math.sin(u * 23 + v * 5) + .008 * Math.cos(v * 2 - .4)));
+    const body = add(new ParametricGeometry((u, v, t) => { const [y, z] = sec(v * Math.PI * 2, rad(u, v * Math.PI * 2)); t.set((u - .5) * L, y, z); }, 160, 128), shell);
     [-1, 1].forEach(sx => {
       const cap = add(new ParametricGeometry((r, v, t) => { const [y, z] = sec(v * Math.PI * 2, end * r); t.set(sx * (L / 2 + .045 * (1 - r * r)), y, z); }, 24, 96), trim);
       const ring = []; for (let i = 0; i < 96; i++) { const [y, z] = sec(i / 96 * Math.PI * 2, end * 1.004); ring.push(new THREE.Vector3(sx * L / 2, y, z)); }
@@ -2474,6 +2813,7 @@ const Studio = {
       // shoulder-strap D-ring + snap hook on each end panel
       const dr = add(new THREE.TorusGeometry(.055, .011, 10, 28, Math.PI * 1.15), metal); dr.position.set(sx * (L / 2 + .05), H * .18, 0); dr.rotation.set(0, sx * Math.PI / 2, Math.PI * .43);
       const hook = add(new RoundedBoxGeometry(.03, .16, .06, 2, .01), metal); hook.position.set(sx * (L / 2 + .085), H * .05, .02); hook.rotation.z = sx * .35;
+      { const sp = [], sn = [], sa = [], rr = .93; for (let i = 0; i <= 120; i++) { const v = i / 120 * Math.PI * 2, [y, z] = sec(v, end * rr); sp.push(new THREE.Vector3(sx * (L / 2 + .045 * (1 - rr * rr)), y, z)); sn.push(new THREE.Vector3(sx, 0, 0)); sa.push(new THREE.Vector3(0, y, z).normalize()); } stitch(sp, sn, sa, 0, .003); }
       cap.castShadow = true;
     });
     // flat band helper: centres + outward normals + width axis → box-section strap
@@ -2488,16 +2828,19 @@ const Studio = {
     const xs = L * .19, gap = .42, top = [];
     [-1, 1].forEach(sx => {
       const pts = [], nrm = [], ax = [], u = .5 + sx * xs / L;
-      for (let i = 0; i <= 120; i++) { const v = Math.PI + gap + i / 120 * (Math.PI * 2 - gap * 2), [y, z] = sec(v, taper(u)), [y2, z2] = sec(v + .01, taper(u));
+      for (let i = 0; i <= 120; i++) { const v = Math.PI + gap + i / 120 * (Math.PI * 2 - gap * 2), [y, z] = sec(v, rad(u, v)), [y2, z2] = sec(v + .01, rad(u, v + .01));
         const tg = new THREE.Vector3(0, y2 - y, z2 - z).normalize(), nn = new THREE.Vector3(0, -tg.z, tg.y); // outward (curve runs counter-clockwise seen from +x)
         if (nn.y * y + nn.z * z < 0) nn.negate(); pts.push(new THREE.Vector3(sx * xs, y, z).addScaledVector(nn, .014)); nrm.push(nn); ax.push(new THREE.Vector3(1, 0, 0)); }
       band(pts, nrm, ax, .15, .022, trim);
+      [-1, 1].forEach(k => stitch(pts, nrm, ax, k * .061, .0125));
       top.push(pts[0], pts[pts.length - 1]);
     });
     // zip track + pull along the crown
-    { const pts = [], nrm = [], ax = []; for (let i = 0; i <= 60; i++) { const u = .04 + i / 60 * .92, [y] = sec(Math.PI, taper(u)); pts.push(new THREE.Vector3((u - .5) * L, y + .006, 0)); nrm.push(new THREE.Vector3(0, 1, 0)); ax.push(new THREE.Vector3(0, 0, 1)); }
+    { const pts = [], nrm = [], ax = []; for (let i = 0; i <= 60; i++) { const u = .04 + i / 60 * .92, [y] = sec(Math.PI, rad(u, Math.PI)); pts.push(new THREE.Vector3((u - .5) * L, y + .006, 0)); nrm.push(new THREE.Vector3(0, 1, 0)); ax.push(new THREE.Vector3(0, 0, 1)); }
       band(pts, nrm, ax, .09, .012, new THREE.MeshStandardMaterial({ color: '#1b1c20', roughness: .7 }));
-      band(pts, nrm, ax, .03, .02, metal);
+      band(pts, nrm, ax, .012, .014, new THREE.MeshStandardMaterial({ color: '#0c0c0e', roughness: .8 }));
+      ribbon(pts, nrm, ax, 0, .034, .0085, new THREE.MeshStandardMaterial({ color: HW[0], metalness: 1, roughness: HW[1] + .08, envMapIntensity: 2.4, alphaMap: TEX.zipTeeth(), alphaTest: .5, side: THREE.DoubleSide }), .0115); // interlocked metal teeth
+      [-1, 1].forEach(k => stitch(pts, nrm, ax, k * .037, .0075));
       const pull = add(new RoundedBoxGeometry(.05, .016, .16, 2, .008), metal); pull.position.set(L * .3, H / 2 + .02, .06); pull.rotation.x = -.4;
       const pt = add(new RoundedBoxGeometry(.06, .012, .22, 2, .006), trim); pt.position.set(L * .3, H / 2 + .015, .2); pt.rotation.x = -.6; }
     // rolled handles: front and back arches meet under a snap wrap
@@ -2515,6 +2858,7 @@ const Studio = {
     { const c = new THREE.CatmullRomCurve3([[-1, .18, 0], [-1.09, -.08, .22], [-.85, -.5, .62], [-.3, -.66, .78], [.3, -.62, .8], [.85, -.45, .62], [1.09, -.06, .22], [1, .18, 0]].map(([x, y, z]) => new THREE.Vector3(x * (L / 2 + .06), y * H, z * D)));
       const pts = c.getSpacedPoints(160), nrm = [], ax = []; pts.forEach((p, i) => { const tg = c.getTangentAt(i / 160), a = new THREE.Vector3().crossVectors(tg, new THREE.Vector3(0, 0, 1)).normalize(); ax.push(a); nrm.push(new THREE.Vector3().crossVectors(a, tg).normalize()); });
       band(pts, nrm, ax, .13, .018, trim);
+      [-1, 1].forEach(e => stitch(pts, nrm, ax, e * .052, .0105));
       const k = 80, pad = add(new RoundedBoxGeometry(.6, .19, .045, 3, .02), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
       const bk = add(new THREE.TorusGeometry(.07, .009, 6, 4), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .015); bk.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(118 / 160), ax[118].clone().negate(), nrm[118])); bk.rotateZ(Math.PI / 4); bk.scale.set(1.3, 1, 1); }
     // luggage tag off the front-right handle ring
@@ -2849,11 +3193,11 @@ const Studio = {
   snap(view, size = 1200) {
     const r = this.renderer, cam = this.camera, prev = { v: this.lastView, p: cam.position.clone(), a: cam.aspect, w: r.domElement.width / r.getPixelRatio(), h: r.domElement.height / r.getPixelRatio(), pr: r.getPixelRatio() };
     const SS = 2; r.setPixelRatio(1); r.setSize(size * SS, size * SS, false); cam.aspect = 1; cam.updateProjectionMatrix();
-    if (view) this.view(view);
-    r.render(this.scene, cam);
+    this.sizeComposer(); if (view) this.view(view);
+    this.draw();
     const out = TEX.canvas(size, size, (x) => { x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(r.domElement, 0, 0, size, size); }); // 2x supersample
     const url = out.toDataURL('image/jpeg', .93);
-    r.setPixelRatio(prev.pr); r.setSize(prev.w, prev.h, false); cam.aspect = prev.a; cam.updateProjectionMatrix();
+    r.setPixelRatio(prev.pr); r.setSize(prev.w, prev.h, false); this.sizeComposer(); cam.aspect = prev.a; cam.updateProjectionMatrix();
     if (view) { this.view(prev.v); cam.position.copy(prev.p); this.controls.update(); }
     return url;
   },
@@ -2868,7 +3212,7 @@ const Studio = {
     touch(); if (!silent) toast('Renders saved to tech pack');
   },
   exportPNG() { const d = S.current; download(`${d.styleNo}_${this.lastView}.png`, this.snapPNG()); },
-  snapPNG() { this.renderer.render(this.scene, this.camera); return this.renderer.domElement.toDataURL('image/png'); },
+  snapPNG() { this.draw(); return this.renderer.domElement.toDataURL('image/png'); },
   exportGLB() {
     const d = S.current;
     new GLTFExporter().parse(this.root, buf => download(`${d.styleNo}.glb`, new Blob([buf], { type: 'model/gltf-binary' })), err => toast('GLB export failed: ' + err.message, true), { binary: true });
@@ -2886,6 +3230,16 @@ const Panels = {
   },
   range(path, label, val, min, max, step, fmt = v => v) { return `<div class="fld"><label>${label}<b data-out="${path}" data-fmt="${fmt === frac ? 'frac' : ''}">${fmt(val)}</b></label><input type="range" data-bind="${path}" data-num min="${min}" max="${max}" step="${step}" value="${val}"></div>`; },
   select(path, label, val, opts) { return `<div class="fld"><label>${label}</label><select class="in" data-bind="${path}">${opts.map(([v, l]) => `<option value="${v}" ${String(v) === String(val) ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`; },
+  // Labels & tags: every category gets one. Text and logo are shared by the sewn label and the hang tag.
+  tagSec(d) {
+    const g = d.garment, cat = d.category, kinds = tagKinds(cat), apparel = kinds.includes('label'), hem = kinds.includes('hem');
+    return `<div class="sec"><h4><em>T</em>Labels &amp; tags</h4>
+      <div class="grid2">${apparel ? this.select('garment.tag', isTop(cat) ? 'Neck label' : 'Waistband label', g.tag || 'woven', [['woven', 'Woven · DPP'], ['printed', 'Printed tagless'], ['none', 'None']]) : hem ? this.select('garment.tag', 'Hem label', g.tag === 'none' ? 'none' : 'woven', [['woven', 'Woven · DPP'], ['none', 'None']]) : ''}${this.select('garment.hangTag', 'Hang tag', g.hangTag || '', [['', 'No'], ['1', 'Yes · DPP']])}</div>
+      <div class="fld" style="margin-top:10px"><label>Tag text</label><input class="in" data-bind="garment.tagText" maxlength="48" placeholder="Leave empty for logo only" value="${esc(g.tagText ?? TAG_TEXT)}"></div>
+      <div class="grid2" style="margin-top:10px">${this.select('garment.tagLogo', 'DPP logo', g.tagLogo === '0' ? '0' : '1', [['1', 'Logo + text'], ['0', 'Text only']])}${apparel ? this.select('garment.tagSize', 'Size', g.tagSize || 'M', ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => [s, s])) : '<div></div>'}</div>
+      <div class="grid2" style="margin-top:10px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.tagColor" value="${g.tagColor || '#14172B'}"></div><div class="fld"><label>Ink</label><input type="color" data-bind="garment.tagInk" value="${g.tagInk || '#EEF1F9'}"></div></div>
+      <div class="grid2" style="margin-top:10px;align-items:end">${apparel || hem ? '<img id="tagPrev" alt="Label preview" style="width:100%;border-radius:3px">' : ''}<img id="hangPrev" alt="Hang tag preview" style="width:44%;justify-self:center;border-radius:3px"></div></div>`;
+  },
   studio() {
     const d = S.current, L = $('#studioLeft'), R = $('#studioRight');
     if (d.category === 'watch') {
@@ -2918,7 +3272,7 @@ const Panels = {
           ${['oyster', 'jubilee', 'integrated', 'mesh'].includes(W.strap) ? '<p class="hint" style="margin-top:8px">Metal bracelets follow the case metal. Wood or ceramic cases default to steel.</p>' : ''}</div>
         <div class="sec"><h4><em>F</em>Movement & caseback</h4>${this.select('watch.movement', 'Movement', W.movement, MOVEMENTS.map(m => [m, m]))}
           <div style="margin-top:10px">${this.select('watch.wr', 'Water resistance', W.wr, ['3 ATM', '5 ATM', '10 ATM', '20 ATM', '30 ATM'].map(v => [v, v]))}</div>
-          <div class="fld" style="margin-top:10px"><label>Caseback engraving</label><input class="in" data-bind="watch.engraving" value="${esc(W.engraving)}"></div></div>`;
+          <div class="fld" style="margin-top:10px"><label>Caseback engraving</label><input class="in" data-bind="watch.engraving" value="${esc(W.engraving)}"></div></div>${this.tagSec(d)}`;
     } else {
       const g = d.garment;
       L.innerHTML = `<div class="sec"><h4><em>A</em>Piece</h4>
@@ -2935,7 +3289,9 @@ const Panels = {
         <div class="fld" style="margin-top:12px"><label>3D model<b>${g.model ? 'Uploaded GLB' : Models.peek(d) ? 'Studio default' : 'Built-in shape'}</b></label>
           <div class="grid2"><button class="btn sm" id="mdlUp">Upload GLB</button>${g.model ? '<button class="btn sm" id="mdlRm">Remove</button>' : `<span class="hint" style="align-self:center">CLO · Marvelous · marketplace</span>`}</div>
           ${g.model || Models.peek(d) ? `<div style="margin-top:8px">${this.select('garment.modelRot', 'Facing', g.modelRot || 0, [[0, 'As exported'], [90, 'Rotate 90°'], [180, 'Rotate 180°'], [270, 'Rotate 270°']])}</div>` : ''}</div></div>
-        <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}<div class="grid2" style="margin-top:10px">${this.select('garment.pattern', 'Fabric pattern', g.pattern || 'solid', Object.entries(PATTERNS))}${g.pattern && g.pattern !== 'solid' ? this.range('garment.plaidScale', 'Scale', num(g.plaidScale) || 1, .4, 3, .1) : ''}</div>${(g.pattern && g.pattern !== 'solid') || g.doubleWB === '1' ? `<div class="grid3" style="margin-top:8px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.plaid1" value="${g.plaid1 || '#14172B'}"></div><div class="fld"><label>Stripe</label><input type="color" data-bind="garment.plaid2" value="${g.plaid2 || '#B98A4A'}"></div><div class="fld"><label>Accent</label><input type="color" data-bind="garment.plaid3" value="${g.plaid3 || '#EEF1F9'}"></div></div>` : ''}${d.category === 'pants' || d.category === 'shorts' ? `<div class="grid2" style="margin-top:10px">${this.select('garment.doubleWB', 'Double waistband', g.doubleWB || '', [['', 'No'], ['1', 'Yes']])}${g.doubleWB === '1' ? this.select('garment.wb2Pattern', 'Band 2 fabric', g.wb2Pattern || 'plaid', [['plaid', 'Plaid'], ['solid', 'Solid']]) : ''}</div>${g.doubleWB === '1' ? `<div class="grid2" style="margin-top:8px">${this.range('garment.wb2H', 'Band 2 height', num(g.wb2H) || 1.75, .75, 4, .125, v => frac(v) + '"')}<div class="fld"><label>Band 2 solid</label><input type="color" data-bind="garment.wb2Color" value="${g.wb2Color || '#B98A4A'}"></div></div>` : ''}` : ''}
+        <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}<div class="grid2" style="margin-top:10px">${this.select('garment.pattern', 'Fabric pattern', g.pattern || 'solid', Object.entries(PATTERNS))}${g.pattern && g.pattern !== 'solid' ? this.range('garment.plaidScale', 'Scale', num(g.plaidScale) || 1, .4, 3, .1) : ''}</div>${(g.pattern && g.pattern !== 'solid') || g.doubleWB === '1' ? `<div class="grid3" style="margin-top:8px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.plaid1" value="${g.plaid1 || '#14172B'}"></div><div class="fld"><label>Stripe</label><input type="color" data-bind="garment.plaid2" value="${g.plaid2 || '#B98A4A'}"></div><div class="fld"><label>Accent</label><input type="color" data-bind="garment.plaid3" value="${g.plaid3 || '#EEF1F9'}"></div></div>` : ''}${d.category === 'pants' || d.category === 'shorts' ? `<div class="grid2" style="margin-top:10px">${this.select('garment.doubleWB', 'Double waistband', g.doubleWB || '', [['', 'No'], ['1', 'Yes']])}${g.doubleWB === '1' ? this.select('garment.wb2Style', 'Build', wb2Spec(g).style, [['boxer', 'Built-in boxer'], ['band', 'Second band']]) : ''}</div>${g.doubleWB === '1' ? (w => `<div class="grid2" style="margin-top:8px">${this.select('garment.wb2Pattern', w.style === 'boxer' ? 'Boxer fabric' : 'Band fabric', w.pattern, [['plaid', 'Plaid'], ['gingham', 'Gingham'], ['pinstripe', 'Pinstripe'], ['solid', 'Solid']])}${w.pattern === 'solid' ? `<div class="fld"><label>Solid color</label><input type="color" data-bind="garment.wb2Color" value="${w.color}"></div>` : '<div class="fld"><label>Colors</label><span class="hint">Ground / Stripe / Accent above</span></div>'}</div>
+          <div class="grid2" style="margin-top:8px">${this.range('garment.wb2H', 'Shows above waist', w.H, .75, 4, .125, frac)}${w.style === 'boxer' ? this.range('garment.wb2E', 'Elastic height', w.E, .75, 2, .125, frac) : ''}</div>
+          ${w.style === 'boxer' ? `<div class="grid2" style="margin-top:8px"><div class="fld"><label>Elastic</label><input type="color" data-bind="garment.wb2Elastic" value="${w.elastic}"></div><div class="fld"><label>Knit-in text color</label><input type="color" data-bind="garment.wb2Ink" value="${w.ink}"></div></div><div class="fld" style="margin-top:8px"><label>Knit-in text</label><input class="in" data-bind="garment.wb2Text" maxlength="40" value="${esc(g.wb2Text ?? "DON'T POSTPONE PASSION")}"></div>` : ''}`)(wb2Spec(g)) : ''}` : ''}
           <div class="grid2" style="margin-top:12px"><div class="fld"><label>${d.category === 'socks' ? 'Cuff' : isBottom(d.category) ? 'Waistband / trim' : 'Rib / trim'}</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim}"><button class="btn sm" data-copy="garment.trim">= Body</button></div></div>
           <div class="fld"><label>${d.category === 'socks' ? 'Heel / toe' : 'Stitch'}</label><div class="row"><input type="color" data-bind="garment.stitch" value="${g.stitch}"><button class="btn sm" data-copy="garment.stitch">= Body</button></div></div></div></div>
         ${['front', 'back'].map((s, i) => { const P = d.place[s]; return `<div class="sec"><h4><em>${'CD'[i]}</em>${s} print<span class="r cap">${d.artwork[s].length} layer${d.artwork[s].length === 1 ? '' : 's'}</span></h4>
@@ -2952,10 +3308,7 @@ const Panels = {
           <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveLogo', 'Sleeve logo', g.sleeveLogo || 'none', [['none', 'None'], ['mark', 'DPP mark'], ['word', 'Wordmark · down sleeve']])}${this.select('garment.sleeveSide', 'Side (as worn)', g.sleeveSide || 'left', [['left', 'Left'], ['right', 'Right'], ['both', 'Both']])}</div>
           ${g.sleeveLogo && g.sleeveLogo !== 'none' ? `<div class="grid2" style="margin-top:10px">${this.range('garment.sleeveLogoSize', g.sleeveLogo === 'word' ? 'Size · length 4×' : 'Logo width', num(g.sleeveLogoSize) || 3, 1, 5, .25, v => frac(v) + '"')}${g.sleeveLogo === 'mark' ? this.range('garment.sleeveDrop', 'Below shoulder seam', num(g.sleeveDrop ?? 2.5), .5, 12, .25, v => frac(v) + '"') : '<div></div>'}</div>
           <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveTech', 'Technique', g.sleeveTech || 'Screen print', [['Screen print', 'Screen print'], ['Flat embroidery', 'Flat embroidery']])}<div class="fld"><label>Logo color</label><div class="row"><input type="color" data-bind="garment.sleeveLogoColor" value="${g.sleeveLogoColor || (lum(sleeveHex(g)) > .5 ? '#14172B' : '#EEF1F9')}"></div></div></div>` : ''}</div>` : ''}
-        ${isTop(d.category) || isBottom(d.category) ? `<div class="sec"><h4><em>T</em>Labels &amp; tags</h4>
-          <div class="grid2">${this.select('garment.tag', isTop(d.category) ? 'Neck label' : 'Waistband label', g.tag || 'woven', [['woven', 'Woven · DPP'], ['printed', 'Printed tagless'], ['none', 'None']])}${this.select('garment.hangTag', 'Hang tag', g.hangTag || '', [['', 'No'], ['1', 'Yes · DPP']])}</div>
-          <div class="grid3" style="margin-top:10px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.tagColor" value="${g.tagColor || '#14172B'}"></div><div class="fld"><label>Ink</label><input type="color" data-bind="garment.tagInk" value="${g.tagInk || '#EEF1F9'}"></div>${this.select('garment.tagSize', 'Size', g.tagSize || 'M', ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => [s, s]))}</div>
-          <div class="grid2" style="margin-top:10px;align-items:end"><img id="tagPrev" alt="Label preview" style="width:100%;border-radius:3px"><img id="hangPrev" alt="Hang tag preview" style="width:44%;justify-self:center;border-radius:3px"></div></div>` : ''}`;
+        ${this.tagSec(d)}`;
     }
     R.innerHTML = `<div class="sec notes" id="noteSec"></div><div class="sec"><h4><em>E</em>Output</h4>
         <button class="btn primary block" id="sRenders">Save renders to tech pack</button>
@@ -3004,7 +3357,7 @@ function onBind(e) {
     let v = el.value;
     if (el.dataset.hex !== undefined) { if (!/^#[0-9a-f]{6}$/i.test(v)) return; }
     if (el.dataset.num !== undefined) v = num(v);
-    followBody(d, el.dataset.bind, v); setPath(d, el.dataset.bind, v); touch();
+    followBody(d, el.dataset.bind, v); setPath(d, el.dataset.bind, v); if (/^garment\.(doubleWB|wb2|plaid|fabric)/.test(el.dataset.bind)) syncSpec(d); touch();
     const root = el.closest('.side');
     $$(`[data-out="${el.dataset.bind}"]`, root).forEach(o => { const f = o.dataset.fmt; o.textContent = f === 'frac' ? frac(v) + '"' : el.type === 'range' ? o.textContent.replace(/^-?[\d.]+(?: \d\/\d)?|^-?\d\/\d/, '') && formatOut(el.dataset.bind, v) : String(v).toUpperCase(); });
     $$(`[data-bind="${el.dataset.bind}"]`, root).forEach(o => { if (o !== el) o.value = o.dataset.hex !== undefined ? String(v).toUpperCase() : v; });
@@ -3027,15 +3380,15 @@ function formatOut(path, v) {
 }
 const rebuildSoon = debounce(() => Studio.build(), 120);
 function tagPreview(d) {
-  const a = $('#tagPrev'), b = $('#hangPrev'); if (!a || !d) return;
-  const printed = d.garment.tag === 'printed'; a.src = tagCanvas(d, printed ? 'printed' : 'woven').toDataURL(); a.style.background = printed ? d.garment.color : ''; a.style.width = printed ? '70%' : '100%';
-  b.src = tagCanvas(d, 'hang').toDataURL();
+  const a = $('#tagPrev'), b = $('#hangPrev'); if (!d) return;
+  if (a) { const printed = d.garment.tag === 'printed'; a.src = tagCanvas(d, printed ? 'printed' : 'woven').toDataURL(); a.style.background = printed ? d.garment.color : ''; a.style.width = printed ? '70%' : '100%'; }
+  if (b) b.src = tagCanvas(d, 'hang').toDataURL();
 }
 function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
-  if (/^garment\.tag(Color|Ink|Size)$/.test(path)) tagPreview(S.current);
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^garment\.tag(Color|Ink|Size|Text|Logo)$/.test(path)) tagPreview(S.current);
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|wb2Style|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
@@ -3052,7 +3405,9 @@ document.addEventListener('click', e => {
       const d = S.current, cat = d.category; d.place.front.s = clamp(d.place.front.s, .2, 1.6);
       // a different silhouette needs its own POM / BOM / construction when the measurement set differs
       const pom = presetPOM(cat), codes = x => x.rows.map(r => r.code).join();
-      if (codes(pom) !== codes(d.pom)) { d.pom = pom; d.bom = presetBOM(cat); d.construction = presetConstruction(cat); toast(`Specs switched to the ${CATS[cat].label} template`); }
+      if (codes(pom) !== codes(d.pom)) { d.pom = pom; d.bom = tagShell(presetBOM(cat)); d.construction = presetConstruction(cat); toast(`Specs switched to the ${CATS[cat].label} template`); }
+      if (d.labels === presetLabels(prev)) d.labels = presetLabels(cat); if (d.packaging === presetPackaging(prev)) d.packaging = presetPackaging(cat);
+      syncSpec(d);
       d.styleNo = d.styleNo.replace(/^DPP-[A-Z]{2}-/, `DPP-${CATS[cat].code}-`);
       renderCtx();
     }
@@ -3495,15 +3850,170 @@ async function analyzeWithClaude(dataUrl) {
 }
 
 /* =========================================================================
+   12b. Spec-driven tech pack copy — the style description, the double-waist
+   rows and the shell-fabric row are written from the 3D spec, so the pack
+   never says one thing while the model shows another.
+   ========================================================================= */
+const hx = h => `${colorName(h)} (${String(h).toUpperCase()})`;
+const SHELL_ROWS = ['Shell fabric', 'Body fabric', 'Shell', 'Body', 'Body yarn'];
+const tagShell = bom => { const r = bom.find(x => SHELL_ROWS.includes(x.component)); if (r) r.auto = 'shell'; return bom; };
+function presetLabels(cat) {
+  if (cat === 'watch') return 'Dial: DPP mark at 12, edition N° at 6.\nCaseback: N° ___ / 150 and engraving text.\nCertificate card numbered to match caseback.';
+  if (cat === 'pants' || cat === 'shorts') return 'Main label: woven DPP mark, inside centre back waistband, 1/4" below top edge.\nSize tab: woven loop label beside the main label.\nCare / content label: inside left side seam, at the pocket bag.\nHang tag: style no., size and barcode, strung through the left front belt loop (or drawcord eyelet).';
+  if (cat === 'boxers') return 'Branding: jacquard elastic waistband carries the DPP wordmark.\nCare / content: heat-transfer print inside centre back. No sewn label.\nSize: printed with the care transfer and on the box sleeve.';
+  if (cat === 'socks') return 'Branding: knit-in or embroidered, per the artwork page.\nSize and content: printed on the header card. No sewn label.\nPair numbers match the header card.';
+  if (cat === 'scarf' || cat === 'balaclava') return 'Main label: woven DPP mark, folded loop label at the hem.\nCare / content label: sewn under the main label.\nHang tag: safety pin through the main label.';
+  if (isBag(cat)) return 'Exterior: DPP mark per the artwork page.\nInterior: woven DPP label on the slip pocket.\nHang tag: strung on the handle or strap ring.';
+  return 'Main label: woven DPP mark, centered back neck, 1/2" below seam.\nCare label: left side seam, 4" above hem.\nHang tag: drop name + unit number, attached via safety pin through main label.';
+}
+function presetPackaging(cat) {
+  if (cat === 'watch') return 'Wood presentation box, foam insert, numbered certificate, 2 spare links, link tool. Outer mailer carton.';
+  if (cat === 'pants' || cat === 'shorts') return 'Fold in thirds to 10" × 13", tissue interleaf, recycled polybag with size sticker. 20 units per master carton, sorted by size.';
+  if (cat === 'boxers') return 'Recycled box sleeve, 1 or 3-pack, size on the end flap. 48 units per master carton, sorted by size.';
+  if (cat === 'socks') return 'Paired on a header card. 120 pairs per master carton, sorted by size.';
+  if (cat === 'scarf' || cat === 'balaclava') return 'Folded, header card, recycled polybag. 48 units per master carton.';
+  if (isBag(cat)) return 'Stuffed with tissue to hold shape, hardware wrapped, cotton dust bag, individual carton.';
+  return 'Fold to 9" × 12", tissue wrap, recycled polybag with size sticker. 24 units per master carton, sorted by size.';
+}
+// Shell-fabric BOM row follows the fabric picked in 3D Studio (only the row the preset created; edits to other rows stay)
+function syncShell(d) {
+  const r = d.category !== 'watch' && d.bom.find(x => x.auto === 'shell'), f = FABRICS[d.garment.fabric]; if (!r || !f) return false;
+  const [name, weight] = f.label.split('·').map(s => s.trim()), mat = `${name} · ${f.comp}`, spec = f.gsm ? `${weight && !/gsm/.test(weight) ? weight + ' · ' : ''}${f.gsm} gsm, per colorway` : r.spec;
+  if (r.material === mat && r.spec === spec) return false; r.material = mat; r.spec = spec; return true;
+}
+function wb2Phrase(g) {
+  const w = wb2Spec(g), fab = w.pattern === 'solid' ? `${colorName(w.color)} cotton poplin` : `${colorName(g.plaid1)} and ${colorName(g.plaid2)} ${w.pattern} cotton poplin`;
+  return w.style === 'boxer'
+    ? `a built-in boxer layer showing ${frac(w.H)} in above the trouser waistband: ${fab} gathered into a ${colorName(w.elastic)} jacquard elastic band${w.text ? ` woven with "${w.text}" in ${colorName(w.ink)}` : ''}, small button fly at centre front`
+    : `a second flat waistband in ${fab} stacked ${frac(w.H)} in above the main waistband, with its own centre-front button`;
+}
+function wb2Rows(d) {
+  const g = d.garment, w = wb2Spec(g), find = c => d.pom.rows.find(r => r.code === c) || {}, W1 = num(find('W1').base) || 16, gW = num(find('W1').grade) || .5;
+  const q = v => frac(v) + '"', U = h => String(h).toUpperCase(), pre = 'Double waist · ';
+  const fab = { plaid: 'Yarn-dyed plaid poplin', gingham: 'Yarn-dyed gingham poplin', pinstripe: 'Yarn-dyed pinstripe poplin', solid: 'Piece-dyed poplin' }[w.pattern] || 'Poplin';
+  const cols = w.pattern === 'solid' ? U(w.color) : `Ground ${U(g.plaid1)} · stripe ${U(g.plaid2)} · accent ${U(g.plaid3)}`;
+  if (w.style === 'boxer') return {
+    pom: [
+      { key: 'WB2', code: 'WB2', desc: 'Double waist: total height above main waistband top edge, at side seam', tol: .125, base: w.H, grade: 0 },
+      { key: 'WB3', code: 'WB3', desc: 'Double waist: elastic height', tol: .0625, base: w.E, grade: 0 },
+      { key: 'WB4', code: 'WB4', desc: 'Double waist: woven yoke showing between main waistband and elastic, at side seam', tol: .125, base: w.reveal, grade: 0 },
+      { key: 'WB5', code: 'WB5', desc: 'Double waist: elastic ½, relaxed', tol: .25, base: W1 - 1, grade: gW },
+      { key: 'WB6', code: 'WB6', desc: 'Double waist: elastic ½, fully extended (minimum)', tol: .5, base: W1 + 3, grade: gW }],
+    bom: [
+      { key: 'yoke', component: pre + 'yoke', material: `${fab}, 100% cotton, 115–125 gsm`, supplier: '', spec: `${cols}. Cut on straight grain; match pattern across the CF fly`, qty: .25, uom: 'yd', cost: 0 },
+      { key: 'elastic', component: pre + 'elastic', material: `Jacquard woven elastic, ${q(w.E)} wide, brushed soft back`, supplier: '', spec: `Ground ${U(w.elastic)}; knit-in ${w.text ? `"${w.text}" + ` : ''}DPP mark in ${U(w.ink)}. One repeat centred on CF, join at CB`, qty: +(((W1 - 1) * 2 + 1) / 36).toFixed(2), uom: 'yd', cost: 0 },
+      { key: 'button', component: pre + 'fly button', material: '4-hole resin button, 20L (1/2")', supplier: '', spec: 'Bone / pearl. CF fly of yoke; 1 spare on the care label', qty: 2, uom: 'pc', cost: 0 },
+      { key: 'fuse', component: pre + 'fusible', material: 'Woven fusible interlining, 30 gsm', supplier: '', spec: 'Fly placket, both sides', qty: .05, uom: 'yd', cost: 0 }],
+    construction: [
+      { key: 'c1', area: pre + 'yoke', method: 'Woven inner yoke in two halves, CF lapped fly (left over right as worn) with 1 button + buttonhole. Lower edge sandwiched between main waistband and waistband facing, all round', spi: '12', notes: `Shows ${q(w.reveal)} of yoke above the main waistband top edge at side seam; slightly more at CF where the trouser waist dips. No raw edges inside.` },
+      { key: 'c2', area: pre + 'elastic', method: 'Jacquard elastic joined in the round at CB, set to the yoke top edge with 2-needle coverstitch; yoke eased evenly into the elastic, approx. 1.15 : 1', spi: '12', notes: 'Wordmark reads left to right as worn, one repeat centred on CF. Elastic recovers to WB5 after 5 home washes.' },
+      { key: 'c3', area: pre + 'finish', method: 'Belt loops and closure stay on the main waistband. Woven main label moves to inside CB of the yoke', spi: '', notes: 'Inner layer lies flat and level after wash, no twisting. Approve on the fit sample before bulk.' }],
+  };
+  return {
+    pom: [
+      { key: 'WB2', code: 'WB2', desc: 'Double waist: second band height above main waistband top edge', tol: .125, base: w.H, grade: 0 },
+      { key: 'WB5', code: 'WB5', desc: 'Double waist: second band ½, along top edge', tol: .25, base: W1 - .25, grade: gW }],
+    bom: [
+      { key: 'yoke', component: pre + 'second band', material: `${fab}, 100% cotton, 115–125 gsm`, supplier: '', spec: `${cols}. Cut on straight grain, pattern matched at CF`, qty: .25, uom: 'yd', cost: 0 },
+      { key: 'fuse', component: pre + 'fusible', material: 'Woven fusible interlining, 60 gsm', supplier: '', spec: 'Full second band', qty: .25, uom: 'yd', cost: 0 },
+      { key: 'button', component: pre + 'button', material: '4-hole button, 24L (5/8")', supplier: '', spec: 'CF of second band; 1 spare on the care label', qty: 2, uom: 'pc', cost: 0 }],
+    construction: [
+      { key: 'c1', area: pre + 'second band', method: 'Second waistband, fully fused, folded top edge with self facing. Set into the top seam of the main waistband; edge-stitched 1/16" at top and bottom', spi: '10', notes: `Finishes ${q(w.H)} above the main band. CF lapped closure (left over right as worn), 1 button + buttonhole.` },
+      { key: 'c3', area: pre + 'finish', method: 'Belt loops stay on the main waistband only. Second band sits flush inside the main band, no gap at the side seams', spi: '', notes: 'Approve on the fit sample before bulk.' }],
+  };
+}
+// Keeps the double-waist rows in POM / BOM / construction matched to the spec. Supplier and unit cost typed into
+// those rows survive; everything else in them is regenerated. Returns true when anything changed.
+function syncDoubleWaist(d) {
+  if (!d?.pom?.rows || d.category === 'watch') return false;
+  const on = (d.category === 'pants' || d.category === 'shorts') && d.garment.doubleWB === '1', want = on ? wb2Rows(d) : { pom: [], bom: [], construction: [] };
+  let changed = false;
+  const apply = (list, rows, anchor) => {
+    const old = list.filter(r => r.auto === 'wb2');
+    const next = rows.map(w => { const o = old.find(x => x.key === w.key); return { id: o?.id || uid('r'), auto: 'wb2', ...w, ...(o && 'supplier' in w ? { supplier: o.supplier, cost: o.cost } : {}) }; });
+    if (JSON.stringify(old) === JSON.stringify(next)) return list;
+    changed = true; const rest = list.filter(r => r.auto !== 'wb2'); let at = rest.reduce((a, r, i) => anchor(r) ? i + 1 : a, -1); if (at < 0) at = rest.length;
+    return [...rest.slice(0, at), ...next, ...rest.slice(at)];
+  };
+  d.pom.rows = apply(d.pom.rows, want.pom, r => r.code === 'WB1');
+  d.bom = apply(d.bom, want.bom, r => r.auto === 'shell' || SHELL_ROWS.includes(r.component));
+  d.construction = apply(d.construction, want.construction, r => r.area === 'Waistband');
+  d.construction.forEach(r => { if (r.notes === 'Double waistband: second band joined above main band, see WB2.') { r.notes = ''; changed = true; } }); // stale note from the first build
+  return changed;
+}
+const syncSpec = d => { const a = syncDoubleWaist(d), b = syncShell(d); return a || b; };
+// Style description for the Overview page: what a pattern room needs to picture the piece before reading the tables.
+function styleDescription(d) {
+  const g = d.garment, cat = d.category, out = [], q = v => frac(v) + '"', pv = c => { const r = d.pom.rows.find(x => x.code === c); return r ? num(r.base) : 0; };
+  if (cat === 'watch') {
+    const W = watchSpec(d), mat = W.caseMat === 'wood' ? WOODS[W.caseWood].label : CASE_MATS[W.caseMat]?.label || 'Steel';
+    out.push(W.head === 'shock' ? `Shock-resistant resin sports watch, ${W.dia} mm, ${W.display === 'anadigi' ? 'ana-digi' : 'digital'} ${W.lcd === 'neg' ? 'negative' : 'positive'} LCD, ${(CASE_MATS[W.caseMat]?.label || 'steel').toLowerCase()} hardware.` : `${CASE_SHAPES[W.shape]} case, ${W.dia} mm, in ${mat.toLowerCase()}${W.shape === 'round' ? `; ${BEZEL_STYLES[W.bezelStyle].toLowerCase()} bezel` : ''}${W.crownGuards ? '; screw-down style crown with guards' : '; push-pull crown'}.`);
+    out.push(`${DIAL_STYLES[W.dialStyle].label} dial in ${hx(W.dial)} with ${NUMERALS[W.numerals].toLowerCase()} hour markers and ${HANDS[W.hands].toLowerCase()} hands in ${hx(W.index)}; seconds in ${hx(W.accent)}${W.date !== 'none' ? `; date at ${W.date}` : ''}.`);
+    out.push(`Movement: ${W.movement}. Crystal: ${W.crystal}. Water resistance: ${W.wr}.`);
+    out.push(`Strap: ${STRAPS[W.strap]}${W.strap === 'woodlinks' ? ` in ${WOODS[W.strapWood].label.toLowerCase()} with ${WOODS[W.strapAccent].label.toLowerCase()} side links` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ` in ${hx(W.strapColor)}` : ''}.`);
+    out.push(`Numbered edition: N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}. Caseback engraving: ${W.engraving || 'none'}.`);
+    if (g.hangTag === '1') { const T = tagSpec(d); out.push(`Hang tag on a string loop: ${T.logo ? 'DPP mark' : 'text only'}${T.text ? `, "${T.text}"` : ''}, style no. and edition number.`); }
+    return out;
+  }
+  const f = FABRICS[g.fabric] || FABRICS.jersey, fit = FITS[g.fit]?.label || 'Boxy', fabric = `${f.label.split('·')[0].trim().toLowerCase()} (${f.comp}${f.gsm ? `, ${f.gsm} gsm` : ''})`;
+  const noun = { tee: `${fit}-fit short-sleeve tee`, longsleeve: `${fit}-fit long-sleeve tee`, crewneck: `${fit}-fit crewneck sweatshirt`, hoodie: `${fit}-fit pullover hoodie`, pants: `${g.pantStyle === 'slim' ? 'Slim' : 'Straight'}-leg five-pocket pant, ${fit.toLowerCase()} fit`, shorts: `Pull-on short, ${fit.toLowerCase()} fit`, boxers: 'Boxer brief', socks: g.sockStyle === 'noshow' ? 'No-show sock' : 'Crew sock', scarf: 'Hooded wrap scarf', balaclava: 'Single-opening balaclava', duffle: 'Barrel duffle', satchel: 'Mini crossbody satchel' }[cat];
+  out.push(`${noun} in ${fabric}, body ${hx(g.color)}.`);
+  const build = {
+    tee: 'Set-in sleeves, 1×1 rib crew neck, taped back neck shoulder to shoulder, twin-needle coverstitch at sleeve and body hems.',
+    longsleeve: 'Set-in long sleeves with 1×1 rib cuffs, rib crew neck, taped back neck, twin-needle body hem.',
+    crewneck: 'Set-in sleeves, rib crew neck, rib cuffs and waistband cut to 75% of the opening, taped back neck.',
+    hoodie: 'Two-ply self-lined hood with centre seam, flat drawcords through metal eyelets, kangaroo pocket bartacked at the corners, rib cuffs and waistband.',
+    pants: 'Five-pocket build: two scoop front pockets, two back patch pockets, coin pocket. Zip fly with shank button, five belt loops, chain-stitched hem.',
+    shorts: 'Elasticated waistband with drawcord, two side-seam pockets, coverstitched hem.',
+    boxers: 'Jacquard elastic waistband, contoured double-layer pouch, flatlock seams throughout, coverstitched leg hems.',
+    socks: `Rib cuff, Y-heel, terry footbed, hand-linked toe${g.sockAccent === '1' ? `; contrast heel and toe in ${hx(g.stitch)}` : ''}${g.sockCuff === '1' ? `; contrast cuff in ${hx(g.trim)}` : ''}${num(g.stripes) && g.sockStyle !== 'noshow' ? `; ${num(g.stripes)} athletic stripe${num(g.stripes) > 1 ? 's' : ''} below the cuff in ${hx(g.stripeCol)}` : ''}.`,
+    scarf: 'Hood shaped into the wrap, rolled or overlocked edges, soft drape.',
+    balaclava: 'One bound eye opening, flatlock seams with no ridge against the head, bib hem.',
+    duffle: 'Turned construction with piped end panels, rolled handles on wrap-under straps, two-way metal zip, detachable padded shoulder strap, board base with metal feet.',
+    satchel: 'Soft rounded body with top flap, zip front pocket, webbing side gussets, adjustable webbing strap on D-rings, topstitch line across the flap.',
+  }[cat];
+  out.push(build);
+  if ((cat === 'pants' || cat === 'shorts') && g.doubleWB === '1') {
+    const w = wb2Spec(g), fab = w.pattern === 'solid' ? `solid ${hx(w.color)} poplin` : `${w.pattern} poplin (${hx(g.plaid1)} ground, ${hx(g.plaid2)} stripe, ${hx(g.plaid3)} accent)`;
+    out.push(w.style === 'boxer'
+      ? `Double waist: a built-in boxer layer stands ${q(w.H)} above the main waistband. A woven yoke in ${fab} is caught in the main waistband seam, shows ${q(w.reveal)}, and is gathered into a ${q(w.E)} jacquard elastic in ${hx(w.elastic)}${w.text ? ` carrying "${w.text}"` : ''} and the DPP mark in ${hx(w.ink)}. Lapped fly with one button at centre front. See WB2–WB6.`
+      : `Double waist: a second flat waistband in ${fab} stands ${q(w.H)} above the main waistband, set into its top seam, edge-stitched top and bottom, with its own centre-front button. See WB2 and WB5.`);
+  }
+  if (g.pattern && g.pattern !== 'solid' && !isBag(cat)) out.push(`Body fabric pattern: ${PATTERNS[g.pattern].toLowerCase()} in ${hx(g.plaid1)}, ${hx(g.plaid2)} and ${hx(g.plaid3)}.`);
+  const trims = [];
+  if (g.trim && g.trim.toLowerCase() !== g.color.toLowerCase()) trims.push(`${isBag(cat) ? 'trim' : cat === 'socks' ? 'cuff' : isBottom(cat) ? 'waistband / trim' : 'rib'} in ${hx(g.trim)}`);
+  if (isTop(cat)) { const L = sleeveHex(g), R = sleeveHexR(g), b = g.color.toLowerCase(); if (L.toLowerCase() !== R.toLowerCase()) trims.push(`split sleeves, ${hx(L)} left and ${hx(R)} right as worn`); else if (L.toLowerCase() !== b) trims.push(`contrast sleeves in ${hx(L)}`); }
+  if (g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() && cat !== 'socks') trims.push(`thread in ${hx(g.stitch)}`);
+  if (trims.length) out.push(`Contrast: ${trims.join('; ')}.`);
+  const wash = [g.finish && g.finish !== 'none' ? FINISHES[g.finish].label.toLowerCase() : '', g.distress && g.distress !== 'none' ? 'distressing: ' + DISTRESS[g.distress].label.toLowerCase() : ''].filter(Boolean);
+  if (wash.length) out.push(`Finish: ${wash.join('; ')}. Wash after all prints and embroidery are approved on a strike-off.`);
+  const art = ['front', 'back'].filter(s => d.artwork[s].some(l => !l.hidden)).map(s => { const bb = artBBox(d, s); return `${s} ${d.place[s].tech.toLowerCase()}, ${q(bb.w)} wide`; });
+  const brand = [...art];
+  if ((d.placements || []).length) brand.push(`${d.placements.length} additional placement${d.placements.length > 1 ? 's' : ''} (see artwork page)`);
+  if (isTop(cat) && g.sleeveLogo && g.sleeveLogo !== 'none') brand.push(g.sleeveLogo === 'word' ? `wordmark down the ${g.sleeveSide === 'both' ? 'sleeves' : g.sleeveSide + ' sleeve'}` : `DPP mark on the ${g.sleeveSide === 'both' ? 'upper sleeves' : 'upper ' + g.sleeveSide + ' sleeve'}`);
+  { const T = tagSpec(d), k = tagKinds(cat), tg = g.tag || 'woven', bits = [];
+    if (k.includes('label')) bits.push({ woven: 'woven main label', printed: 'printed tagless label', none: 'no main label' }[tg]); if (k.includes('hem') && tg !== 'none') bits.push('woven hem label'); if (g.hangTag === '1') bits.push('hang tag');
+    if (bits.length) brand.push(bits.join(' and ') + ((tg !== 'none' && !k.every(x => x === 'hang')) || g.hangTag === '1' ? ` (${T.logo ? 'DPP mark' : 'text only'}${T.text ? `, "${T.text}"` : ''})` : '')); }
+  if (brand.length) out.push(`Branding: ${brand.join('; ')}.`);
+  const P = d.pom, key = isTop(cat) ? [['chest ½', 'B'], ['body length', 'A'], ['sleeve', 'G1']] : cat === 'pants' || cat === 'shorts' ? [['waist ½', 'W1'], ['outseam', 'A'], ['inseam', 'I1']] : cat === 'boxers' ? [['waist ½', 'W1'], ['side length', 'A']] : [];
+  const meas = key.filter(([, c]) => pv(c)).map(([l, c]) => `${l} ${q(pv(c))}`);
+  if (P.sizes.length > 1 || meas.length) out.push(`${P.sizes.length > 1 ? `Size run ${P.sizes[0]}–${P.sizes[P.sizes.length - 1]}, base ${P.base}` : `One size (${P.base})`}${meas.length ? `: ${meas.join(', ')}` : ''}.`);
+  return out;
+}
+/* =========================================================================
    13. Tech pack — printable, fully editable
    ========================================================================= */
 const TechPack = {
   render() {
     const d = S.current; if (!d) return;
+    const changed = syncSpec(d); // spec-driven rows follow the 3D Studio before the pages are drawn
     const isW = d.category === 'watch', pages = [this.cover(d), this.materials(d), this.measure(d), isW ? null : this.art(d), this.build(d), this.cost(d)].filter(Boolean);
     $('#tpScroll').innerHTML = pages.map((p, i) => `<div class="tp-page">${this.head(d, p.title, i + 1, pages.length)}${p.body}${this.foot(d)}</div>`).join('');
-    Mark.paint($('#tpScroll')); this.calc();
+    Mark.paint($('#tpScroll')); this.calc(); this.fitCells();
+    if (changed) touch();
   },
+  // wrapped table cells grow to their text (browsers without field-sizing)
+  fitCells(root = $('#tpScroll')) { if (CSS.supports('field-sizing', 'content')) return; $$('textarea.tp-in', root).forEach(t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }); },
   head(d, title, n, of) {
     return `<div class="tp-head"><div data-mark></div><h2><small>Tech pack · ${esc(CATS[d.category].label)}</small>${esc(title)}</h2>
       <div class="pg">Style <b>${esc(d.styleNo)}</b> · Rev <b>${String(d.revisions.length).padStart(2, '0')}</b><br>${esc(d.name)}<br>Page <b>${n}</b> / ${of} · ${today()}</div></div>`;
@@ -3513,7 +4023,7 @@ const TechPack = {
   fig(img, cap, right = '') { return `<div class="tp-fig"><div class="im">${img || `<div class="missing">Not captured<br>3D Studio → Save renders</div>`}</div><div class="cp"><span>${cap}</span><span>${right}</span></div></div>`; },
   table(key, cols, rows, opts = {}) {
     return `<table class="tp-tbl"><thead><tr>${cols.map(c => `<th class="${c.num ? 'num' : ''}" style="${c.w ? 'width:' + c.w : ''}">${c.label}</th>`).join('')}<th class="x"></th></tr></thead>
-      <tbody>${rows.map(r => `<tr>${cols.map(c => c.calc ? `<td class="calc ${c.cls?.(r) || ''}" data-calc="${key}:${r.id}:${c.key}"></td>` : `<td class="${c.num ? 'num' : ''}">${c.color ? `<span class="tp-sw" style="background:${esc(r[c.key])}"></span>` : ''}<input class="tp-in" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}" ${c.num ? 'type="number" step="any"' : ''} value="${esc(r[c.key] ?? '')}" ${c.color ? 'style="width:72%"' : ''}></td>`).join('')}<td class="x"><button data-del="${key}:${r.id}" title="Remove row">×</button></td></tr>`).join('')}</tbody>${opts.foot || ''}</table>`;
+      <tbody>${rows.map(r => `<tr>${cols.map(c => c.calc ? `<td class="calc ${c.cls?.(r) || ''}" data-calc="${key}:${r.id}:${c.key}"></td>` : `<td class="${c.num ? 'num' : ''}">${c.color ? `<span class="tp-sw" style="background:${esc(r[c.key])}"></span>` : ''}${c.num || c.color ? `<input class="tp-in" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}" ${c.num ? 'type="number" step="any"' : ''} value="${esc(r[c.key] ?? '')}" ${c.color ? 'style="width:72%"' : ''}>` : `<textarea class="tp-in" rows="1" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}">${esc(r[c.key] ?? '')}</textarea>`}</td>`).join('')}<td class="x"><button data-del="${key}:${r.id}" title="Remove row">×</button></td></tr>`).join('')}</tbody>${opts.foot || ''}</table>`;
   },
   cover(d) {
     const isW = d.category === 'watch';
@@ -3522,6 +4032,8 @@ const TechPack = {
     return {
       title: 'Overview', body: `<div class="tp-meta">${meta.map(([l, k]) => `<div><label>${l}</label>${k === 'status' ? `<select class="tp-in" data-tp="status">${STATUSES.map(s => `<option ${s === d.status ? 'selected' : ''}>${s}</option>`).join('')}</select>` : this.inp(k, d[k])}</div>`).join('')}</div>
       <div class="tp-figs" style="margin-top:18px">${this.fig(r.front && `<img src="${r.front}">`, '3D · Front')}${this.fig(r.back && `<img src="${r.back}">`, isW ? '3D · 3/4' : '3D · Back')}${this.fig(flatSVG(d, 'front'), 'Flat · Front', 'NTS')}${this.fig(flatSVG(d, 'back'), 'Flat · Back', 'NTS')}</div>
+      <h3 style="margin-top:18px">Style description <em>written from the 3D Studio spec · updates with the design</em></h3>
+      <div class="tp-desc">${styleDescription(d).map(s => `<p>${esc(s)}</p>`).join('')}</div>
       <div class="tp-grid" style="grid-template-columns:2fr 1fr;margin-top:18px"><div><h3>Design intent</h3><div class="tp-note" contenteditable data-tpnote="notes">${esc(d.notes)}</div></div>
       <div><h3>References</h3><div id="tpRefs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${d.refs.length ? '' : '<span class="tp-scale">None attached</span>'}</div></div></div>`
     };
@@ -3539,17 +4051,17 @@ const TechPack = {
         ['Seconds / date', `${sw(W.accent)} · date ${W.date === 'none' ? 'none' : 'at ' + W.date}`],
         ['Movement', W.movement], ['Crystal / WR', `${W.crystal} · ${W.wr}`],
         ['Strap', STRAPS[W.strap] + (W.strap === 'woodlinks' ? `: ${WOODS[W.strapWood].label} / ${WOODS[W.strapAccent].label}` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ' · ' + sw(W.strapColor) : '')],
-        ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)]]; })()
-      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? [['Waistband 2', `Stacked above main band · ${frac(num(g.wb2H) || 1.75)}" · ${g.wb2Pattern === 'plaid' ? 'plaid' : g.wb2Color}`]] : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`],
+        ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)], ...tagRows(d)]; })()
+      : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? (w => { const sw = h => `<span class="tp-sw" style="background:${h}"></span>`, fab = w.pattern === 'solid' ? `Solid poplin ${sw(w.color)}${String(w.color).toUpperCase()}` : `${PATTERNS[w.pattern].split(' ')[0]} poplin ${sw(g.plaid1)}${sw(g.plaid2)}${sw(g.plaid3)}`; return [['Double waist', w.style === 'boxer' ? `Built-in boxer · ${frac(w.H)}" above main waistband` : `Second band · ${frac(w.H)}" above main waistband`], [w.style === 'boxer' ? 'Inner yoke' : 'Second band', `${fab}${w.style === 'boxer' ? ` · ${frac(w.reveal)}" showing` : ''}`], ...(w.style === 'boxer' ? [['Inner elastic', `Jacquard · ${frac(w.E)}" · ${sw(w.elastic)}${String(w.elastic).toUpperCase()} / ${sw(w.ink)}${String(w.ink).toUpperCase()}${w.text ? ` · “${esc(w.text)}”` : ''}`]] : [])]; })(wb2Spec(g)) : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`],
         ...(isTop(d.category) ? [['Sleeves', `<span class="tp-sw" style="background:${sleeveHex(g)}"></span>${sleeveHex(g).toUpperCase()}${sleeveHex(g).toLowerCase() === g.color.toLowerCase() ? ' · self' : ' · contrast'}`], ['Sleeve logo', !g.sleeveLogo || g.sleeveLogo === 'none' ? 'None' : `${g.sleeveLogo === 'word' ? "DON'T POSTPONE PASSION wordmark, shoulder to cuff" : `DPP mark ${frac(num(g.sleeveLogoSize) || 3)}" wide, ${frac(num(g.sleeveDrop ?? 2.5))}" below shoulder seam`} · ${g.sleeveSide === 'both' ? 'both sleeves' : g.sleeveSide === 'right' ? 'right sleeve' : 'left sleeve'} · ${g.sleeveTech || 'Screen print'}`]] : []),
-        ...(isTop(d.category) || isBottom(d.category) ? [['Main label', `${{ woven: 'Woven DPP label', printed: 'Printed tagless', none: 'None' }[g.tag || 'woven']}${(g.tag || 'woven') === 'none' ? '' : ` · size ${g.tagSize || 'M'} · <span class="tp-sw" style="background:${g.tagColor || '#14172B'}"></span>${(g.tagColor || '#14172B').toUpperCase()} / ${(g.tagInk || '#EEF1F9').toUpperCase()}`}`], ['Hang tag', g.hangTag === '1' ? 'DPP hang tag 2" × 3 1/2", style no. + size + barcode, string + safety pin' : 'None']] : [])];
+        ...tagRows(d)];
     return {
       title: 'Materials & BOM', body: `<div class="tp-grid" style="grid-template-columns:1fr 2.2fr">
         <div><h3>Specification <em>from 3D Studio</em></h3><div class="tp-kv">${spec.map(([k, v]) => `<label>${k}</label><div>${v}</div>`).join('')}</div>
           <h3 style="margin-top:18px">Colorways <button class="tp-add add" data-add="colorways">+ Row</button></h3>
           ${this.table('colorways', [{ key: 'name', label: 'Name' }, { key: 'hex', label: 'Hex', color: 1 }, { key: 'pantone', label: 'Pantone TCX' }], d.colorways)}</div>
         <div><h3>Bill of materials <button class="tp-add add" data-add="bom">+ Row</button></h3>
-          ${this.table('bom', [{ key: 'component', label: 'Component', w: '15%' }, { key: 'material', label: 'Material', w: '28%' }, { key: 'spec', label: 'Spec / placement' }, { key: 'supplier', label: 'Supplier' }, { key: 'qty', label: 'Qty', num: 1, w: '7%' }, { key: 'uom', label: 'UoM', w: '6%' }, { key: 'cost', label: 'Unit $', num: 1, w: '8%' }, { key: 'ext', label: 'Ext $', calc: 1, w: '8%' }], d.bom,
+          ${this.table('bom', [{ key: 'component', label: 'Component', w: '16%' }, { key: 'material', label: 'Material', w: '25%' }, { key: 'spec', label: 'Spec / placement' }, { key: 'supplier', label: 'Supplier', w: '10%' }, { key: 'qty', label: 'Qty', num: 1, w: '7%' }, { key: 'uom', label: 'UoM', w: '6%' }, { key: 'cost', label: 'Unit $', num: 1, w: '7%' }, { key: 'ext', label: 'Ext $', calc: 1, w: '7%' }], d.bom,
         { foot: `<tfoot><tr><td colspan="7">Materials total / unit</td><td class="calc" data-calc="bomTotal"></td><td></td></tr></tfoot>` })}</div></div>`
     };
   },
@@ -3641,7 +4153,7 @@ function artInks(d, side) { const s = new Set(); d.artwork[side].filter(l => !l.
 document.addEventListener('input', e => {
   const t = e.target; if (!t.closest('#tpScroll') || !S.current) return; const d = S.current;
   if (t.dataset.tp) { setPath(d, t.dataset.tp, t.type === 'number' ? num(t.value) : t.value); if (t.dataset.tp === 'name' || t.dataset.tp === 'status') renderCtx(); if (t.dataset.tp === 'pom.base') TechPack.render(); }
-  if (t.dataset.tbl) { const r = (t.dataset.tbl === 'pom' ? d.pom.rows : d[t.dataset.tbl]).find(x => x.id === t.dataset.id); r[t.dataset.f] = t.type === 'number' ? num(t.value) : t.value; if (t.dataset.f === 'hex') t.previousElementSibling?.style.setProperty('background', t.value); }
+  if (t.dataset.tbl) { const r = (t.dataset.tbl === 'pom' ? d.pom.rows : d[t.dataset.tbl]).find(x => x.id === t.dataset.id); r[t.dataset.f] = t.type === 'number' ? num(t.value) : t.value; if (t.tagName === 'TEXTAREA') TechPack.fitCells(t.parentElement); if (t.dataset.f === 'hex') t.previousElementSibling?.style.setProperty('background', t.value); }
   if (t.dataset.tpnote) d[t.dataset.tpnote] = t.innerText;
   touch(); TechPack.calc();
 });
@@ -3684,9 +4196,9 @@ function promptSpec(d) {
     if (W.head === 'shock') return `a chunky shock-resistant sports wristwatch in matte ${colorName(W.strapColor)} (${W.strapColor}) resin with an integrated resin strap, rounded-square raised bezel with four exposed ${CASE_MATS[W.caseMat]?.label.toLowerCase() || 'steel'} screws and moulded grip ribs, four guarded pushers; recessed ${colorName(W.dial)} face with ${W.display === 'anadigi' ? 'analog hands over a small' : 'a large'} ${W.lcd === 'neg' ? 'negative (dark) ' : ''}seven-segment LCD, ${colorName(W.accent)} accent print, small DPP mark. No other brand names or logos. Flat mineral glass, rugged and technical`;
     return `a ${W.dia} mm ${CASE_SHAPES[W.shape].toLowerCase()} wristwatch in ${mat}${bez}${W.crownGuards ? ', crown guards' : ''}; ${colorName(W.dial)} (${W.dial}) ${dialTxt}, ${NUMERALS[W.numerals].toLowerCase()}, ${HANDS[W.hands].toLowerCase()} hands in ${colorName(W.index)}, ${colorName(W.accent)} seconds hand${W.date !== 'none' ? `, date window at ${W.date} o'clock` : ''}; ${strapTxt}. Small text "N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}" on the dial. Sapphire crystal with crisp reflections, precise machining, realistic metal finishing`;
   }
-  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: 'pair of straight-leg pants', shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks', scarf: 'wrap scarf with hood', balaclava: 'knit balaclava', duffle: 'barrel weekender duffle bag', satchel: 'mini crossbody satchel' }[d.category];
+  const noun = { tee: 'T-shirt', longsleeve: 'long-sleeve T-shirt', crewneck: 'crewneck sweatshirt', hoodie: 'pullover hoodie', pants: `pair of ${d.garment.pantStyle === 'slim' ? 'slim' : 'straight'}-leg pants`, shorts: 'pair of shorts', boxers: 'pair of boxer briefs', socks: d.garment.sockStyle === 'noshow' ? 'pair of no-show socks' : 'pair of crew socks', scarf: 'wrap scarf with hood', balaclava: 'knit balaclava', duffle: 'barrel weekender duffle bag', satchel: 'mini crossbody satchel' }[d.category];
   const f = FABRICS[g.fabric], fit = FITS[g.fit].label.toLowerCase();
-  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', a second exposed waistband stacked above the main waistband' : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', a second exposed waistband above the main band' : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', satchel: 'soft rounded body with a top flap, zip front pocket, webbing side gussets, adjustable webbing shoulder strap on D-rings, a thin gold topstitch line across the flap', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
+  const build = { tee: 'ribbed crew neck, dropped shoulders, twin-needle hems', longsleeve: 'ribbed crew neck, ribbed cuffs', crewneck: 'ribbed crew neck, ribbed cuffs and waistband', hoodie: 'lined hood with flat drawcords and metal aglets, kangaroo pocket, ribbed cuffs and waistband', pants: 'five-pocket construction, belt loops, shank button' + (d.garment.doubleWB === '1' ? ', ' + wb2Phrase(d.garment) : ''), shorts: 'elastic waistband with drawcords, side pockets' + (d.garment.doubleWB === '1' ? ', ' + wb2Phrase(d.garment) : ''), boxers: 'jacquard elastic waistband, contoured pouch, button fly', scarf: 'soft drape, rolled edges', duffle: 'rolled leather handles joined by a snap wrap, wrap-under handle straps, piped end panels, metal zip, detachable shoulder strap with pad, luggage tag', satchel: 'soft rounded body with a top flap, zip front pocket, webbing side gussets, adjustable webbing shoulder strap on D-rings, a thin gold topstitch line across the flap', balaclava: 'single eye opening, flatlock seams, bib hem', socks: 'ribbed cuff, Y-heel, terry footbed' + (d.garment.sockAccent === '1' ? ', contrast heel and toe' : '') + (num(d.garment.stripes) ? `, ${d.garment.stripes} athletic stripes below the cuff` : '') }[d.category];
   const parts = [`a ${fit}-fit ${noun} in ${colorName(g.color)} (${g.color.toUpperCase()}), ${f.label.split('·')[0].trim().toLowerCase()} (${f.gsm} gsm, ${f.comp.toLowerCase()})`, build];
   if (g.trim.toLowerCase() !== g.color.toLowerCase()) parts.push(`contrast ${colorName(g.trim)} rib trim`);
   if (isTop(d.category)) {
