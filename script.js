@@ -1239,13 +1239,17 @@ function dialCanvas(d, W, fit = 1, layer = '') {
     const chrono = st === 'panda' || st === 'rpanda', relief = layer === 'relief', applied = relief || (W.markers || 'applied') === 'applied', ink = relief ? '#ffffff' : W.index;
     x.clearRect(0, 0, w, w);
     if (relief) { x.fillStyle = ink; dialHours(x, W, c, R, fit, true); if (!skel) Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink); return; }
-    if (!skel) { x.fillStyle = dial; x.fillRect(0, 0, w, w); }
+    if (!skel) { x.fillStyle = dial; x.fillRect(0, 0, w, w);
+      // lacquer grain: a printed dial is never a flat fill. Matte styles carry more, glossy ones almost none.
+      const amp = st === 'enamel' ? 2 : st === 'sunburst' || st === 'fume' || st === 'guilloche' ? 5 : 11, N = x.canvas.width, im = x.getImageData(0, 0, N, N), p = im.data;
+      for (let i = 0; i < p.length; i += 4) { const v = (Math.random() - .5) * amp; p[i] += v; p[i + 1] += v; p[i + 2] += v; } x.putImageData(im, 0, 0); }
     const over = (fn) => { x.save(); fn(); x.restore(); };
     if (st === 'classic' || st === 'enamel' || chrono) over(() => { const g = x.createRadialGradient(c, c * .7, 40, c, c, c); g.addColorStop(0, `rgba(255,255,255,${st === 'enamel' ? .14 : .07})`); g.addColorStop(1, 'rgba(0,0,0,.16)'); x.fillStyle = g; x.fillRect(0, 0, w, w); });
     if (st === 'sunburst' || st === 'fume') over(() => {
       if (st === 'fume') { const g = x.createRadialGradient(c, c, 30, c, c, c * 1.05); g.addColorStop(0, shade(dial, .28)); g.addColorStop(.55, dial); g.addColorStop(1, shade(dial, -.82)); x.fillStyle = g; x.fillRect(0, 0, w, w); }
-      const g2 = x.createConicGradient(0, c, c); for (let i = 0; i <= 8; i++) g2.addColorStop(i / 8, i % 2 ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.16)'); x.fillStyle = g2; x.fillRect(0, 0, w, w);
-      x.strokeStyle = 'rgba(255,255,255,.035)'; x.lineWidth = 1; for (let i = 0; i < 720; i++) { const a = i / 720 * Math.PI * 2; x.beginPath(); x.moveTo(c, c); x.lineTo(c + Math.cos(a) * c * 1.5, c + Math.sin(a) * c * 1.5); x.stroke(); }
+      // sunray brushing: two soft light lobes opposite each other (not a pinwheel), over thousands of fine radial strokes
+      const g2 = x.createConicGradient(-.9, c, c); [[0, 'rgba(255,255,255,.2)'], [.12, 'rgba(255,255,255,.04)'], [.25, 'rgba(0,0,0,.2)'], [.38, 'rgba(255,255,255,.03)'], [.5, 'rgba(255,255,255,.16)'], [.62, 'rgba(255,255,255,.03)'], [.75, 'rgba(0,0,0,.22)'], [.88, 'rgba(255,255,255,.04)'], [1, 'rgba(255,255,255,.2)']].forEach(([t, col]) => g2.addColorStop(t, col)); x.fillStyle = g2; x.fillRect(0, 0, w, w);
+      x.lineWidth = .7; for (let i = 0; i < 2600; i++) { const a = Math.random() * Math.PI * 2; x.strokeStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},${.02 + Math.random() * .06})`; x.beginPath(); x.moveTo(c + Math.cos(a) * 14, c + Math.sin(a) * 14); x.lineTo(c + Math.cos(a) * c * 1.5, c + Math.sin(a) * c * 1.5); x.stroke(); }
     });
     if (st === 'guilloche') over(() => { const s = 26; for (let yy = 0; yy < w; yy += s) for (let xx = 0; xx < w; xx += s) { x.fillStyle = 'rgba(255,255,255,.13)'; x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx + s, yy); x.lineTo(xx + s / 2, yy + s / 2); x.fill(); x.fillStyle = 'rgba(0,0,0,.2)'; x.beginPath(); x.moveTo(xx, yy + s); x.lineTo(xx + s, yy + s); x.lineTo(xx + s / 2, yy + s / 2); x.fill(); } });
     if (st === 'linen') over(() => { for (let i = 0; i < w; i += 3) { x.fillStyle = `rgba(${Math.random() < .5 ? '255,255,255' : '0,0,0'},.05)`; x.fillRect(i, 0, 1.5, w); x.fillRect(0, i, w, 1.5); } });
@@ -1255,16 +1259,23 @@ function dialCanvas(d, W, fit = 1, layer = '') {
     const hole = heart ? { x: c - R * .54, y: c, r: R * .26 } : null;
     if (hole) over(() => { x.globalCompositeOperation = 'destination-out'; x.beginPath(); x.arc(hole.x, hole.y, hole.r, 0, Math.PI * 2); x.fill(); x.globalCompositeOperation = 'source-over'; x.strokeStyle = ink; x.lineWidth = 8; x.beginPath(); x.arc(hole.x, hole.y, hole.r + 4, 0, Math.PI * 2); x.stroke(); });
     const sub = chrono ? [[R * .46, 0], [-R * .46, 0], [0, R * .46]] : [];
-    sub.forEach(([dx, dy]) => over(() => { const sc = st === 'panda' ? ink : '#EEF1F9', sx = c + dx, sy = c + dy, r = R * .2; x.fillStyle = sc; x.beginPath(); x.arc(sx, sy, r, 0, Math.PI * 2); x.fill(); x.strokeStyle = st === 'panda' ? dial : ink; x.lineWidth = 3; for (let i = 0; i < 30; i++) { const a = i / 30 * Math.PI * 2, r1 = i % 5 ? r * .82 : r * .7; x.beginPath(); x.moveTo(sx + Math.sin(a) * r1, sy - Math.cos(a) * r1); x.lineTo(sx + Math.sin(a) * r * .94, sy - Math.cos(a) * r * .94); x.stroke(); } x.lineWidth = 5; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + r * .5, sy - r * .55); x.stroke(); }));
+    sub.forEach(([dx, dy]) => over(() => { const sc = st === 'panda' ? ink : '#EEF1F9', sx = c + dx, sy = c + dy, r = R * .2; x.fillStyle = sc; x.beginPath(); x.arc(sx, sy, r, 0, Math.PI * 2); x.fill();
+      x.lineWidth = 1; for (let q = 3; q < r; q += 3) { x.strokeStyle = `rgba(${lum(sc) > .5 ? '0,0,0' : '255,255,255'},${q % 2 ? .1 : .04})`; x.beginPath(); x.arc(sx, sy, q, 0, Math.PI * 2); x.stroke(); } // azurage: concentric rings cut into the register
+      { const sg = x.createRadialGradient(sx, sy, r * .86, sx, sy, r * 1.04); sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,.4)'); x.fillStyle = sg; x.beginPath(); x.arc(sx, sy, r * 1.04, 0, Math.PI * 2); x.fill(); } // sunk below the dial
+      x.strokeStyle = st === 'panda' ? dial : ink; x.lineWidth = 3; for (let i = 0; i < 30; i++) { const a = i / 30 * Math.PI * 2, r1 = i % 5 ? r * .82 : r * .7; x.beginPath(); x.moveTo(sx + Math.sin(a) * r1, sy - Math.cos(a) * r1); x.lineTo(sx + Math.sin(a) * r * .94, sy - Math.cos(a) * r * .94); x.stroke(); } x.lineWidth = 5; x.beginPath(); x.moveTo(sx, sy); x.lineTo(sx + r * .5, sy - r * .55); x.stroke(); }));
     x.strokeStyle = ink; x.fillStyle = ink;
     if (W.numerals !== 'none') for (let i = 0; i < 60; i++) { // minute track
-      if (i % 5 === 0) continue; const a = i / 60 * Math.PI * 2; x.lineWidth = 3; x.beginPath(); x.moveTo(c + Math.sin(a) * R * .89, c - Math.cos(a) * R * .89); x.lineTo(c + Math.sin(a) * R * .94, c - Math.cos(a) * R * .94); x.stroke();
+      if (i % 5 === 0) continue; const a = i / 60 * Math.PI * 2; x.lineWidth = 2; x.beginPath(); x.moveTo(c + Math.sin(a) * R * .895, c - Math.cos(a) * R * .895); x.lineTo(c + Math.sin(a) * R * .945, c - Math.cos(a) * R * .945); x.stroke();
     }
+    if (W.numerals !== 'none' && !skel) { x.save(); x.globalAlpha = .7; x.lineWidth = 1.5; x.beginPath(); x.arc(c, c, R * .955, 0, Math.PI * 2); x.stroke(); x.restore(); } // hairline closing the minute track
     if (!applied) dialHours(x, W, c, R, fit, false);
-    if (W.date === '3' || W.date === '6') over(() => { const p = W.date === '3' ? [c + R * .68, c] : [c, c + R * .68]; x.fillStyle = '#f7f5f0'; x.strokeStyle = ink; x.lineWidth = 4; x.fillRect(p[0] - 42, p[1] - 30, 84, 60); x.strokeRect(p[0] - 42, p[1] - 30, 84, 60); x.fillStyle = '#111'; x.font = '600 40px "JetBrains Mono"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(new Date().getDate()), p[0], p[1] + 2); });
+    if (W.date === '3' || W.date === '6') over(() => { const p = W.date === '3' ? [c + R * .68, c] : [c, c + R * .68]; x.fillStyle = '#f7f5f0'; x.strokeStyle = ink; x.lineWidth = 4; x.fillRect(p[0] - 42, p[1] - 30, 84, 60);
+      { const dg = x.createLinearGradient(0, p[1] - 30, 0, p[1] + 30); dg.addColorStop(0, 'rgba(0,0,0,.42)'); dg.addColorStop(.3, 'rgba(0,0,0,0)'); dg.addColorStop(1, 'rgba(0,0,0,.06)'); x.fillStyle = dg; x.fillRect(p[0] - 42, p[1] - 30, 84, 60); } // the date wheel sits below the dial: the cut-out shades it
+      x.strokeRect(p[0] - 42, p[1] - 30, 84, 60); x.fillStyle = '#111'; x.font = '600 40px "Inter"'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(new Date().getDate()), p[0], p[1] + 2); });
     if (!skel) {
       if (!applied) Mark.draw(x, c, c - R * .42, 150 * fit, 128 * fit, ink);
       x.textAlign = 'center'; x.textBaseline = 'middle';
+      if (!chrono && !heart) { x.font = `600 ${Math.round(19 * fit)}px "Inter"`; x.letterSpacing = '5px'; x.fillText("DON'T POSTPONE PASSION", c, c - R * .235); } // signature under the mark
       x.font = `500 ${Math.round(24 * fit)}px "JetBrains Mono"`; x.letterSpacing = '6px';
       const mv = String(W.movement).toUpperCase(), label = mv.includes('GMT') ? 'GMT AUTOMATIC' : mv.includes('CHRONO') ? 'CHRONOGRAPH' : mv.includes('AUTO') ? 'AUTOMATIC' : 'QUARTZ';
       if (!chrono) x.fillText(label, c, c + R * .27);
@@ -2371,6 +2382,8 @@ const Studio = {
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals(); return this.add(geo, mat, false);
     };
     const stitch = (pts, nrm, ax, off, lift) => ribbon(pts, nrm, ax, off, .0052, lift, thread, .0115);
+    // hardware: rectangular wire loop (handle rings, strap slider, hook eye), in its own XY plane
+    const rectRing = (w, h, tr) => { const pts = [], se = v => Math.sign(v) * Math.abs(v) ** .3; for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; pts.push(new THREE.Vector3(se(Math.cos(a)) * w / 2, se(Math.sin(a)) * h / 2, 0)); } return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, tr, 8, true); };
     // cross-section (y up, z toward camera); v = 0 sits under the bag so the UV seam hides
     const sec = (v, s = 1) => { const a = v - Math.PI / 2, c = Math.cos(a), sn = Math.sin(a), n = sn < 0 ? 4.2 : 2.3;
       const y = H / 2 * Math.sign(sn) * Math.abs(sn) ** (2 / n), z = D / 2 * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - .14 * Math.max(0, sn));
@@ -2384,7 +2397,12 @@ const Studio = {
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ring, true), 192, .017, 8, true), trim); // piping
       // shoulder-strap D-ring + snap hook on each end panel
       const dr = add(new THREE.TorusGeometry(.055, .011, 10, 28, Math.PI * 1.15), metal); dr.position.set(sx * (L / 2 + .05), H * .18, 0); dr.rotation.set(0, sx * Math.PI / 2, Math.PI * .43);
-      const hook = add(new RoundedBoxGeometry(.03, .16, .06, 2, .01), metal); hook.position.set(sx * (L / 2 + .085), H * .05, .02); hook.rotation.z = sx * .35;
+      // swivel snap hook hanging off the D-ring: hook arc, shank, swivel collar, strap eye
+      { const hk = new THREE.Group(); hk.position.set(sx * (L / 2 + .078), H * .18 - .05, 0); hk.rotation.z = sx * .32; this.root.add(hk);
+        const part = (geo, y) => { const m = new THREE.Mesh(geo, metal); m.castShadow = m.receiveShadow = true; m.position.y = y; hk.add(m); return m; };
+        const arc = part(new THREE.TorusGeometry(.036, .0095, 10, 30, Math.PI * 1.55), 0); arc.rotation.set(0, Math.PI / 2, 0); arc.rotateZ(-Math.PI * .28);
+        part(new THREE.CylinderGeometry(.0105, .0105, .06, 12), -.064); part(new THREE.CylinderGeometry(.021, .021, .026, 20), -.104); part(new THREE.CylinderGeometry(.013, .013, .012, 16), -.122);
+        part(rectRing(.085, .05, .0075), -.15).rotation.y = Math.PI / 2; }
       { const sp = [], sn = [], sa = [], rr = .93; for (let i = 0; i <= 120; i++) { const v = i / 120 * Math.PI * 2, [y, z] = sec(v, end * rr); sp.push(new THREE.Vector3(sx * (L / 2 + .045 * (1 - rr * rr)), y, z)); sn.push(new THREE.Vector3(sx, 0, 0)); sa.push(new THREE.Vector3(0, y, z).normalize()); } stitch(sp, sn, sa, 0, .003); }
       cap.castShadow = true;
     });
@@ -2421,23 +2439,27 @@ const Studio = {
       const zs = Math.sign(a.z), mid = new THREE.Vector3(0, apexY, zs * .045);
       const curve = new THREE.CatmullRomCurve3([a.clone().add(new THREE.Vector3(0, -.02, 0)), a.clone().add(new THREE.Vector3(0, .16, -zs * .03)), new THREE.Vector3(a.x * .78, apexY - .22, zs * .1), mid, new THREE.Vector3(b.x * .78, apexY - .22, zs * .1), b.clone().add(new THREE.Vector3(0, .16, -zs * .03)), b.clone().add(new THREE.Vector3(0, -.02, 0))]);
       add(new THREE.TubeGeometry(curve, 120, .036, 14, false), trim);
-      [a, b].forEach(p => { const ring = add(new THREE.TorusGeometry(.05, .011, 10, 24), metal); ring.position.copy(p).add(new THREE.Vector3(0, .05, 0)); ring.rotation.y = Math.PI / 2;
+      [a, b].forEach(p => { const nn = new THREE.Vector3(0, p.y, p.z).normalize(), X = new THREE.Vector3(1, 0, 0), tt = new THREE.Vector3().crossVectors(nn, X).normalize(); if (tt.y < 0) tt.negate();
+        const ring = add(rectRing(.2, .078, .0095), metal); ring.position.copy(p).addScaledVector(tt, .035).addScaledVector(nn, .014); ring.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, tt, new THREE.Vector3().crossVectors(X, tt))); /* rectangular ring: the strap folds over one bar, the handle over the other */
         [-1, 1].forEach(k => { const rv = add(new THREE.CylinderGeometry(.014, .014, .012, 16), metal); rv.position.copy(p).add(new THREE.Vector3(0, -.05 - k * .045, 0)).addScaledVector(new THREE.Vector3(0, p.y, p.z).normalize(), .013); rv.lookAt(rv.position.clone().add(new THREE.Vector3(0, p.y, p.z))); rv.rotateX(Math.PI / 2); }); });
     });
-    { const wrap = add(new THREE.CapsuleGeometry(.06, H * .42, 6, 16), trim); wrap.position.set(0, apexY, 0); wrap.rotation.z = Math.PI / 2; wrap.scale.set(1, 1, 1.25);
-      const snap = add(new THREE.CylinderGeometry(.026, .026, .012, 24), metal); snap.position.set(0, apexY + .066, 0); }
+    { const wl = H * .26, wrap = add(new THREE.CapsuleGeometry(.056, wl, 8, 24), trim); wrap.position.set(0, apexY, 0); wrap.rotation.z = Math.PI / 2; wrap.scale.set(1, 1, 1.22); // short leather grip wrap, closed by two snaps
+      [-1, 1].forEach(k => { const snap = add(new THREE.SphereGeometry(.024, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), metal); snap.scale.y = .45; snap.position.set(k * wl * .3, apexY + .055, 0);
+        const sp = [], sn = [], sa = []; for (let i = 0; i <= 40; i++) { const a = -Math.PI * .1 + i / 40 * Math.PI * 1.2, c = Math.cos(a), s = Math.sin(a); sp.push(new THREE.Vector3(k * (wl / 2 + .012), apexY + s * .056, c * .056 * 1.22)); sn.push(new THREE.Vector3(0, s, c).normalize()); sa.push(new THREE.Vector3(1, 0, 0)); } stitch(sp, sn, sa, 0, .003); }); }
     // shoulder strap: ring to ring, draped across the front with a pad
     { const c = new THREE.CatmullRomCurve3([[-1, .18, 0], [-1.09, -.08, .22], [-.85, -.5, .62], [-.3, -.66, .78], [.3, -.62, .8], [.85, -.45, .62], [1.09, -.06, .22], [1, .18, 0]].map(([x, y, z]) => new THREE.Vector3(x * (L / 2 + .06), y * H, z * D)));
       const pts = c.getSpacedPoints(160), nrm = [], ax = []; pts.forEach((p, i) => { const tg = c.getTangentAt(i / 160), a = new THREE.Vector3().crossVectors(tg, new THREE.Vector3(0, 0, 1)).normalize(); ax.push(a); nrm.push(new THREE.Vector3().crossVectors(a, tg).normalize()); });
       band(pts, nrm, ax, .13, .018, trim);
       [-1, 1].forEach(e => stitch(pts, nrm, ax, e * .052, .0105));
-      const k = 80, pad = add(new RoundedBoxGeometry(.6, .19, .045, 3, .02), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
-      const bk = add(new THREE.TorusGeometry(.07, .009, 6, 4), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .015); bk.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(118 / 160), ax[118].clone().negate(), nrm[118])); bk.rotateZ(Math.PI / 4); bk.scale.set(1.3, 1, 1); }
+      const k = 80, pad = add(new RoundedBoxGeometry(.56, .18, .032, 5, .015), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
+      const bq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(118 / 160), ax[118].clone().negate(), nrm[118])); // length-adjusting slider: frame + centre bar
+      const bk = add(rectRing(.1, .18, .009), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .012); bk.quaternion.copy(bq);
+      const bar = add(new THREE.CylinderGeometry(.008, .008, .17, 10), metal); bar.position.copy(pts[118]).addScaledVector(nrm[118], .016); bar.quaternion.copy(bq); }
     // luggage tag off the front-right handle ring
     { const p = top[3], tag = add(new RoundedBoxGeometry(.24, .36, .025, 3, .012), trim); tag.position.set(p.x + .17, p.y - .32, p.z + .08); tag.rotation.set(-.12, .25, -.18);
       const lp = add(new RoundedBoxGeometry(.045, .26, .014, 2, .006), trim); lp.position.set(p.x + .09, p.y - .07, p.z + .05); lp.rotation.z = .55; }
     // base studs
-    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([a, b]) => { const s = add(new THREE.CylinderGeometry(.03, .034, .03, 20), metal); s.position.set(a * L * .36, -H / 2 - .005, b * D * .3); });
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(([a, b]) => { const s = add(new THREE.SphereGeometry(.036, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), metal); s.rotation.x = Math.PI; s.scale.y = .6; s.position.set(a * L * .36, -H / 2 + .004, b * D * .3); }); // domed feet
     this.modelMeshes = [body]; this.torso = body;
     this.P = { w: L / 4, d: D / 2, h: H, rise: 0, neckR: .3, side: false };
     this.updateDecals();
