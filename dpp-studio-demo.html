@@ -2326,7 +2326,7 @@ const Studio = {
     const ref = presetPOM(d.category), rv = c => num((ref.rows.find(r => r.code === c) || {}).base);
     const kL = rv('G1') ? clamp(pomAt(d, 'G1') / rv('G1'), .6, 1.8) : 1, kR = rv('F') ? clamp(pomAt(d, 'F') / rv('F'), .7, 1.6) : 1;
     // drop shoulder: the sleeve swings down about the armhole (it hangs, it doesn't jut out) and sits a little lower
-    const drop = { oversized: .05, boxy: .02 }[d.garment.fit] || 0, swing = { oversized: .38, boxy: .06 }[d.garment.fit] || 0;
+    const drop = { oversized: .05, boxy: .02 }[d.garment.fit] || 0, swing = { oversized: .27, boxy: .06 }[d.garment.fit] || 0;
     const v = new THREE.Vector3(), inv = new THREE.Matrix4();
     // smooth normals across UV seams (positions welded), written back only where the sleeve moved
     const freshNormals = (geo, movedIdx) => { const p = geo.attributes.position, old = geo.attributes.normal.array.slice(); geo.computeVertexNormals(); const n = geo.attributes.normal; geo.computeBoundingBox();
@@ -2342,6 +2342,9 @@ const Studio = {
       let tEdge = 0;
       this.modelMeshes.forEach((m, mi) => { const fl = S.flag[mi], p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { if (fl[i]) continue; v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); if (s * v.x <= 0 || v.y < root.y - len) continue; tEdge = Math.max(tEdge, v.sub(root).dot(u)); } });
       tEdge = clamp(tEdge, 0, len * .6); const span = Math.max(.05, (len - tEdge) * .8); // a long blend: no crease where the reshape starts
+      // the sleeve hinges at the underarm, not the armhole centre: the top of the sleeve slides out and down (a dropped shoulder) while the underarm stays put, so nothing folds into the body
+      const piv = root.clone(); let lowY = Infinity;
+      this.modelMeshes.forEach((m, mi) => { const fl = S.flag[mi], p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { if (fl[i] !== s) continue; v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); const t = v.clone().sub(root).dot(u); if (t <= tEdge || t > tEdge + span * .3) continue; if (v.y < lowY) { lowY = v.y; piv.set(v.x, v.y, root.z); } } });
       this.modelMeshes.forEach((m, mi) => {
         const fl = S.flag[mi], p = m.geometry.attributes.position; inv.copy(m.matrixWorld).invert(); let moved = false;
         for (let i = 0; i < p.count; i++) {
@@ -2350,7 +2353,7 @@ const Studio = {
           const t = v.clone().sub(root).dot(u); if (t <= tEdge) continue;
           const b = THREE.MathUtils.smoothstep(t, tEdge, tEdge + span), radial = v.clone().sub(root).addScaledVector(u, -t);
           v.copy(root).addScaledVector(u, t * (1 + (kL - 1) * b)).addScaledVector(radial, 1 + (kR - 1) * b);
-          { const a = -s * swing * b, rx = v.x - root.x, ry = v.y - root.y, ca = Math.cos(a), sa = Math.sin(a); v.x = root.x + rx * ca - ry * sa; v.y = root.y + rx * sa + ry * ca - drop * b; }
+          { const a = -s * swing * b, rx = v.x - piv.x, ry = v.y - piv.y, ca = Math.cos(a), sa = Math.sin(a); v.x = piv.x + rx * ca - ry * sa; v.y = piv.y + rx * sa + ry * ca - drop * b; }
           v.applyMatrix4(inv); p.setXYZ(i, v.x, v.y, v.z); moved = true; movedBy[mi].add(i);
         }
         if (moved) { p.needsUpdate = true; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere(); }
