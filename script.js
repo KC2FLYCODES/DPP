@@ -177,6 +177,8 @@ const WOODS = {
   koa: { label: 'Koa', a: '#a5652f', b: '#5a3015' },
   bamboo: { label: 'Bamboo', a: '#d2b47c', b: '#9b7a45' },
 };
+// Worn view for watches: the forearm the watch sits on. "form" is a matte display arm.
+const SKIN = { light: { label: 'Light', c: '#e2b697' }, medium: { label: 'Medium', c: '#c18b65' }, tan: { label: 'Tan', c: '#9d6c48' }, deep: { label: 'Deep', c: '#734d36' }, dark: { label: 'Dark', c: '#4d3124' }, form: { label: 'Display form · matte', c: '#2b2c30' } };
 const BEZELS = { steel: { label: 'Brushed steel', c: '#bdbbb6', m: 1, r: .32 }, black: { label: 'Black IP steel', c: '#1d1c1b', m: 1, r: .3 }, gold: { label: 'Gold IP steel', c: '#c9a45c', m: 1, r: .25 }, wood: { label: 'Matching wood' } };
 const MOVEMENTS = ['Miyota 2035 · quartz', 'Miyota 8215 · automatic', 'Miyota 82S7 · open-heart automatic', 'Seiko NH35A · automatic', 'Seiko NH34 · GMT automatic', 'Seiko NH38 · skeleton automatic', 'Sellita SW200 · automatic', 'Seiko VK63 · meca-quartz chrono', 'Digital quartz module · 10-yr battery', 'Ana-digi quartz module'];
 
@@ -1107,7 +1109,7 @@ const DIAL_STYLES = {
 const NUMERALS = { index: 'Baton indices', arabic: 'Arabic', roman: 'Roman', california: 'California', none: 'None · minimal' };
 const HANDS = { baton: 'Baton', dauphine: 'Dauphine', sword: 'Sword', mercedes: 'Mercedes', pencil: 'Pencil' };
 const STRAPS = { woodlinks: 'Wood links · 3-piece', oyster: 'Oyster-style 3-link', jubilee: 'Jubilee-style 5-link', integrated: 'Integrated H-link', mesh: 'Milanese mesh', leather: 'Leather', rubber: 'FKM rubber', nato: 'NATO nylon' };
-const WATCH_DEFAULT = { dia: 42, shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', bezelColor: '#14172B', bezelColor2: '#B98A4A', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', markers: 'applied', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', strapColor: '#2b1d14', strapColor2: '#B98A4A', crownGuards: '', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM' };
+const WATCH_DEFAULT = { dia: 42, shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', bezelColor: '#14172B', bezelColor2: '#B98A4A', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', markers: 'applied', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', strapColor: '#2b1d14', strapColor2: '#B98A4A', crownGuards: '', movement: MOVEMENTS[0], crystal: 'Sapphire', editionNo: 1, engraving: "TERANGA · DON'T POSTPONE PASSION", wr: '3 ATM', wrist: 'deep' };
 const watchSpec = d => ({ ...WATCH_DEFAULT, ...d.watch });
 const WATCH_PRESETS = [
   ['The Teranga · wood', { shape: 'round', caseMat: 'wood', caseWood: 'walnut', bezel: 'steel', bezelStyle: 'smooth', dialStyle: 'classic', dial: '#EEF1F9', index: '#14172B', accent: '#B98A4A', numerals: 'index', hands: 'baton', date: 'none', strap: 'woodlinks', strapWood: 'walnut', strapAccent: 'maple', crownGuards: '', movement: 'Miyota 2035 · quartz', wr: '3 ATM' }],
@@ -1307,6 +1309,13 @@ function dialCanvas(d, W, fit = 1, layer = '') {
       x.fillText(`N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}`, c, chrono ? c + R * .2 : c + R * .4);
     } else { x.textAlign = 'center'; x.font = '600 22px "JetBrains Mono"'; x.letterSpacing = '3px'; x.fillStyle = ink; x.fillText(`N° ${String(W.editionNo).padStart(3, '0')}/${d.edition || 150}`, c, c + R * .84); }
   });
+}
+// Smooth normals for a reshaped mesh: recomputed, then averaged across vertices that share a position (UV seams, unindexed faces)
+function weldNormals(geo) {
+  geo.computeVertexNormals(); const p = geo.attributes.position, n = geo.attributes.normal; geo.computeBoundingBox();
+  const q = 1 / (geo.boundingBox.getSize(new THREE.Vector3()).length() * 2e-4), acc = new Map(), key = i => Math.round(p.getX(i) * q) + ',' + Math.round(p.getY(i) * q) + ',' + Math.round(p.getZ(i) * q), ks = [];
+  for (let i = 0; i < p.count; i++) { const k = ks[i] = key(i); let a = acc.get(k); if (!a) acc.set(k, a = [0, 0, 0]); a[0] += n.getX(i); a[1] += n.getY(i); a[2] += n.getZ(i); }
+  for (let i = 0; i < p.count; i++) { const a = acc.get(ks[i]), l = Math.hypot(a[0], a[1], a[2]) || 1; n.setXYZ(i, a[0] / l, a[1] / l, a[2] / l); } n.needsUpdate = true;
 }
 // Shader patches chain on one material (fabric FX, sock zones…): each adds a fn(shader) + a cache-key part
 function addPatch(mat, key, fn) {
@@ -1584,7 +1593,7 @@ const Studio = {
     if (isW) this.buildWatch(d); else this.buildGarment(d);
     if (!isTop(d.category) && !isBottom(d.category)) this.addAccTags(d);
     this.root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(this.root); this.ground.position.y = box.min.y - .01;
+    const box = new THREE.Box3(); this.root.traverse(o => { if (o.isMesh && !o.userData.noFit) box.expandByObject(o); }); this.ground.position.y = box.min.y - .01; // the worn-view arm runs out of frame on purpose
     { const sc = this.key.shadow.camera, rr = box.getSize(new THREE.Vector3()).length() * .62; Object.assign(sc, { left: -rr, right: rr, top: rr, bottom: -rr }); sc.updateProjectionMatrix(); this.key.shadow.radius = 3; } // tight shadow frustum = crisp shadows
     this.frame(box);
     const fq = c => frac(pomAt(d, c)) + '"', sizeNote = this.fitInfo ? ` · size ${esc(d.garment.viewSize || d.pom.base)} · chest ½ ${fq('B')} · body ${fq('A')} · sleeve ${fq('G1')}` : '';
@@ -1785,6 +1794,7 @@ const Studio = {
   // True to size: reshape the model to the POM at the viewed size. Torso width → chest/sweep ½ (measured, absolute);
   // sleeves lengthen and widen by the spec ratio vs the starter template; oversized drops the shoulder.
   trueSize(d, holder) {
+    this.modelMeshes.forEach(m => { m.geometry = m.geometry.clone(); }); // the reshape below moves vertices: never touch the cached model, or every rebuild stacks on the last
     const box0 = new THREE.Box3().setFromObject(holder), S = this.sleeveZones(d, box0, false); if (!S) return null;
     // measure the chest where the spec does: 1" below the armhole, torso fabric only (sleeve vertices excluded)
     const chestY = S.hps - (pomAt(d, 'E') + 1) / 10, ext = [0, 0], hits = [0, 0];
@@ -1795,15 +1805,23 @@ const Studio = {
     // template reference = boxy starter POM for this silhouette, base size
     const ref = presetPOM(d.category), rv = c => num((ref.rows.find(r => r.code === c) || {}).base);
     const kL = rv('G1') ? clamp(pomAt(d, 'G1') / rv('G1'), .6, 1.8) : 1, kR = rv('F') ? clamp(pomAt(d, 'F') / rv('F'), .7, 1.6) : 1;
-    const drop = { oversized: .16, boxy: .05 }[d.garment.fit] || 0;
+    // drop shoulder: the sleeve swings down about the armhole (it hangs, it doesn't jut out) and sits a little lower
+    const drop = { oversized: .05, boxy: .02 }[d.garment.fit] || 0, swing = { oversized: .38, boxy: .06 }[d.garment.fit] || 0;
     const v = new THREE.Vector3(), inv = new THREE.Matrix4();
+    // smooth normals across UV seams (positions welded), written back only where the sleeve moved
+    const freshNormals = (geo, movedIdx) => { const p = geo.attributes.position, old = geo.attributes.normal.array.slice(); geo.computeVertexNormals(); const n = geo.attributes.normal; geo.computeBoundingBox();
+      const q = 1 / (geo.boundingBox.getSize(new THREE.Vector3()).length() * 2e-4), acc = new Map(), key = i => Math.round(p.getX(i) * q) + ',' + Math.round(p.getY(i) * q) + ',' + Math.round(p.getZ(i) * q);
+      for (let i = 0; i < p.count; i++) { const k = key(i); let a = acc.get(k); if (!a) acc.set(k, a = [0, 0, 0]); a[0] += n.getX(i); a[1] += n.getY(i); a[2] += n.getZ(i); }
+      const out = old; movedIdx.forEach(i => { const a = acc.get(key(i)), l = Math.hypot(a[0], a[1], a[2]) || 1; out[i * 3] = a[0] / l; out[i * 3 + 1] = a[1] / l; out[i * 3 + 2] = a[2] / l; });
+      n.array.set(out); n.needsUpdate = true; };
+    const movedBy = this.modelMeshes.map(() => new Set());
     [1, -1].forEach(s => {
       const ax = this.sleeveAxis(S, s); if (!ax) return;
       const sc = new THREE.Vector3(sx, 1, sz), root = ax.root.clone().multiply(sc), tip = ax.tip.clone().multiply(sc), u = tip.clone().sub(root), len = u.length(); u.normalize();
       // the reshape starts past the furthest torso point along the sleeve axis, so the armhole seam can't tear
       let tEdge = 0;
       this.modelMeshes.forEach((m, mi) => { const fl = S.flag[mi], p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { if (fl[i]) continue; v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld); if (s * v.x <= 0 || v.y < root.y - len) continue; tEdge = Math.max(tEdge, v.sub(root).dot(u)); } });
-      tEdge = clamp(tEdge, 0, len * .6); const span = Math.max(.05, (len - tEdge) * .5);
+      tEdge = clamp(tEdge, 0, len * .6); const span = Math.max(.05, (len - tEdge) * .8); // a long blend: no crease where the reshape starts
       this.modelMeshes.forEach((m, mi) => {
         const fl = S.flag[mi], p = m.geometry.attributes.position; inv.copy(m.matrixWorld).invert(); let moved = false;
         for (let i = 0; i < p.count; i++) {
@@ -1812,12 +1830,13 @@ const Studio = {
           const t = v.clone().sub(root).dot(u); if (t <= tEdge) continue;
           const b = THREE.MathUtils.smoothstep(t, tEdge, tEdge + span), radial = v.clone().sub(root).addScaledVector(u, -t);
           v.copy(root).addScaledVector(u, t * (1 + (kL - 1) * b)).addScaledVector(radial, 1 + (kR - 1) * b);
-          v.y -= drop * b; v.x += s * drop * .35 * b; // drop shoulder: the sleeve sits lower and further out
-          v.applyMatrix4(inv); p.setXYZ(i, v.x, v.y, v.z); moved = true;
+          { const a = -s * swing * b, rx = v.x - root.x, ry = v.y - root.y, ca = Math.cos(a), sa = Math.sin(a); v.x = root.x + rx * ca - ry * sa; v.y = root.y + rx * sa + ry * ca - drop * b; }
+          v.applyMatrix4(inv); p.setXYZ(i, v.x, v.y, v.z); moved = true; movedBy[mi].add(i);
         }
         if (moved) { p.needsUpdate = true; m.geometry.computeBoundingBox(); m.geometry.computeBoundingSphere(); }
       });
     });
+    this.modelMeshes.forEach((m, mi) => { if (movedBy[mi].size && m.geometry.attributes.normal && m.geometry.index) freshNormals(m.geometry, movedBy[mi]); });
     return { sx, kL, kR };
   },
   // Sleeve logo: find the sleeve's axis (armhole centroid → cuff), set the logo on its outer face and project it as a decal
@@ -1887,7 +1906,7 @@ const Studio = {
         this.add(geo, new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: .6, roughness: .62, side: THREE.DoubleSide })); break;
       }
     }
-    if (g.hangTag === '1') {
+    if (g.hangTag === '1' && !(cat === 'watch' && SKIN[watchSpec(d).wrist])) { // a watch shown on the wrist carries no swing tag
       const s = cat === 'watch' ? H * .24 / .35 : cat === 'balaclava' ? .8 : 1, lo = box.min.y + .52 * s, hi = box.max.y - .02 * s; // watch: a small swing tag off the strap, clear of the dial
       const spots = { duffle: [[.2, .6], [.1, .5]], satchel: [[.22, .3], [.1, .25], [.1, .2]], socks: [[.3, .8], [-.3, .8], [.2, .7]], watch: [[-.14, .34], [.14, .34], [0, .34], [0, .45]], balaclava: [[-.2, .3], [-.08, .3], [0, .34]] }[cat] || [[.2, .55], [.1, .5], [0, .5], [-.15, .5]];
       const hits = spots.map(([fx, fy]) => front(cx + W * fx, clamp(box.min.y + H * fy, lo, Math.max(lo, hi)))).filter(Boolean);
@@ -1954,6 +1973,23 @@ const Studio = {
       if (nl) { const ag = this.add(new THREE.CylinderGeometry(.017, .015, .085, 20), metal); ag.position.set(lo.x / nl, ymin + .035, lo.z / nl); } // crimped metal tip
       if (nh) { const x = hi.x / nh, y = c.b.max.y - .012, hit = new THREE.Raycaster(new V(x, y + .03, box.max.z + 2), new V(0, 0, -1)).intersectObject(m, false)[0], z = hit ? hit.point.z : hi.z / nh - .01;
         const ey = this.add(new THREE.TorusGeometry(.026, .008, 10, 28), metal); ey.position.set(x, y, z + .003); ey.scale.z = .6; } // eyelet where the cord leaves the casing
+    });
+    // Branding woven along the cord: the DPP mark, a line of text, or both, repeating down each cord and reading top to bottom.
+    const brand = g.cordBrand || 'none'; if (brand === 'none') return;
+    const ink = g.cordInk || (lum(col) > .5 ? '#14172B' : '#EEF1F9'), txt = String(g.cordText ?? TAG_TEXT).trim().toUpperCase(), showT = brand !== 'logo' && txt, showL = brand !== 'text';
+    if (!showT && !showL) return;
+    const Hc = 96, font = '800 50px "Inter"', meas = TEX.canvas(8, 8, x => { x.font = font; x.letterSpacing = '7px'; x._w = x.measureText(txt).width; }).getContext('2d'); meas.font = font; meas.letterSpacing = '7px';
+    const tw = showT ? Math.ceil(meas.measureText(txt).width) : 0, lw = showL ? 120 : 0, gap = 70, Wc = Math.min(4096, tw + lw + gap * (showT && showL ? 2 : 1));
+    const cv = TEX.canvas(Wc, Hc, x => { x.clearRect(0, 0, Wc, Hc); let px = gap / 2; if (showL) { Mark.draw(x, px + lw / 2, Hc / 2, lw * .92, Hc * .8, ink); px += lw + gap; } if (showT) { x.font = font; x.letterSpacing = '7px'; x.fillStyle = ink; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText(txt, px, Hc / 2 + 3); } });
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 16; tex.wrapS = THREE.RepeatWrapping; tex.userData.own = true;
+    const bm = new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: .3, roughness: .85, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    cord.updateMatrixWorld(true); const rc = new THREE.Raycaster(), fwd = new V(0, 0, -1);
+    cords.forEach(c => {
+      const rows = []; // walk down the cord: centre, front surface and width at each height
+      for (let y = c.b.max.y - .07; y > c.b.min.y + .1; y -= .012) { let x0 = null, x1 = null, zf = -1e9; for (let i = 0; i <= 10; i++) { const x = lerp(c.b.min.x - .005, c.b.max.x + .005, i / 10); rc.set(new V(x, y, box.max.z + 2), fwd); const h = rc.intersectObject(cord, false)[0]; if (h) { x0 ??= x; x1 = x; zf = Math.max(zf, h.point.z); } } if (x0 !== null) rows.push([(x0 + x1) / 2, y, zf, x1 - x0]); }
+      if (rows.length < 8) return;
+      const wd = rows.map(r => r[3]).sort((p, q) => p - q)[rows.length >> 1] || .03, w = Math.max(.016, wd * .7), pts = rows.map((r, i) => { const a = rows[Math.max(0, i - 2)], b = rows[Math.min(rows.length - 1, i + 2)]; return new V((a[0] + r[0] + b[0]) / 3, r[1], Math.max(a[2], r[2], b[2])); });
+      this.ribbon(pts, pts.map(() => new V(0, 0, 1)), pts.map(() => new V(1, 0, 0)), 0, w, .004, bm, w * Wc / Hc);
     });
   },
   // Marketplace bottoms ship with a flat cap closing the waist. Cut it out so the opening reads as an opening:
@@ -2387,7 +2423,8 @@ const Studio = {
   // Mini satchel built in code (1 unit = 10 in): boxed body with piped edges, a bound flap that wraps over the top, a zip
   // pocket below it, webbing tabs with D-rings and a crossbody strap with a slider. Body width = POM A.
   buildSatchelPro(d) {
-    const g = d.garment, V = THREE.Vector3, W = (pomAt(d, 'A') || 11.75) / 10, H = W * .68, D = W * .35, bev = D * .16;
+    const g = d.garment, V = THREE.Vector3, W = (pomAt(d, 'A') || 11.75) / 10, H = W * .68, D = W * .35, bev = D * .36, CR = W * .13; // deep rounded edges and corners: a soft bag, not a box
+    const n0 = this.root.children.length;
     const fab = FABRICS[g.fabric] ? g.fabric : 'ballistic', f = FABRICS[fab];
     const HW = { gunmetal: ['#5b5f66', .32], steel: ['#d2d4d8', .22], gold: ['#c9a24a', .26], black: ['#26272b', .45] }[g.hardware || 'gold'];
     const shell = this.fabricMat(g.color, fab, false, 6, 4, g.pattern && g.pattern !== 'solid' ? { map: TEX.pattern(g.pattern, g.plaid1, g.plaid2, g.plaid3, num(g.plaidScale) || 1) } : null);
@@ -2401,11 +2438,11 @@ const Studio = {
     const rr = (w, h, r) => { const s = new THREE.Shape(), P = Math.PI; s.moveTo(-w / 2 + r, -h / 2); s.lineTo(w / 2 - r, -h / 2); s.absarc(w / 2 - r, -h / 2 + r, r, -P / 2, 0); s.lineTo(w / 2, h / 2 - r); s.absarc(w / 2 - r, h / 2 - r, r, 0, P / 2); s.lineTo(-w / 2 + r, h / 2); s.absarc(-w / 2 + r, h / 2 - r, r, P / 2, P); s.lineTo(-w / 2, -h / 2 + r); s.absarc(-w / 2 + r, -h / 2 + r, r, P, P * 1.5); return s; };
     const loopPts = (sh, z, ox = 0, oy = 0) => { const out = []; sh.getPoints(14).forEach(p => { const v = new V(p.x + ox, p.y + oy, z); if (!out.length || out[out.length - 1].distanceTo(v) > 1e-4) out.push(v); }); if (out[0].distanceTo(out[out.length - 1]) < 1e-4) out.pop(); return out; };
     // body + piping on the front and back seams
-    const bg = new THREE.ExtrudeGeometry(rr(W - bev * 2, H - bev * 2, .07), { depth: D - bev * 2, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 10, curveSegments: 24 }); bg.translate(0, 0, -(D - bev * 2) / 2);
+    const bg = new THREE.ExtrudeGeometry(rr(W - bev * 2, H - bev * 2, Math.max(.02, CR - bev)), { depth: D - bev * 2, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 16, curveSegments: 32, steps: 6 }); bg.translate(0, 0, -(D - bev * 2) / 2);
     const body = this.add(bg, shell);
-    [-1, 1].forEach(sz => this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(loopPts(rr(W - bev * .58, H - bev * .58, .07 + bev * .71), sz * (D / 2 - bev * .29)), true), 260, .011, 8, true), trim));
+    [-1, 1].forEach(sz => this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(loopPts(rr(W - bev * .58, H - bev * .58, Math.max(.02, CR - bev) + bev * .71), sz * (D / 2 - bev * .29)), true), 260, .008, 8, true), trim));
     // flap: runs up the back, over the top and down the front; s = distance along that path
-    const o = .012, hd = D / 2 + o, hh = H / 2 + o, rc = bev + o, q = Math.PI * rc / 2, sA = .1, sC = 2 * (hd - rc), tot = sA + q + sC + q + H * .5, cr = .09;
+    const o = .012, hd = D / 2 + o, hh = H / 2 + o, rc = bev + o, q = Math.PI * rc / 2, sA = .1, sC = 2 * (hd - rc), tot = sA + q + sC + q + H * .42, cr = .16;
     const prof = s => { let t = s; // → [z, y, normal z, normal y]
       if (t < sA) return [-hd, hh - rc - sA + t, -1, 0]; t -= sA;
       if (t < q) { const a = Math.PI - t / rc; return [-(hd - rc) + Math.cos(a) * rc, hh - rc + Math.sin(a) * rc, Math.cos(a), Math.sin(a)]; } t -= q;
@@ -2450,6 +2487,14 @@ const Studio = {
       let geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo = geo.toNonIndexed(); geo.computeVertexNormals();
       this.add(geo, trim).name = 'Shoulder strap (webbing)';
       const tg = curve.getTangentAt(.28), sp = curve.getPointAt(.28), sld = this.add(new THREE.TorusGeometry(w * .62, .008, 8, 4), metal); sld.position.copy(sp); sld.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(tg, ax, new V().crossVectors(tg, ax))); sld.rotateZ(Math.PI / 4); sld.scale.set(.75, 1, 1); }
+    // Soft-goods pass over everything just built: the body pillows front and back, widens toward the base, and the top
+    // settles in the middle. Every part goes through the same warp, so stitching, zip and hardware stay on the surface.
+    { const sm = t => { const c = clamp(t, 0, 1); return c * c * (3 - 2 * c); }, v = new V();
+      const warp = p => { const ty = clamp((p.y + H / 2) / H, 0, 1.15), ex = Math.max(0, 1 - (p.x / (W / 2)) ** 2), ey = Math.max(0, 1 - (p.y / (H / 2)) ** 2);
+        p.z += Math.sign(p.z) * Math.min(1, Math.abs(p.z) / (D * .25)) * .034 * W * ex * ey; p.x *= 1.045 - .09 * Math.min(ty, 1); p.y -= .03 * W * ex * sm(ty) ** 2 + .012 * W * (1 - ex) * (1 - sm(ty * 3)); };
+      this.root.children.slice(n0).forEach(m => { if (!m.isMesh) return; m.updateMatrix(); const geo = m.geometry.clone(); geo.applyMatrix4(m.matrix); m.position.set(0, 0, 0); m.quaternion.identity(); m.scale.set(1, 1, 1); m.updateMatrix();
+        const p = geo.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); warp(v); p.setXYZ(i, v.x, v.y, v.z); } p.needsUpdate = true;
+        if (m === body || m === flap || m === pocket) weldNormals(geo); geo.computeBoundingBox(); geo.computeBoundingSphere(); m.geometry.dispose(); m.geometry = geo; }); }
     this.modelMeshes = [body, flap, pocket]; this.torso = flap;
     this.P = { w: W / 4, d: D / 2, h: H, rise: 0, neckR: .2, side: false };
     this.updateDecals();
@@ -2495,22 +2540,22 @@ const Studio = {
     const sec = (v, s = 1) => { const a = v - Math.PI / 2, c = Math.cos(a), sn = Math.sin(a), n = sn < 0 ? 4.2 : 2.3;
       const y = H / 2 * Math.sign(sn) * Math.abs(sn) ** (2 / n), z = D / 2 * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - .14 * Math.max(0, sn));
       return [y * s, z * s]; };
-    const taper = u => 1 - .08 * Math.abs(2 * u - 1) ** 5, end = taper(0);
-    const rad = (u, v) => taper(u) * (1 + Math.sin(Math.PI * clamp(u, 0, 1)) ** .6 * (.011 * Math.sin(u * 9.4 + .6) * Math.cos(v * 3 + 1.1) + .006 * Math.sin(u * 23 + v * 5) + .008 * Math.cos(v * 2 - .4)) - .034 * Math.sin(Math.PI * clamp(u, 0, 1)) ** 2 * Math.max(0, -Math.cos(v)) ** 3); // soft body: the crown settles between the end panels
+    const taper = u => 1 - .13 * Math.abs(2 * u - 1) ** 4, end = taper(0), DOME = .12; // soft shoulders into domed end panels, not a tube with flat lids
+    const rad = (u, v) => taper(u) * (1 + Math.sin(Math.PI * clamp(u, 0, 1)) ** .6 * (.017 * Math.sin(u * 9.4 + .6) * Math.cos(v * 3 + 1.1) + .008 * Math.sin(u * 23 + v * 5) + .01 * Math.cos(v * 2 - .4)) - .06 * Math.sin(Math.PI * clamp(u, 0, 1)) ** 2 * Math.max(0, -Math.cos(v)) ** 3); // soft body: the crown settles between the end panels
     const body = add(new ParametricGeometry((u, v, t) => { const [y, z] = sec(v * Math.PI * 2, rad(u, v * Math.PI * 2)); t.set((u - .5) * L, y, z); }, 160, 128), shell);
     [-1, 1].forEach(sx => {
-      const cap = add(new ParametricGeometry((r, v, t) => { const [y, z] = sec(v * Math.PI * 2, end * r); t.set(sx * (L / 2 + .045 * (1 - r * r)), y, z); }, 24, 96), trim);
+      const cap = add(new ParametricGeometry((r, v, t) => { const [y, z] = sec(v * Math.PI * 2, end * r); t.set(sx * (L / 2 + DOME * (1 - r * r)), y, z); }, 24, 96), trim);
       const ring = []; for (let i = 0; i < 96; i++) { const [y, z] = sec(i / 96 * Math.PI * 2, end * 1.004); ring.push(new THREE.Vector3(sx * L / 2, y, z)); }
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ring, true), 192, .017, 8, true), trim); // piping
       // shoulder-strap D-ring + snap hook on each end panel
-      const dr = add(new THREE.TorusGeometry(.055, .011, 10, 28, Math.PI * 1.15), metal); dr.position.set(sx * (L / 2 + .05), H * .18, 0); dr.rotation.set(0, sx * Math.PI / 2, Math.PI * .43);
+      const dr = add(new THREE.TorusGeometry(.055, .011, 10, 28, Math.PI * 1.15), metal); dr.position.set(sx * (L / 2 + DOME * .86 + .006), H * .18, 0); dr.rotation.set(0, sx * Math.PI / 2, Math.PI * .43);
       // swivel snap hook hanging off the D-ring: hook arc, shank, swivel collar, strap eye
-      { const hk = new THREE.Group(); hk.position.set(sx * (L / 2 + .078), H * .18 - .05, 0); hk.rotation.z = sx * .32; this.root.add(hk);
+      { const hk = new THREE.Group(); hk.position.set(sx * (L / 2 + DOME * .86 + .034), H * .18 - .05, 0); hk.rotation.z = sx * .32; this.root.add(hk);
         const part = (geo, y) => { const m = new THREE.Mesh(geo, metal); m.castShadow = m.receiveShadow = true; m.position.y = y; hk.add(m); return m; };
         const arc = part(new THREE.TorusGeometry(.036, .0095, 10, 30, Math.PI * 1.55), 0); arc.rotation.set(0, Math.PI / 2, 0); arc.rotateZ(-Math.PI * .28);
         part(new THREE.CylinderGeometry(.0105, .0105, .06, 12), -.064); part(new THREE.CylinderGeometry(.021, .021, .026, 20), -.104); part(new THREE.CylinderGeometry(.013, .013, .012, 16), -.122);
         part(rectRing(.085, .05, .0075), -.15).rotation.y = Math.PI / 2; }
-      { const sp = [], sn = [], sa = [], rr = .93; for (let i = 0; i <= 120; i++) { const v = i / 120 * Math.PI * 2, [y, z] = sec(v, end * rr); sp.push(new THREE.Vector3(sx * (L / 2 + .045 * (1 - rr * rr)), y, z)); sn.push(new THREE.Vector3(sx, 0, 0)); sa.push(new THREE.Vector3(0, y, z).normalize()); } stitch(sp, sn, sa, 0, .003); }
+      { const sp = [], sn = [], sa = [], rr = .93; for (let i = 0; i <= 120; i++) { const v = i / 120 * Math.PI * 2, [y, z] = sec(v, end * rr); sp.push(new THREE.Vector3(sx * (L / 2 + DOME * (1 - rr * rr)), y, z)); sn.push(new THREE.Vector3(sx, 0, 0)); sa.push(new THREE.Vector3(0, y, z).normalize()); } stitch(sp, sn, sa, 0, .003); }
       cap.castShadow = true;
     });
     // flat band helper: centres + outward normals + width axis → box-section strap
@@ -2541,7 +2586,7 @@ const Studio = {
       const pull = add(new RoundedBoxGeometry(.05, .016, .16, 2, .008), metal); pull.position.set(L * .3, H / 2 + .02, .06); pull.rotation.x = -.4;
       const pt = add(new RoundedBoxGeometry(.06, .012, .22, 2, .006), trim); pt.position.set(L * .3, H / 2 + .015, .2); pt.rotation.x = -.6; }
     // rolled handles: front and back arches meet under a snap wrap
-    const apexY = H / 2 + H * .64;
+    const apexY = H / 2 + H * .47; // handles sit low and relaxed, not as tall hoops
     [[top[0], top[2]], [top[1], top[3]]].forEach(([a, b]) => {
       const zs = Math.sign(a.z), mid = new THREE.Vector3(0, apexY, zs * .045);
       const curve = new THREE.CatmullRomCurve3([a.clone().add(new THREE.Vector3(0, -.02, 0)), a.clone().add(new THREE.Vector3(0, .16, -zs * .03)), new THREE.Vector3(a.x * .78, apexY - .22, zs * .1), mid, new THREE.Vector3(b.x * .78, apexY - .22, zs * .1), b.clone().add(new THREE.Vector3(0, .16, -zs * .03)), b.clone().add(new THREE.Vector3(0, -.02, 0))]);
@@ -2556,12 +2601,12 @@ const Studio = {
     // shoulder strap: ring to ring, draped across the front with a pad
     { const c = new THREE.CatmullRomCurve3([[-1, .18, 0], [-1.09, -.08, .22], [-.85, -.5, .62], [-.3, -.66, .78], [.3, -.62, .8], [.85, -.45, .62], [1.09, -.06, .22], [1, .18, 0]].map(([x, y, z]) => new THREE.Vector3(x * (L / 2 + .06), y * H, z * D)));
       const pts = c.getSpacedPoints(160), nrm = [], ax = []; pts.forEach((p, i) => { const tg = c.getTangentAt(i / 160), a = new THREE.Vector3().crossVectors(tg, new THREE.Vector3(0, 0, 1)).normalize(); ax.push(a); nrm.push(new THREE.Vector3().crossVectors(a, tg).normalize()); });
-      band(pts, nrm, ax, .13, .018, trim);
-      [-1, 1].forEach(e => stitch(pts, nrm, ax, e * .052, .0105));
-      const k = 80, pad = add(new RoundedBoxGeometry(.56, .18, .032, 5, .015), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
+      band(pts, nrm, ax, .105, .014, trim);
+      [-1, 1].forEach(e => stitch(pts, nrm, ax, e * .041, .0085));
+      const k = 80, pad = add(new RoundedBoxGeometry(.48, .15, .03, 6, .0148), trim); pad.position.copy(pts[k]).addScaledVector(nrm[k], .02); pad.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(.5), ax[k].clone().negate(), nrm[k]));
       const bq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(c.getTangentAt(118 / 160), ax[118].clone().negate(), nrm[118])); // length-adjusting slider: frame + centre bar
-      const bk = add(rectRing(.1, .18, .009), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .012); bk.quaternion.copy(bq);
-      const bar = add(new THREE.CylinderGeometry(.008, .008, .17, 10), metal); bar.position.copy(pts[118]).addScaledVector(nrm[118], .016); bar.quaternion.copy(bq); }
+      const bk = add(rectRing(.085, .145, .008), metal); bk.position.copy(pts[118]).addScaledVector(nrm[118], .01); bk.quaternion.copy(bq);
+      const bar = add(new THREE.CylinderGeometry(.007, .007, .135, 10), metal); bar.position.copy(pts[118]).addScaledVector(nrm[118], .016); bar.quaternion.copy(bq); }
     // luggage tag off the front-right handle ring
     { const p = top[3], tag = add(new RoundedBoxGeometry(.24, .36, .025, 3, .012), trim); tag.position.set(p.x + .17, p.y - .32, p.z + .08); tag.rotation.set(-.12, .25, -.18);
       const lp = add(new RoundedBoxGeometry(.045, .26, .014, 2, .006), trim); lp.position.set(p.x + .09, p.y - .07, p.z + .05); lp.rotation.z = .55; }
@@ -2840,11 +2885,35 @@ const Studio = {
     this.headWait[name] ??= new GLTFLoader().loadAsync(`assets/models/watch-${name}.glb`).then(g => { this.heads[name] = g.scene.children[0] || g.scene; this.heads[name].userData = { ...(g.scene.userData || {}), ...(g.scene.children[0]?.userData || {}) }; if (S.current?.category === 'watch' && S.view === 'studio') this.build(); }).catch(e => console.warn('watch head', name, e));
     return null;
   },
+  // Worn view: a forearm through the strap. Its wrist section is fitted to the strap loop (it meets the caseback and the
+  // inside of the strap), swells toward the elbow, flattens into the back of the hand and fades out at both ends like a
+  // cropped product shot. The watch shadows the skin; the arm casts nothing and is left out of the framing.
+  addWrist(W, grp, RW, top = -.3) {
+    const form = W.wrist === 'form', tone = SKIN[W.wrist].c, bot = -2.44, b0 = (top - bot) / 2, a0 = RW - .07, x0 = -7, x1 = 6.2, PI = Math.PI;
+    const sm = (e0, e1, t) => { const q = clamp((t - e0) / (e1 - e0), 0, 1); return q * q * (3 - 2 * q); }, bell = (t, c, w) => Math.exp(-(((t - c) / w) ** 2));
+    const geo = new ParametricGeometry((u, v, t) => {
+      const s = lerp(x0, x1, v), th = -u * PI * 2 - PI / 2, el = sm(-.7, -5, s) /* the texture seam runs along the underside */, hand = sm(.75, 3.2, s);
+      const a = a0 * (1 + .2 * el + .3 * hand) * (1 - .035 * bell(s, .95, .45)), b = b0 * (1 + .27 * el - .36 * hand), n = 2.2 - .12 * el + .7 * hand;
+      const c = Math.cos(th), sn = Math.sin(th);
+      let z = a * Math.sign(c) * Math.abs(c) ** (2 / n), y = top - b + b * Math.sign(sn) * Math.abs(sn) ** (2 / n);
+      const ulna = .11 * bell(s, -1.05, .42) * bell(Math.atan2(sn, -c), .95, .5); z += ulna * c; y += ulna * sn; // ulna head: the knuckle of bone on the little-finger side, just behind the watch
+      if (sn < 0) y -= .03 * bell(s, .1, 1.3) * (bell(z, .24, .1) + bell(z, -.2, .09)) * -sn; // flexor tendons under the wrist
+      if (sn > 0) y += .02 * hand * (bell(z, .0, .16) + bell(z, .45, .13) + bell(z, -.45, .13)) * sn; // extensor tendons fanning into the back of the hand
+      t.set(s, y, z);
+    }, 110, 200);
+    TEX._c.armFade ||= new THREE.CanvasTexture(TEX.canvas(4, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#000'); g.addColorStop(.2, '#fff'); g.addColorStop(.77, '#fff'); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, w, h); }));
+    const mat = new THREE.MeshPhysicalMaterial({ color: tone, roughness: form ? .82 : .58, sheen: form ? .15 : .55, sheenRoughness: .45, sheenColor: new THREE.Color(tone).lerp(new THREE.Color(form ? '#ffffff' : '#ff9d7c'), .35), alphaMap: TEX._c.armFade, transparent: true, envMapIntensity: .45, // solid from mid-forearm to the knuckles, fading only well clear of the watch
+      ...(form ? {} : { map: TEX.mottle(), bumpMap: TEX.repeat(TEX.grain('smooth'), 9, 26), bumpScale: .16 }) });
+    const arm = new THREE.Mesh(geo, mat); arm.name = 'Wrist'; arm.userData.noFit = true; arm.castShadow = false; arm.receiveShadow = true; arm.renderOrder = 1; grp.add(arm);
+    // depth-only twin drawn first: where the arm fades you see the backdrop, never the far side of the strap through a ghost hand
+    const occ = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ colorWrite: false })); occ.name = 'Wrist depth'; occ.userData.noFit = true; occ.renderOrder = -10; occ.castShadow = occ.receiveShadow = false; grp.add(occ);
+  },
   buildStrap(W, grp, mk, M, G) {
     const z0 = G.halfZ + .18, integ = W.shape === 'octagon';
     // wrist loop at true scale: about 64 mm across and 50 mm deep for a 42 mm case (1 unit = 20 mm)
     const RW = Math.max(1.58, z0 + .4), half = [[0, -.14, z0], [0, -.3, z0 + .33], [0, -.8, RW], [0, -1.5, RW + .02], [0, -2.1, RW * .8], [0, -2.42, RW * .42]];
     const base = [...half, [0, -2.52, 0], ...half.slice().reverse().map(([x, y, z]) => [x, y, -z])].map(p => new THREE.Vector3(...p));
+    if (SKIN[W.wrist]) this.addWrist(W, grp, RW, W.strap === 'nato' ? -.62 : -.3); // a NATO passes under the case, so the wrist sits lower
     const X = new THREE.Vector3(1, 0, 0);
     const t = W.strap, Q = (curve, u) => ({ p: curve.getPointAt(u), T: curve.getTangentAt(u), q: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), curve.getTangentAt(u)) });
     // flat strap with rounded edges; width tapers from lug width toward the buckle
@@ -2992,7 +3061,8 @@ const Panels = {
           <div style="margin-top:10px">${this.select('watch.caseMat', 'Material', W.caseMat, kv(CASE_MATS))}</div>
           ${W.caseMat === 'wood' ? `<div class="grid2" style="margin-top:10px">${this.select('watch.caseWood', 'Species', W.caseWood, woods)}${this.select('watch.bezel', 'Bezel metal', W.bezel, kv(BEZELS))}</div>` : ''}
           <div style="margin-top:10px">${this.range('watch.dia', 'Case size', W.dia, 34, 46, 1, v => v + ' mm')}</div>
-          <div class="grid2" style="margin-top:10px">${this.select('watch.crownGuards', 'Crown guards', W.crownGuards, [['', 'No'], ['1', 'Yes']])}${this.select('watch.crystal', 'Crystal', W.crystal, [['Sapphire', 'Sapphire'], ['Domed sapphire', 'Domed sapphire'], ['Mineral', 'Hardened mineral']])}</div></div>
+          <div class="grid2" style="margin-top:10px">${this.select('watch.crownGuards', 'Crown guards', W.crownGuards, [['', 'No'], ['1', 'Yes']])}${this.select('watch.crystal', 'Crystal', W.crystal, [['Sapphire', 'Sapphire'], ['Domed sapphire', 'Domed sapphire'], ['Mineral', 'Hardened mineral']])}</div>
+          <div style="margin-top:10px">${this.select('watch.wrist', 'Shown on a wrist', SKIN[W.wrist] ? W.wrist : 'off', [['off', 'Off · watch only, with swing tag'], ...Object.entries(SKIN).map(([k, v]) => [k, v.label])])}</div></div>
         <div class="sec"${hide}><h4><em>C</em>Bezel</h4>${this.select('watch.bezelStyle', 'Style', W.bezelStyle, kv(BEZEL_STYLES))}
           ${/diver|gmt|tachy/.test(W.bezelStyle) ? `<div class="grid2" style="margin-top:10px">${cp('watch.bezelColor', W.bezelStyle === 'gmt' ? 'Day half' : 'Insert', W.bezelColor)}${W.bezelStyle === 'gmt' ? cp('watch.bezelColor2', 'Night half', W.bezelColor2) : ''}</div>` : ''}
           ${W.shape !== 'round' ? '<p class="hint" style="margin-top:8px">Inserts and gem-setting render on round cases. Shaped cases use a fitted frame.</p>' : ''}</div>
@@ -3028,6 +3098,7 @@ const Panels = {
         <div class="sec"><h4><em>B</em>Color</h4>${this.colorField('garment.color', 'Body', g.color)}<div class="grid2" style="margin-top:10px">${this.select('garment.pattern', 'Fabric pattern', g.pattern || 'solid', Object.entries(PATTERNS))}${g.pattern && g.pattern !== 'solid' ? this.range('garment.plaidScale', 'Scale', num(g.plaidScale) || 1, .4, 3, .1) : ''}</div>${(g.pattern && g.pattern !== 'solid') || g.doubleWB === '1' ? `<div class="grid3" style="margin-top:8px"><div class="fld"><label>Ground</label><input type="color" data-bind="garment.plaid1" value="${g.plaid1 || '#14172B'}"></div><div class="fld"><label>Stripe</label><input type="color" data-bind="garment.plaid2" value="${g.plaid2 || '#B98A4A'}"></div><div class="fld"><label>Accent</label><input type="color" data-bind="garment.plaid3" value="${g.plaid3 || '#EEF1F9'}"></div></div>` : ''}${d.category === 'pants' || d.category === 'shorts' ? `<div class="grid2" style="margin-top:10px">${this.select('garment.doubleWB', 'Double waistband', g.doubleWB || '', [['', 'No'], ['1', 'Yes']])}${g.doubleWB === '1' ? this.select('garment.wb2Style', 'Build', wb2Spec(g).style, [['boxer', 'Built-in boxer'], ['band', 'Second band']]) : ''}</div>${g.doubleWB === '1' ? (w => `<div class="grid2" style="margin-top:8px">${this.select('garment.wb2Pattern', w.style === 'boxer' ? 'Boxer fabric' : 'Band fabric', w.pattern, [['plaid', 'Plaid'], ['gingham', 'Gingham'], ['pinstripe', 'Pinstripe'], ['solid', 'Solid']])}${w.pattern === 'solid' ? `<div class="fld"><label>Solid color</label><input type="color" data-bind="garment.wb2Color" value="${w.color}"></div>` : '<div class="fld"><label>Colors</label><span class="hint">Ground / Stripe / Accent above</span></div>'}</div>
           <div class="grid2" style="margin-top:8px">${this.range('garment.wb2H', 'Shows above waist', w.H, .75, 4, .125, frac)}${w.style === 'boxer' ? this.range('garment.wb2E', 'Elastic height', w.E, .75, 2, .125, frac) : ''}</div>
           ${w.style === 'boxer' ? `<div class="grid2" style="margin-top:8px"><div class="fld"><label>Elastic</label><input type="color" data-bind="garment.wb2Elastic" value="${w.elastic}"></div><div class="fld"><label>Knit-in text color</label><input type="color" data-bind="garment.wb2Ink" value="${w.ink}"></div></div><div class="fld" style="margin-top:8px"><label>Knit-in text</label><input class="in" data-bind="garment.wb2Text" maxlength="40" value="${esc(g.wb2Text ?? "DON'T POSTPONE PASSION")}"></div>` : ''}`)(wb2Spec(g)) : ''}` : ''}
+          ${d.category === 'shorts' && !g.model ? (b => `<div class="grid2" style="margin-top:10px">${this.select('garment.cordBrand', 'Drawcord branding', b, [['none', 'None'], ['logo', 'DPP logo'], ['text', 'Text'], ['both', 'Logo + text']])}${b !== 'none' ? `<div class="fld"><label>Branding color</label><input type="color" data-bind="garment.cordInk" value="${g.cordInk || '#14172B'}"></div>` : ''}</div>${b === 'text' || b === 'both' ? `<div class="fld" style="margin-top:8px"><label>Drawcord text</label><input class="in" data-bind="garment.cordText" maxlength="40" value="${esc(g.cordText ?? TAG_TEXT)}"></div>` : ''}<p class="hint" style="margin:6px 0 0">The cord takes the Waistband / trim color; left at the default it runs a shade off the body.</p>`)(g.cordBrand || 'none') : ''}
           <div class="grid2" style="margin-top:12px"><div class="fld"><label>${d.category === 'socks' ? 'Cuff' : isBottom(d.category) ? 'Waistband / trim' : 'Rib / trim'}</label><div class="row"><input type="color" data-bind="garment.trim" value="${g.trim}"><button class="btn sm" data-copy="garment.trim">= Body</button></div></div>
           <div class="fld"><label>${d.category === 'socks' ? 'Heel / toe' : 'Stitch'}</label><div class="row"><input type="color" data-bind="garment.stitch" value="${g.stitch}"><button class="btn sm" data-copy="garment.stitch">= Body</button></div></div></div></div>
         ${['front', 'back'].map((s, i) => { const P = d.place[s]; return `<div class="sec"><h4><em>${'CD'[i]}</em>${s} print<span class="r cap">${d.artwork[s].length} layer${d.artwork[s].length === 1 ? '' : 's'}</span></h4>
@@ -3124,7 +3195,7 @@ function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
   if (/^garment\.tag(Color|Ink|Size|Text|Logo)$/.test(path)) tagPreview(S.current);
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|wb2Pattern|wb2Style|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|cordBrand|wb2Pattern|wb2Style|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
   if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
