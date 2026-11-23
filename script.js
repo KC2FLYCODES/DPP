@@ -1800,7 +1800,12 @@ const Studio = {
     const sm = best.map((_, i) => { let y = 0, r = 0; for (let k = -2; k <= 2; k++) { const p = best[(i + k + N) % N]; y += p.y; r += p.r; } return { y: y / 5, r: r / 5 }; });
     const pts = sm.map((p, i) => { const a = i / N * Math.PI * 2; return new THREE.Vector3(Math.sin(a) * p.r, p.y, zc + Math.cos(a) * p.r); });
     const bin = a => ((Math.round(a / (2 * Math.PI) * N) % N) + N) % N;
-    return { pts, N, zc, maxY, minY: Math.min(...pts.map(p => p.y)), front: pts[0], back: pts[N / 2], bin, at: a => pts[bin(a)] };
+    // geometry runs on a smooth, left-right symmetric version: cosine series (5 terms) fitted to the mirrored bearings
+    const K = 5, cy = [], cr = [];
+    for (let k = 0; k <= K; k++) { let sy = 0, sr = 0; best.forEach((b, i) => { const m = best[(N - i) % N], a = i / N * Math.PI * 2, c = Math.cos(k * a); sy += (b.y + m.y) / 2 * c; sr += (b.r + m.r) / 2 * c; }); cy.push(sy / N * (k ? 2 : 1)); cr.push(sr / N * (k ? 2 : 1)); }
+    const ser = (c, a) => c.reduce((s, v, k) => s + v * Math.cos(k * a), 0);
+    const P = a => { const r = ser(cr, a); return new THREE.Vector3(Math.sin(a) * r, ser(cy, a), zc + Math.cos(a) * r); };
+    return { pts, N, zc, maxY, minY: Math.min(...pts.map(p => p.y)), front: P(0), back: P(Math.PI), bin, at: a => pts[bin(a)], P };
   },
   // Each triangle of the garment mesh goes to a zone (body, left/right sleeve, collar band, cuff, waistband, sleeve
   // stripe, rugby hoop, V-insert). Each zone gets its own material, so it can take its own colour and fabric, and washes
@@ -1809,6 +1814,7 @@ const Studio = {
     const S = this.slv, ms = this.modelMeshes; if (!S || !ms?.length) return false;
     const g = d.garment, T = topSpec(d), Z = this.zfx || {}, L = d.category === 'hoodie' ? null : this.neckLoop(S); this.neck = L; this.grids = null;
     if (L && !['crew', 'vinsert'].includes(T.collar)) this.surfGrids(S);
+    const band = ['crew', 'henley', 'vinsert'].includes(T.collar); // collars built in geometry cover the neck edge; a painted band would show inside
     const AX = { 1: this.sleeveAxis(S, 1), [-1]: this.sleeveAxis(S, -1) };
     const ribH = (pomAt(d, 'L') || 1) / 10, cuffH = T.long ? (pomAt(d, 'N') || 2.5) / 10 : (pomAt(d, 'M') || 1) / 10, hemH = (pomAt(d, 'P') || 3) / 10;
     const yUA = S.hps - (pomAt(d, 'E') || 10.25) * .95 / 10;
@@ -1822,7 +1828,7 @@ const Studio = {
     const slvCol = s => s > 0 ? sleeveHex(g) : sleeveHexR(g);
     // zone → [colour, fabric key (FABRICS or TRIM_FABS), rib]
     const zoneOf = (x, y, z, s) => {
-      if (L && y > L.minY - ribH - .02 && Math.hypot(x, z - L.zc) < 1) { const lp = L.at(Math.atan2(x, z - L.zc)); if (y < lp.y + .015 && loopD(x, y, z) < ribH) return [T.collarCol, T.collarFab]; }
+      if (L && band && y > L.minY - ribH - .02 && Math.hypot(x, z - L.zc) < 1) { const lp = L.at(Math.atan2(x, z - L.zc)); if (y < lp.y + .015 && loopD(x, y, z) < ribH) return [T.collarCol, T.collarFab]; }
       if (VI && !s && z > VI.zc && y > VI.yApex && y < VI.yTop && Math.abs(x) < VI.xH * (y - VI.yApex) / (VI.yTop - VI.yApex)) return [T.collarCol, g.fabric];
       if (s) {
         const a = AX[s]; const t = a ? (x - a.root.x) * a.u.x + (y - a.root.y) * a.u.y + (z - a.root.z) * a.u.z : 0;
@@ -1863,7 +1869,7 @@ const Studio = {
       uZHoop: { value: T.hoops === 'all' ? 2 : T.hoops ? 1 : 0 }, uZHoopW: { value: hw }, uZHoopCol: { value: C(T.hoopCol) }, uZHem0: { value: S.torsoHem },
       uZFleece: { value: T.fleece ? 1 : 0 }, uZHemH: { value: hemH }, uZHemCol: { value: C(T.hemCol) },
       uZVIOn: { value: VI ? 1 : 0 }, uZVI: { value: VI ? new THREE.Vector4(VI.yTop, VI.yApex, VI.xH, VI.zc) : new THREE.Vector4() },
-      uZCollarOn: { value: L ? 1 : 0 }, uZLoop: { value: L ? L.pts.map(p => p.clone()) : Array.from({ length: 72 }, () => new THREE.Vector3()) }, uZRibH: { value: ribH }, uZCollar: { value: C(T.collarCol) }, uZLoopZc: { value: L ? L.zc : 0 }, uZLoopMin: { value: L ? L.minY : 0 } };
+      uZCollarOn: { value: L && band ? 1 : 0 }, uZLoop: { value: L ? L.pts.map(p => p.clone()) : Array.from({ length: 72 }, () => new THREE.Vector3()) }, uZRibH: { value: ribH }, uZCollar: { value: C(T.collarCol) }, uZLoopZc: { value: L ? L.zc : 0 }, uZLoopMin: { value: L ? L.minY : 0 } };
     const FRAG = `{
       vec3 P = vFP; float s = 0.;
       #ifdef ZP_PANEL
@@ -1932,87 +1938,128 @@ const Studio = {
       if (fl[i]) continue; const x = wp[i * 3], y = wp[i * 3 + 1], z = wp[i * 3 + 2];
       let ix = Math.floor((x - F.x0) / F.c), iy = Math.floor((y - F.y0) / F.c); if (z > zc && ix >= 0 && ix < F.nx && iy >= 0 && iy < F.ny) { const k = iy * F.nx + ix; if (z > F.a[k]) F.a[k] = z; }
       ix = Math.floor((x - Tg.x0) / Tg.c); iy = Math.floor((z - Tg.y0) / Tg.c); if (ix >= 0 && ix < Tg.nx && iy >= 0 && iy < Tg.ny) { const k = iy * Tg.nx + ix; if (y > Tg.a[k]) Tg.a[k] = y; } } });
-    this.grids = { F, Tg };
+    // the chest field gets its gaps filled and two box-blur passes, then is read bilinearly: plackets and zips lie smooth
+    for (let pass = 0; pass < 3; pass++) { const src = F.a.slice(); for (let j = 0; j < F.ny; j++) for (let i = 0; i < F.nx; i++) { let s = 0, n = 0, mx = -99; for (let v = -1; v <= 1; v++) for (let u = -1; u <= 1; u++) { const ii = i + u, jj = j + v; if (ii < 0 || jj < 0 || ii >= F.nx || jj >= F.ny) continue; const q = src[jj * F.nx + ii]; if (q > -99) { s += q; n++; mx = Math.max(mx, q); } } if (n) F.a[j * F.nx + i] = pass === 0 && src[j * F.nx + i] > -99 ? Math.max(src[j * F.nx + i], s / n) : s / n; } }
+    F.smooth = true; this.grids = { F, Tg };
   },
-  gridAt(G, u, v) { const i0 = Math.floor((u - G.x0) / G.c), j0 = Math.floor((v - G.y0) / G.c); for (let r = 0; r <= 4; r++) { let best = -99; for (let j = j0 - r; j <= j0 + r; j++) for (let i = i0 - r; i <= i0 + r; i++) { if (i < 0 || j < 0 || i >= G.nx || j >= G.ny) continue; best = Math.max(best, G.a[j * G.nx + i]); } if (best > -99) return best; } return null; },
+  gridAt(G, u, v) {
+    if (G.smooth) { const fx = (u - G.x0) / G.c - .5, fy = (v - G.y0) / G.c - .5, i = Math.floor(fx), j = Math.floor(fy), tx = fx - i, ty = fy - j, at = (a, b) => (a < 0 || b < 0 || a >= G.nx || b >= G.ny) ? -99 : G.a[b * G.nx + a];
+      const q = [at(i, j), at(i + 1, j), at(i, j + 1), at(i + 1, j + 1)]; if (q.every(x => x > -99)) return lerp(lerp(q[0], q[1], tx), lerp(q[2], q[3], tx), ty); }
+    const i0 = Math.floor((u - G.x0) / G.c), j0 = Math.floor((v - G.y0) / G.c); for (let r = 0; r <= 4; r++) { let best = -99; for (let j = j0 - r; j <= j0 + r; j++) for (let i = i0 - r; i <= i0 + r; i++) { if (i < 0 || j < 0 || i >= G.nx || j >= G.ny) continue; best = Math.max(best, G.a[j * G.nx + i]); } if (best > -99) return best; } return null; },
+  // A smooth front strip for plackets and zips: z(y) is a least-squares cubic through the highest surface point of each
+  // row across xs, lifted so no sample sits above it. Straight edges, and the body can't poke through.
+  frontFit(xs, yTop, yBot) {
+    const smp = []; for (let y = yBot; y <= yTop + 1e-6; y += .005) { let m = -99; xs.forEach(x => { const z = this.surfZ(x, y); if (z !== null) m = Math.max(m, z); }); if (m > -99) smp.push([(y - yBot) / Math.max(1e-6, yTop - yBot), m]); }
+    if (smp.length < 4) return null;
+    const A = Array.from({ length: 4 }, () => new Array(5).fill(0)); smp.forEach(([t, z]) => { const p = [1, t, t * t, t * t * t]; for (let r = 0; r < 4; r++) { for (let c = 0; c < 4; c++) A[r][c] += p[r] * p[c]; A[r][4] += p[r] * z; } });
+    for (let c = 0; c < 4; c++) { let pv = c; for (let r = c + 1; r < 4; r++) if (Math.abs(A[r][c]) > Math.abs(A[pv][c])) pv = r; [A[c], A[pv]] = [A[pv], A[c]]; for (let r = 0; r < 4; r++) if (r !== c) { const f = A[r][c] / (A[c][c] || 1e-12); for (let k = c; k < 5; k++) A[r][k] -= f * A[c][k]; } }
+    const k = A.map((r, i) => r[4] / (r[i] || 1e-12)), f = t => k[0] + k[1] * t + k[2] * t * t + k[3] * t * t * t, lift = Math.max(0, ...smp.map(([t, z]) => z - f(t)));
+    return y => f((y - yBot) / Math.max(1e-6, yTop - yBot)) + lift;
+  },
   // Front surface z at (x, y), for laying plackets and zips on the chest
   surfZ(x, y) { if (this.grids) { const z = this.gridAt(this.grids.F, x, y); if (z !== null) return z; } const h = new THREE.Raycaster(new THREE.Vector3(x, y, 20), new THREE.Vector3(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0]; return h ? h.point.z : null; },
-  // Collars built in geometry from the neckline: mock neck, quarter-zip stand + zip, polo / rugby collar + placket, henley placket.
+  // Collars built in geometry on the smoothed neckline (L.P): each is one closed shell swept from a cross-section
+  // profile, so there are no stacked surfaces to flicker. Profiles are (out, up) offsets from the neck edge.
+  // Mock neck and quarter-zip stand follow the neckline curve; polo / rugby stand, fold, then drape a leaf onto the
+  // shoulders (leaf points pushed up out of the body using the top-down heightfield); plackets are thick panels.
   buildCollar(d) {
     const L = this.neck, T = topSpec(d), g = d.garment; if (!L || ['crew', 'vinsert', 'hood'].includes(T.collar)) return;
-    const V = THREE.Vector3, N = L.N, Z = this.zfx || {}, ang = i => i / N * Math.PI * 2, out = a => new V(Math.sin(a), 0, Math.cos(a));
-    const mat = (hex, fab, rx = 5) => { const tf = TRIM_FABS[fab], f = fab === 'twill' ? 'twill' : fab === 'self' ? g.fabric : FABRICS[fab] ? fab : 'jersey'; const m = this.fabricMat(hex, f, !!tf?.rib, rx, 1.2); fabricFX(m, { ...(Z.fx || {}), woven: !!FABRICS[f]?.weave, uv: true, tile: 5 }); return m; };
-    // a band between two rows of points: outer face, inner face pushed toward the neck centre, and the edge between
-    const band = (bot, top, m, th = .007) => {
-      const n = bot.length, inw = p => { const v = new V(-p.x, 0, L.zc - p.z); return v.lengthSq() > 1e-8 ? v.normalize() : new V(); };
-      const rows = [bot, top, top.map(p => p.clone().addScaledVector(inw(p), th)), bot.map(p => p.clone().addScaledVector(inw(p), th))], pos = [], uv = [], idx = [];
-      rows.forEach((R, ri) => R.forEach((p, i) => { pos.push(p.x, p.y, p.z); uv.push(i / (n - 1), [0, 1, 1, 0][ri]); }));
-      for (let r = 0; r < 3; r++) for (let i = 0; i < n - 1; i++) { const a = r * n + i, b = a + 1, c = a + n, e = c + 1; idx.push(a, c, b, b, c, e); }
+    const V = THREE.Vector3, Z = this.zfx || {}, out = a => new V(Math.sin(a), 0, Math.cos(a)), TAU = Math.PI * 2;
+    const mat = (hex, fab, rx = 5, ry = 1.2) => {
+      const tf = TRIM_FABS[fab], f = fab === 'twill' ? 'twill' : fab === 'self' ? g.fabric : FABRICS[fab] ? fab : 'jersey';
+      const m = this.fabricMat(hex, f, !!tf?.rib, rx, ry); fabricFX(m, { ...(Z.fx || {}), woven: !!FABRICS[f]?.weave, uv: true, tile: 5 });
+      m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -2; return m;
+    };
+    const bodyTop = (x, z) => this.grids ? this.gridAt(this.grids.Tg, x, z) : null;
+    // sweep a 2D profile along the neckline angles `as` into a closed shell of thickness th
+    const sweep = (as, prof, th, m, leafFrom = 99) => {
+      const rows = as.map(a => {
+        const B = L.P(a), n = out(a), P = prof(a);
+        const pts = P.map(([o, u]) => B.clone().addScaledVector(n, o).add(new V(0, u, 0)));
+        for (let j = leafFrom; j < pts.length; j++) { const y = bodyTop(pts[j].x, pts[j].z); if (y !== null && pts[j].y < y + .007) pts[j].y = y + .007; } // drape: never inside the body
+        // 2D normal of the profile (pointing to the inside of the fold / neck side), for the shell thickness
+        const inn = pts.map((p, j) => { const A = pts[Math.max(0, j - 1)], C = pts[Math.min(pts.length - 1, j + 1)], tg = C.clone().sub(A); const side = tg.clone().cross(new V(Math.cos(a), 0, -Math.sin(a))).normalize(); return side; });
+        return { pts, inn };
+      });
+      const nA = rows.length, nP = rows[0].pts.length, pos = [], uv = [], idx = [];
+      let acc = 0; const us = rows.map((r, i) => (i ? (acc += r.pts[0].distanceTo(rows[i - 1].pts[0])) : 0));
+      const vs = rows[0].pts.map((p, j, A) => j ? A.slice(1, j + 1).reduce((s, q, k) => s + q.distanceTo(A[k]), 0) : 0);
+      [0, 1].forEach(side => rows.forEach((r, i) => r.pts.forEach((p, j) => { const q = side ? p.clone().addScaledVector(r.inn[j], th) : p; pos.push(q.x, q.y, q.z); uv.push(us[i] * 4, vs[j] * 4); })));
+      const id = (side, i, j) => side * nA * nP + i * nP + j;
+      for (let i = 0; i < nA - 1; i++) for (let j = 0; j < nP - 1; j++) {
+        idx.push(id(0, i, j), id(0, i + 1, j), id(0, i, j + 1), id(0, i, j + 1), id(0, i + 1, j), id(0, i + 1, j + 1));
+        idx.push(id(1, i, j), id(1, i, j + 1), id(1, i + 1, j), id(1, i, j + 1), id(1, i + 1, j + 1), id(1, i + 1, j));
+      }
+      for (let i = 0; i < nA - 1; i++) [0, nP - 1].forEach(j => idx.push(id(0, i, j), id(1, i, j), id(0, i + 1, j), id(0, i + 1, j), id(1, i, j), id(1, i + 1, j))); // profile edges
+      [0, nA - 1].forEach(i => { for (let j = 0; j < nP - 1; j++) idx.push(id(0, i, j), id(0, i, j + 1), id(1, i, j), id(1, i, j), id(0, i, j + 1), id(1, i, j + 1)); }); // ends
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
       return this.add(geo, m);
     };
-    const all = [...Array(N).keys()];
+    const range = (a0, a1, n) => Array.from({ length: n + 1 }, (_, k) => a0 + (a1 - a0) * k / n);
+    const halfOpen = w => { let a = .02; while (a < Math.PI / 2 && Math.abs(L.P(a).x) < w) a += .005; return a; }; // angle where the collar meets the placket / zip
     if (T.collar === 'mock' || T.collar === 'qzip') {
-      const h = T.standH / 10, gap = T.collar === 'qzip', seq = gap ? all.slice(1) : [...all, 0];
-      const topY = i => Math.max(L.pts[i].y + h * .55, L.back.y + h - (1 + Math.cos(ang(i))) / 2 * .02);
-      const bot = seq.map(i => L.pts[i].clone().addScaledVector(out(ang(i)), .004).add(new V(0, -.012, 0)));
-      const top = seq.map(i => { const p = L.pts[i], r = Math.hypot(p.x, p.z - L.zc) * .9, a = ang(i); return new V(Math.sin(a) * r, topY(i), L.zc + Math.cos(a) * r); });
-      band(bot, top, mat(T.collarCol, T.collarFab, 4.5));
-      if (gap) this.buildZip(d, top[0].clone().lerp(top[top.length - 1], .5), L.front.y);
+      const h = T.standH / 10, zip = T.collar === 'qzip', a0 = zip ? halfOpen(.007) : 0, as = zip ? range(a0, TAU - a0, 120) : range(0, TAU, 120);
+      // top edge: level round the back, dropping toward the front (never lower than half the stand height above the neck)
+      const yMax = Math.max(...range(0, Math.PI, 36).map(a => L.P(a).y)), fall = (yMax - L.front.y) * .55;
+      const uTop = a => { const fr = Math.max(0, Math.cos(a)); return Math.max(h * .5, yMax + h * .8 - fr * fr * fall - L.P(a).y); };
+      // the stand starts over the body's own neck rib (so no crew rib shows under it), rises leaning in a little at the back,
+      // straight at the front where it meets the zip, and finishes in a rolled double edge
+      sweep(as, a => { const fr = Math.max(0, Math.cos(a)), lean = -.012 * (1 - fr), u = uTop(a); return [[.03, -.11], [.02, -.045], [.012, 0], [lean * .35 + .004, u * .35], [lean * .75, u * .72], [lean, u], [lean + .006, u + .004]]; }, .012, mat(T.collarCol, T.collarFab, 18, 1.5));
+      if (zip) this.buildZip(d, L.P(a0).clone().lerp(L.P(-a0), .5).add(new V(0, uTop(a0), 0)), L.front.y);
       return;
     }
-    // polo / rugby / henley: placket down the centre front
+    // polo / rugby / henley: the placket, a thick panel down the centre front
     const pw = T.placketW / 10, pl = T.placketLen / 10, yTop = L.front.y + .004, yBot = yTop - pl;
-    const cols = 5, rowsN = Math.max(4, Math.round(pl / .025)), pos = [], idx = [], uv = []; let ok = true;
-    for (let r = 0; r <= rowsN && ok; r++) for (let c = 0; c <= cols; c++) { const x = -pw / 2 + c * pw / cols, y = yTop - r * pl / rowsN, z = this.surfZ(x, y); if (z === null) { ok = false; break; } pos.push(x, y, z + .005); uv.push(c / cols, r / rowsN); }
-    if (ok) {
-      for (let r = 0; r < rowsN; r++) for (let c = 0; c < cols; c++) { const a = r * (cols + 1) + c, b = a + 1, e = a + cols + 1, f = e + 1; idx.push(a, e, b, b, e, f); }
-      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
-      this.add(geo, mat(T.placketCol, T.collar === 'rugby' ? 'twill' : 'self', 2));
-      // edge stitching round the placket and the bottom box
-      const st = new THREE.MeshStandardMaterial({ color: g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() ? g.stitch : shade(T.placketCol, lum(T.placketCol) > .5 ? -.35 : .35), roughness: .8 });
-      const sz = (x, y) => (this.surfZ(x, y) ?? 0) + .0065;
-      [[-pw / 2 + .008, 1], [pw / 2 - .008, 1]].forEach(([x]) => { const P = []; for (let k = 0; k <= 16; k++) { const y = yTop - k * pl / 16; P.push(new V(x, y, sz(x, y))); } this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 48, .0011, 4, false), st, false); });
-      { const P = []; for (let k = 0; k <= 8; k++) { const x = -pw / 2 + .008 + k * (pw - .016) / 8; P.push(new V(x, yBot + .008, sz(x, yBot + .008))); } this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 24, .0011, 4, false), st, false); }
-      // buttons with four holes
-      const bt = TEX.canvas(128, 128, x => { x.fillStyle = '#fff'; x.fillRect(0, 0, 128, 128); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 10; x.beginPath(); x.arc(64, 64, 50, 0, 7); x.stroke(); x.fillStyle = 'rgba(0,0,0,.75)'; [[48, 48], [80, 48], [48, 80], [80, 80]].forEach(([a, b]) => { x.beginPath(); x.arc(a, b, 7, 0, 7); x.fill(); }); });
-      const btex = new THREE.CanvasTexture(bt); btex.colorSpace = THREE.SRGBColorSpace; btex.userData.own = true;
-      const bc = new THREE.MeshPhysicalMaterial({ color: T.btn, roughness: T.collar === 'rugby' ? .7 : .25, clearcoat: T.collar === 'rugby' ? 0 : .6 }), bf = new THREE.MeshPhysicalMaterial({ color: T.btn, map: btex, roughness: T.collar === 'rugby' ? .7 : .25, clearcoat: T.collar === 'rugby' ? 0 : .6 });
-      const br = T.collar === 'rugby' ? .028 : .0225;
-      for (let k = 0; k < T.buttons; k++) { const y = yTop - pl * (k + .75) / (T.buttons + .5), z = this.surfZ(0, y); if (z === null) continue; const geo = new THREE.CylinderGeometry(br, br, .006, 24); geo.rotateX(Math.PI / 2); const m = this.add(geo, [bc, bf, bc]); m.position.set(0, y, z + .009); }
+    {
+      const cols = 6, rowsN = Math.max(8, Math.round(pl / .015)), top = [], zf = this.frontFit([-pw / 2 - .01, -pw / 4, 0, pw / 4, pw / 2 + .01], yTop, yBot);
+      if (zf) for (let r = 0; r <= rowsN; r++) for (let c = 0; c <= cols; c++) { const x = -pw / 2 + c * pw / cols, y = yTop - r * pl / rowsN; top.push(new V(x, y, zf(y) + .006 - (x / pw) ** 2 * .004)); }
+      if (zf) {
+        const pos = [], uv = [], idx = [], W = cols + 1, n = top.length;
+        [0, 1].forEach(s => top.forEach((p, k) => { pos.push(p.x, p.y, p.z - s * .006); uv.push((k % W) / cols, Math.floor(k / W) / rowsN * pl * 4); }));
+        for (let r = 0; r < rowsN; r++) for (let c = 0; c < cols; c++) { const a = r * W + c, b = a + 1, e = a + W, f = e + 1; idx.push(a, e, b, b, e, f); }
+        const edge = [...Array(W).keys(), ...Array.from({ length: rowsN }, (_, r) => (r + 1) * W + cols), ...Array.from({ length: cols }, (_, c) => rowsN * W + cols - 1 - c), ...Array.from({ length: rowsN }, (_, r) => (rowsN - 1 - r) * W)];
+        for (let k = 0; k < edge.length - 1; k++) { const a = edge[k], b = edge[k + 1]; idx.push(a, b, a + n, a + n, b, b + n); }
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+        this.add(geo, mat(T.placketCol, T.collar === 'rugby' ? 'twill' : 'self', 2, 2));
+        const st = new THREE.MeshStandardMaterial({ color: g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() ? g.stitch : shade(T.placketCol, lum(T.placketCol) > .5 ? -.3 : .3), roughness: .8 });
+        const zAt = (x, y) => zf(y) + .0065 - (x / pw) ** 2 * .004, line = P => this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 40, .0009, 4, false), st, false);
+        [-1, 1].forEach(s => { const x = s * (pw / 2 - .007); line(Array.from({ length: 13 }, (_, k) => { const y = yTop - .004 - k * (pl - .012) / 12; return new V(x, y, zAt(x, y)); })); });
+        line(Array.from({ length: 7 }, (_, k) => { const x = -pw / 2 + .007 + k * (pw - .014) / 6, y = yBot + .008; return new V(x, y, zAt(x, y)); }));
+        const bt = TEX.canvas(128, 128, x => { x.fillStyle = '#fff'; x.fillRect(0, 0, 128, 128); x.strokeStyle = 'rgba(0,0,0,.3)'; x.lineWidth = 9; x.beginPath(); x.arc(64, 64, 52, 0, 7); x.stroke(); x.fillStyle = 'rgba(0,0,0,.7)'; (T.collar === 'rugby' ? [[50, 64], [78, 64]] : [[50, 50], [78, 50], [50, 78], [78, 78]]).forEach(([a, b]) => { x.beginPath(); x.arc(a, b, 7, 0, 7); x.fill(); }); });
+        const btex = new THREE.CanvasTexture(bt); btex.colorSpace = THREE.SRGBColorSpace; btex.userData.own = true;
+        const rub = T.collar === 'rugby', bc = new THREE.MeshPhysicalMaterial({ color: T.btn, roughness: rub ? .75 : .25, clearcoat: rub ? 0 : .6 }), bf = new THREE.MeshPhysicalMaterial({ color: T.btn, map: btex, roughness: rub ? .75 : .25, clearcoat: rub ? 0 : .6 });
+        const br = rub ? .028 : .022;
+        for (let k = 0; k < T.buttons; k++) { const y = yTop - .03 - (pl - .06) * k / Math.max(1, T.buttons - 1) * (T.buttons > 1 ? .9 : 0), z = zf(y) + .002; const geo = new THREE.CylinderGeometry(br, br * .96, .006, 28); geo.rotateX(Math.PI / 2); this.add(geo, [bc, bf, bc]).position.set(0, y, z + .011); }
+      }
     }
     if (T.collar === 'henley') return;
-    // polo / rugby: a short stand, then the collar leaf folds down over the shoulders, points at the front
-    const h = T.standH / 10, keep = all.filter(i => !(Math.cos(ang(i)) > 0 && Math.abs(L.pts[i].x) < pw / 2 + .004));
-    const seq = [...keep.filter(i => i > 0 && i <= N / 2), ...keep.filter(i => i > N / 2)];
-    const bot = seq.map(i => L.pts[i].clone().addScaledVector(out(ang(i)), .004).add(new V(0, -.01, 0)));
-    const top = seq.map(i => { const p = L.pts[i], a = ang(i), r = Math.hypot(p.x, p.z - L.zc) * .96; return new V(Math.sin(a) * r, Math.max(p.y + h, L.back.y + h * .8), L.zc + Math.cos(a) * r); });
-    const cm = mat(T.collarCol, T.collarFab, T.collar === 'rugby' ? 3 : 4.5);
-    band(bot, top, cm, .006);
-    const tips = seq.map((i, k) => {
-      const a = ang(i), fr = Math.max(0, Math.cos(a)), p = L.pts[i], r = Math.hypot(p.x, p.z - L.zc) + .19 + fr ** 2 * .06;
-      const qx = Math.sin(a) * r, qz = L.zc + Math.cos(a) * r, hy = this.grids ? this.gridAt(this.grids.Tg, qx, qz) : null;
-      const t = hy !== null && hy > top[k].y - .45 ? new V(qx, hy + .012, qz).addScaledVector(out(a), .006) : top[k].clone().addScaledVector(out(a), .17).add(new V(0, -.16, 0));
-      const end = Math.min(k, seq.length - 1 - k); if (end < 3) { const e = (3 - end) / 3; t.y -= e * .1; t.x *= 1 - e * .25; } // collar points run down toward the placket
-      return t;
-    });
-    const roll = top.map((p, k) => p.clone().lerp(tips[k], .35).addScaledVector(out(ang(seq[k])), .02).add(new V(0, .02, 0)));
-    band(top.map(p => p.clone().add(new V(0, .002, 0))), roll, cm, .004); band(roll, tips, cm, .004);
+    // polo / rugby collar: stand, a rounded fold, then the leaf running out and down over the shoulders
+    const hs = T.standH / 10, lw0 = (T.collar === 'rugby' ? 2.5 : 2.25) / 10, pt = (T.collar === 'rugby' ? 3 : 2.75) / 10, a0 = halfOpen(pw / 2 + .002);
+    const prof = a => {
+      const fr = Math.max(0, Math.cos(a)), tip = Math.pow(clamp((Math.cos(a) - Math.cos(a0 + .5)) / (Math.cos(a0) - Math.cos(a0 + .5)), 0, 1), 2); // 0 round the back → 1 at the collar points
+      const lw = lerp(lw0, pt, tip), F = [.012, hs + .009], drop = .55 + tip * .45 + fr * .1;
+      const leaf = [.25, .5, .75, 1].map(s => [F[0] + lw * s * (1 - tip * .35) * .82, F[1] - lw * s * drop]);
+      return [[.028, -.1], [.019, -.042], [.01, 0], [.002, hs * .5], [-.001, hs], [.004, hs + .008], F, ...leaf];
+    };
+    sweep(range(a0, TAU - a0, 140), prof, .0055, mat(T.collarCol, T.collarFab, T.collar === 'rugby' ? 10 : 16, 2), 7);
   },
-  // Quarter-zip: tapes, interlocking teeth and a slider with a pull, down the collar and the chest
+  // Quarter-zip: tapes, interlocking teeth, slider and pull, from the top of the stand down the chest
   buildZip(d, topPt, neckY) {
-    const T = topSpec(d), Zp = ZIPS[T.zip], V = THREE.Vector3, len = T.zipLen / 10, P = [];
-    for (let y = topPt.y; y > neckY; y -= .02) P.push(new V(0, y, lerp(topPt.z, this.surfZ(0, neckY) ?? topPt.z, (topPt.y - y) / Math.max(.01, topPt.y - neckY)) + .006));
-    for (let y = neckY; y >= neckY - len; y -= .02) { const z = this.surfZ(0, y); if (z !== null) P.push(new V(0, y, z + .006)); }
+    const T = topSpec(d), Zp = ZIPS[T.zip], V = THREE.Vector3, len = T.zipLen / 10, P = [], zN = this.surfZ(0, neckY) ?? topPt.z;
+    for (let y = topPt.y; y > neckY; y -= .01) P.push(new V(0, y, lerp(topPt.z, zN, (topPt.y - y) / Math.max(.01, topPt.y - neckY)) + .009));
+    const zf = this.frontFit([-.02, 0, .02], neckY, neckY - len);
+    for (let y = neckY; y >= neckY - len; y -= .01) { const z = zf ? zf(y) : this.surfZ(0, y); if (z !== null) P.push(new V(0, y, z + .007)); }
     if (P.length < 4) return;
-    const metal = new THREE.MeshStandardMaterial({ color: Zp.c, metalness: 1, roughness: Zp.r }), tape = new THREE.MeshStandardMaterial({ color: shade(d.garment.color, -.25), roughness: .9 });
-    const curve = new THREE.CatmullRomCurve3(P), L = curve.getLength(), n = Math.floor(L / .0065);
-    [-1, 1].forEach(s => { const pts = P.map(p => new V(p.x + s * .018, p.y, p.z - .001)); this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, .009, 3, false), tape, false); });
-    const tooth = new THREE.BoxGeometry(.012, .0042, .005), inst = new THREE.InstancedMesh(tooth, metal, n), M = new THREE.Matrix4();
-    for (let k = 0; k < n; k++) { const p = curve.getPointAt(k / n); M.makeTranslation(p.x + (k % 2 ? .003 : -.003), p.y, p.z + .001); inst.setMatrixAt(k, M); }
+    const metal = new THREE.MeshStandardMaterial({ color: Zp.c, metalness: 1, roughness: Zp.r }), tapeM = new THREE.MeshStandardMaterial({ color: shade(d.garment.color, lum(d.garment.color) > .5 ? -.22 : .14), roughness: .92 });
+    tapeM.polygonOffset = true; tapeM.polygonOffsetFactor = -1;
+    // tapes: a flat ribbon each side of the chain
+    [-1, 1].forEach(s => { const pos = [], idx = []; P.forEach((p, k) => { pos.push(s * .006, p.y, p.z - .001, s * .03, p.y, p.z - .004); if (k) { const a = (k - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } });
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals(); this.add(geo, tapeM, false); });
+    const curve = new THREE.CatmullRomCurve3(P), n = Math.floor(curve.getLength() / .0055), tooth = new RoundedBoxGeometry(.013, .0046, .005, 1, .0012), inst = new THREE.InstancedMesh(tooth, metal, n), M = new THREE.Matrix4();
+    for (let k = 0; k < n; k++) { const p = curve.getPointAt(k / n); M.makeTranslation(p.x + (k % 2 ? .0032 : -.0032), p.y, p.z + .001); inst.setMatrixAt(k, M); }
     inst.castShadow = true; this.root.add(inst);
-    const top = curve.getPointAt(0), slider = this.add(new RoundedBoxGeometry(.026, .04, .012, 2, .004), metal); slider.position.set(top.x, top.y - .028, top.z + .006);
-    const pull = this.add(new RoundedBoxGeometry(.016, .05, .004, 2, .0015), metal); pull.position.set(top.x, top.y - .07, top.z + .014); pull.rotation.x = -.15;
+    const top = curve.getPointAt(.02), slider = this.add(new RoundedBoxGeometry(.026, .038, .014, 2, .004), metal); slider.position.set(top.x, top.y - .014, top.z + .008);
+    const pull = this.add(new RoundedBoxGeometry(.016, .056, .004, 2, .0015), metal); pull.position.set(top.x, top.y - .058, top.z + .016); pull.rotation.x = -.18;
   },
   // Sock zones painted in the shader by world position: heel cup, toe, cuff band, athletic stripes.
   // Works on any sock mesh (feet point +z) and layers over the body colour or a fabric pattern.
