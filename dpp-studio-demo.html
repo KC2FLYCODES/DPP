@@ -1246,7 +1246,7 @@ function applyFitPOM(d, from, to, quiet) {
 }
 // a POM measurement at a size (graded from the base size)
 function pomAt(d, code, size) {
-  const r = d.pom.rows.find(x => x.code === code); if (!r) return 0;
+  const r = d.pom?.rows?.find(x => x.code === code); if (!r) return 0; // sketch-only shells (new-design picker) carry no POM
   const sz = d.pom.sizes || [], i = sz.indexOf(size || d.garment?.viewSize || d.pom.base), b = sz.indexOf(d.pom.base);
   return num(r.base) + num(r.grade) * (i < 0 || b < 0 ? 0 : i - b);
 }
