@@ -19,6 +19,7 @@ service cloud.firestore {
     match /media/{id} { allow read, write: if member(); match /c/{part} { allow read, write: if member(); } }
     match /assets/{id} { allow read, write: if member(); match /c/{part} { allow read, write: if member(); } }
     match /comments/{id} { allow read, write: if member(); }
+    match /suppliers/{id} { allow read, write: if member(); }
 
     // Presence: everyone can see who's around; you can only write your own heartbeat.
     match /presence/{uid} {

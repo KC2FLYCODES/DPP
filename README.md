@@ -48,10 +48,28 @@ Free-tier headroom: saves are batched (one write per design every few seconds of
 | 02 3D Studio | Silhouette, fit, fabric and colors for garments. For the watch: case, bezel, dial, edition N°, strap woods, movement. Print placement is in inches from HPS. Exports PNG and GLB. Use "Save renders" to send views to the tech pack. |
 | 03 Artwork | Layered front/back print art on a 14 × 14 in zone. Supports image, text, DPP mark and shapes. Undo with Ctrl+Z; paste images with Ctrl+V. |
 | 04 Capture | Drop or paste a photo. It cuts the background and pulls the palette. From there: build a 3D blank, crop and lift a graphic onto the artwork, or let Claude draft the spec (needs an API key in Settings). |
-| 05 Tech Pack | 5–6 editable pages: overview, BOM, graded POM, artwork placement, construction, costing and revision log. Print to PDF or export CSV. The Overview carries a **Style description** written from the 3D spec (silhouette, fabric, construction, double waist, contrast, finish, branding, size run); it rewrites itself as the design changes. The shell-fabric BOM row follows the fabric picked in 3D Studio. Table cells wrap, so long specs print in full. |
+| 06 Suppliers | Supplier database, vetting and the design finder. See *Suppliers* above. |
+| 05 Tech Pack | 6–7 editable pages (the last is Sourcing & suppliers): overview, BOM, graded POM, artwork placement, construction, costing and revision log. Print to PDF or export CSV. The Overview carries a **Style description** written from the 3D spec (silhouette, fabric, construction, double waist, contrast, finish, branding, size run); it rewrites itself as the design changes. The shell-fabric BOM row follows the fabric picked in 3D Studio. Table cells wrap, so long specs print in full. |
 
 ## Bugs
 Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the browser console (F12) shows red errors, include those too.
+
+## Collars, sleeves & trend presets (tops)
+In 3D Studio, tops get **K · Trend presets**, **N · Collar & ribs**, **R · Rugby hoops** and an expanded **S · Sleeves**:
+- **Trend presets (FW26):** Ringer tee, Rugby, Polo, Quarter-zip, Raglan baseball, Hockey jersey and Football jersey. A preset sets the collar, sleeves, stripes and trim colours and, where the look needs it, the fabric, fit or silhouette. Body colour and prints stay.
+- **Collar styles:** crew rib, mock neck, polo (knit collar + 3-button placket), rugby (woven twill collar + 2 rubber buttons), henley, quarter-zip (stand collar with a real zip: tapes, teeth, slider, pull) and V-insert. Each has its own colour and fabric (1×1 rib, 2×2 rib, flat-knit, woven twill, self). Placket and button colours are editable, and so is the zip finish.
+- **Sleeves:** set-in or raglan, left and right colours, their own fabric (e.g. mesh or nylon sleeves on a cotton body), cuff (or tee hem band) colour and fabric, and 1–3 hockey / varsity stripes at the elbow or the cuff.
+- **Body:** rugby hoops on the body or body + sleeves, any width. Fleece gets its own waistband rib colour.
+- Collar, cuffs and waistband follow **Rib / trim** until set; **= Rib / = Body / = Sleeve** buttons hand a colour back to its default.
+- **Tech pack:** the style description, the Materials spec, the flats, and the POM (CL1–3, PL1–2, QZ1, VI1, RG1, ST1, HP1), BOM and construction rows are all written from these choices. Supplier and unit cost typed into those rows are kept.
+
+## Suppliers (06)
+An internal supplier database with vetting, lookup and a finder.
+- **Record:** status (Lead → Contacted → Vetting → Sampling → Approved → Preferred, or Paused / Rejected), contact, website + directory listing, location with straight-line miles to Danville, Greensboro and Raleigh, capabilities (types, what they make, techniques, fabrics), MOQ, sample and bulk days, deposit, pricing notes, certificates (with expiry and a *verified at source* tick), an 8-step vetting checklist, red flags, a weighted scorecard, a sample log, and **Used in** (designs linked to it).
+- **Finder:** pick a design and a run size. Suppliers are ranked by fit to that design's tech pack: can they make the piece and do its print / embroidery techniques, fabric, MOQ against the run, distance, status, red flags and verified certificates. Each row says why.
+- **Tethered to the tech pack:** the Overview **Factory** field and the BOM **Supplier** column autocomplete from the database and link to the record (coloured dot = status). The **Sourcing & suppliers** page lists every linked supplier and the warnings to clear before a factory hand-off (not approved, expired certificates, MOQ above the run, red flags, unlinked BOM rows).
+- Seeded with 20 regional leads from the Nov 23 2026 research pass, all at **Lead** and unverified. **Export CSV** is in the left panel.
+- **Team cloud:** suppliers sync through Firestore like designs. One-time step: publish the updated `firestore.rules` (it adds `match /suppliers/{id}`). Until then suppliers save on each device and the studio shows one warning.
 
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie
@@ -83,7 +101,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
     - "Sport · modelled": a real modeled round sport case.
     - "Shock · resin": a chunky shock-resistant resin watch with a live LCD that shows the real time, in digital or ana-digi and positive or negative display. You can set the resin color and accent print.
 
-Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe, woodland camo) work on any garment.
+Fabrics per category. Tops: jersey, heavyweight jersey, fleece, waffle, piqué, rugby jersey, athletic mesh. Bottoms: rigid denim, khaki chino twill, corduroy, duck canvas, ripstop, nylon shell, linen, fleece. Each woven fabric has its own surface texture. Fabric patterns (plaid, gingham, pinstripe, woodland camo) work on any garment.
 
 **Washes and distressing** are drawn at real scale across the whole garment, with no seams:
 - **Washes:** acid, mineral, stone, vintage fade and bleach splatter. Denim fades on the thighs and knees and gets whiskers either side of the fly.

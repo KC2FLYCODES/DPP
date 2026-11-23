@@ -149,6 +149,9 @@ const FABRICS = {
   heavy: { label: 'Heavyweight jersey · 300 gsm', gsm: 300, comp: '100% cotton, open-end, garment-dyed', rough: .93, sheen: .55, bump: .8, for: 'any' },
   fleece: { label: 'Loopback fleece · 420 gsm', gsm: 420, comp: '100% cotton French terry, loopback', rough: .97, sheen: .85, bump: .45, for: 'any' },
   waffle: { label: 'Waffle knit · 260 gsm', gsm: 260, comp: '100% cotton thermal waffle', rough: .95, sheen: .3, bump: 1.6, for: 'top' },
+  pique: { label: 'Piqué · 240 gsm', gsm: 240, comp: '100% combed cotton piqué', rough: .92, sheen: .35, bump: 1.1, knit: 'waffle', k: 2.6, for: 'top' },
+  rugbyjersey: { label: 'Rugby jersey · 330 gsm', gsm: 330, comp: '100% cotton heavy rugby jersey, brushed back', rough: .94, sheen: .5, bump: .9, for: 'top' },
+  mesh: { label: 'Athletic mesh · 160 gsm', gsm: 160, comp: '100% recycled polyester birdseye mesh', rough: .62, sheen: .2, bump: 1.2, knit: 'waffle', k: 3.4, for: 'top' },
   denim: { label: 'Rigid denim · 13.5 oz', gsm: 458, comp: '100% cotton, 3/1 right-hand twill, ring-spun', rough: .9, sheen: .12, bump: 1.4, weave: 'denim', tint: 1, k: 1.6, for: 'bottom' },
   twill: { label: 'Khaki chino twill · 9 oz', gsm: 305, comp: '100% cotton 2/1 twill, peached', rough: .82, sheen: .2, bump: .9, weave: 'twill', k: 1.8, for: 'bottom' },
   cord: { label: 'Corduroy · 8-wale', gsm: 340, comp: '100% cotton corduroy, 8 wales / in', rough: .78, sheen: .75, bump: 3, weave: 'cord', k: .65, for: 'bottom' },
@@ -168,6 +171,58 @@ const FABRICS = {
   sockknit: { label: 'Sock knit · 200 needle', gsm: 0, comp: '80% combed cotton / 17% nylon / 3% spandex', rough: .95, sheen: .4, bump: .9, for: 'socks' },
 };
 const FITS = { boxy: { label: 'Boxy', w: 1.14, h: 2.5, drop: .14 }, regular: { label: 'Regular', w: 1.0, h: 2.72, drop: 0 }, oversized: { label: 'Oversized', w: 1.24, h: 2.82, drop: .26 } };
+// Tops construction. Collar, sleeve, cuff, waistband and stripe choices each carry their own colour and fabric.
+// The FW26 set: ringer and rugby collars, polos, quarter-zips, raglan baseball sleeves, hockey / varsity sleeve stripes.
+const COLLARS = {
+  crew: { label: 'Crew · rib band', seg: 'Crew' },
+  mock: { label: 'Mock neck', seg: 'Mock' },
+  polo: { label: 'Polo · knit collar, 3-button placket', seg: 'Polo' },
+  rugby: { label: 'Rugby · woven collar, 2-button placket', seg: 'Rugby' },
+  henley: { label: 'Henley · 3-button placket', seg: 'Henley' },
+  qzip: { label: 'Quarter-zip · stand collar', seg: '¼ zip' },
+  vinsert: { label: 'V-insert · jersey', seg: 'V' },
+};
+const TRIM_FABS = {
+  rib1: { label: '1×1 rib', comp: '1×1 rib, 95% cotton / 5% spandex', rib: 1 },
+  rib2: { label: '2×2 rib · heavy', comp: '2×2 rib, 95% cotton / 5% spandex, 320 gsm', rib: 1 },
+  flatknit: { label: 'Flat-knit collar', comp: 'Fully fashioned flat-knit collar, 100% cotton', rib: 1 },
+  twill: { label: 'Woven cotton twill', comp: '100% cotton twill 8 oz, fused', rib: 0 },
+  self: { label: 'Self fabric', comp: 'Body fabric', rib: 0 },
+};
+const SLEEVE_STYLES = { setin: 'Set-in', raglan: 'Raglan' };
+const CONSTRUCTION_KEYS = ['collar', 'collarFab', 'collarColor', 'placketColor', 'btnColor', 'zipFinish', 'sleeveStyle', 'sleeveFab', 'cuffColor', 'cuffFab', 'hemColor', 'slvStripes', 'slvStripeCol', 'slvStripePos', 'hoops', 'hoopCol', 'hoopW'];
+const ZIPS = { nickel: { label: 'Nickel', c: '#c9c7c1', r: .3 }, gunmetal: { label: 'Gunmetal', c: '#4b4c50', r: .35 }, brass: { label: 'Brass', c: '#c9a24a', r: .3 }, black: { label: 'Matte black', c: '#1c1c1e', r: .55 } };
+// One-click looks from the FW26 research (Nov 2026). They only set construction + colour fields; everything stays editable.
+const TOP_PRESETS = [
+  ['Ringer tee', { collar: 'crew', collarFab: 'rib1', collarColor: '#14172B', cuffColor: '#14172B', sleeveStyle: 'setin', slvStripes: 0, hoops: '' }, 'tee'],
+  ['Rugby', { collar: 'rugby', collarFab: 'twill', collarColor: '#EEF1F9', placketColor: '#EEF1F9', btnColor: '#EEF1F9', fabric: 'rugbyjersey', hoops: 'all', hoopCol: '#14172B', hoopW: 4, cuffColor: '#14172B', sleeveStyle: 'setin' }, 'longsleeve'],
+  ['Polo', { collar: 'polo', collarFab: 'flatknit', fabric: 'pique', hoops: '', slvStripes: 0, sleeveStyle: 'setin' }, 'tee'],
+  ['Quarter-zip', { collar: 'qzip', collarFab: 'self', zipFinish: 'gunmetal', hoops: '', sleeveStyle: 'setin' }, 'crewneck'],
+  ['Raglan baseball', { collar: 'crew', sleeveStyle: 'raglan', sleeveColor: '#14172B', sleeveColorR: '', collarColor: '#14172B', cuffColor: '#14172B', hoops: '', slvStripes: 0 }, 'longsleeve'],
+  ['Hockey jersey', { collar: 'vinsert', collarColor: '#B98A4A', fabric: 'mesh', slvStripes: 2, slvStripeCol: '#B98A4A', slvStripePos: 'elbow', hoops: '', fit: 'oversized', sleeveStyle: 'setin' }, 'longsleeve'],
+  ['Football jersey', { collar: 'vinsert', collarColor: '#14172B', sleeveColor: '#14172B', sleeveColorR: '', fabric: 'mesh', slvStripes: 3, slvStripeCol: '#EEF1F9', slvStripePos: 'cuff', hoops: '', fit: 'oversized', sleeveStyle: 'setin' }, 'tee'],
+];
+// Effective construction spec for a top, with defaults for designs made before these fields existed.
+function topSpec(d) {
+  const g = d.garment, cat = d.category, long = cat !== 'tee', fleece = cat === 'crewneck' || cat === 'hoodie', trim = g.trim || g.color;
+  const collar = cat === 'hoodie' ? 'hood' : COLLARS[g.collar] ? g.collar : 'crew';
+  const collarFab = TRIM_FABS[g.collarFab] ? g.collarFab : collar === 'rugby' ? 'twill' : collar === 'polo' ? 'flatknit' : collar === 'qzip' || collar === 'mock' ? (fleece ? 'self' : 'rib2') : 'rib1';
+  const collarCol = g.collarColor || trim;
+  return {
+    collar, long, fleece, collarCol, collarFab,
+    placketCol: g.placketColor || (collar === 'rugby' ? collarCol : g.color),
+    btn: g.btnColor || (collar === 'rugby' ? '#EEF1F9' : shade(collar === 'rugby' ? collarCol : g.color, lum(g.color) > .5 ? -.25 : .25)),
+    zip: ZIPS[g.zipFinish] ? g.zipFinish : 'nickel',
+    raglan: g.sleeveStyle === 'raglan', sleeveFab: FABRICS[g.sleeveFab] ? g.sleeveFab : g.fabric,
+    cuffCol: g.cuffColor || (long ? trim : ''), cuffFab: TRIM_FABS[g.cuffFab] ? g.cuffFab : long ? 'rib1' : 'self',
+    hemCol: g.hemColor || trim,
+    stripes: clamp(Math.round(num(g.slvStripes)), 0, 3), stripeCol: g.slvStripeCol || '#B98A4A', stripePos: g.slvStripePos === 'cuff' ? 'cuff' : 'elbow',
+    hoops: g.hoops === 'body' || g.hoops === 'all' ? g.hoops : '', hoopCol: g.hoopCol || '#14172B', hoopW: clamp(num(g.hoopW) || 3, 1, 8),
+    placketLen: collar === 'polo' ? 6 : collar === 'rugby' ? 5 : collar === 'henley' ? 5.5 : 0, placketW: collar === 'henley' ? 1 : 1.25,
+    buttons: collar === 'rugby' ? 2 : collar === 'polo' || collar === 'henley' ? 3 : 0, zipLen: 8,
+    standH: collar === 'mock' ? 1.5 : collar === 'qzip' ? 2.5 : collar === 'polo' ? .9 : collar === 'rugby' ? 1 : 0,
+  };
+}
 const WOODS = {
   walnut: { label: 'Black walnut', a: '#6a4329', b: '#2f1b10' },
   maple: { label: 'Hard maple', a: '#dcbd8e', b: '#a9824f' },
@@ -459,7 +514,7 @@ function newDesign(cat, name) {
     category: cat, status: 'Concept', drop: '', season: '', factory: '', designer: st.designer,
     msrp: CATS[cat].msrp, edition: isW ? 150 : '', notes: '', printNotes: '',
     created: Date.now(), updated: Date.now(), thumb: null, renders: {},
-    garment: { ...(cat === 'satchel' ? { hardware: 'gold' } : {}), color: cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', trim: cat === 'duffle' ? '' : cat === 'satchel' ? '#0A0B15' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : cat === 'satchel' ? '#B98A4A' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', satchel: 'ballistic', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Style: 'boxer', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 2.25, wb2E: 1.25, wb2Elastic: '#EEF1F9', wb2Ink: '#14172B', wb2Text: "DON'T POSTPONE PASSION", sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', tagText: TAG_TEXT, tagLogo: '1', tagInit: 1, hangTag: isTop(cat) || isBottom(cat) ? '' : '1' },
+    garment: { ...(cat === 'satchel' ? { hardware: 'gold' } : {}), color: cat === 'duffle' ? '#1b1b1e' : cat === 'satchel' ? '#14172B' : '#EEF1F9', trim: cat === 'duffle' ? '' : cat === 'satchel' ? '#0A0B15' : '#EEF1F9', stitch: cat === 'socks' ? '#14172B' : cat === 'satchel' ? '#B98A4A' : '#EEF1F9', fabric: { hoodie: 'fleece', crewneck: 'fleece', pants: 'denim', shorts: 'twill', boxers: 'modal', socks: 'sockknit', duffle: 'pebble', satchel: 'ballistic', balaclava: 'merino', scarf: 'merino' }[cat] || 'heavy', fit: 'boxy', finish: 'none', distress: 'none', pattern: 'solid', sockStyle: 'crew', sockAccent: '1', sockCuff: '', stripes: 0, stripeCol: '#B98A4A', plaid1: '#14172B', plaid2: '#B98A4A', plaid3: '#EEF1F9', plaidScale: 1, doubleWB: '', wb2Style: 'boxer', wb2Color: '#B98A4A', wb2Pattern: 'plaid', wb2H: 2.25, wb2E: 1.25, wb2Elastic: '#EEF1F9', wb2Ink: '#14172B', wb2Text: "DON'T POSTPONE PASSION", sleeveColor: '', sleeveLogo: 'none', sleeveSide: 'left', sleeveLogoColor: '', sleeveLogoSize: 3, sleeveDrop: 2.5, sleeveTech: 'Screen print', collar: 'crew', collarFab: '', collarColor: '', placketColor: '', btnColor: '', zipFinish: 'nickel', sleeveStyle: 'setin', sleeveFab: '', cuffColor: '', cuffFab: '', hemColor: '', slvStripes: 0, slvStripeCol: '#B98A4A', slvStripePos: 'elbow', hoops: '', hoopCol: '#14172B', hoopW: 3, tag: 'woven', tagColor: '#14172B', tagInk: '#EEF1F9', tagSize: 'M', tagText: TAG_TEXT, tagLogo: '1', tagInit: 1, hangTag: isTop(cat) || isBottom(cat) ? '' : '1' },
     watch: { ...WATCH_DEFAULT },
     place: cat === 'satchel' ? { front: { dx: 0, top: .35, s: .17, r: 0, tech: 'Heat transfer' }, back: { dx: 0, top: 2, s: .3, r: 0, tech: 'Heat transfer' } } : cat === 'duffle' ? { front: { dx: 0, top: .4, s: .8, r: 0, tech: 'Deboss (pressed)' }, back: { dx: 0, top: 3, s: .5, r: 0, tech: 'Deboss (pressed)' } } : cat === 'socks' ? { front: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' }, back: { dx: 0, top: 2, s: .25, r: 0, tech: 'Flat embroidery' } } : { front: { dx: 0, top: 3, s: 1, r: 0, tech: 'Screen print' }, back: { dx: 0, top: 4, s: 1, r: 0, tech: 'Screen print' } },
     artwork: cat === 'satchel' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark · gold', w: 900, h: 900 / (Mark.aspect || 1), color: '#B98A4A' }], back: [] } : cat === 'duffle' ? { front: [{ id: uid('l'), x: 512, y: 512, rot: 0, opacity: 1, hidden: false, locked: false, type: 'mark', name: 'DPP mark (stamp)', w: 640, h: 640 / (Mark.aspect || 1), color: '#000000' }], back: [] } : { front: [], back: [] },
@@ -479,8 +534,8 @@ const DB = {
   db: null,
   open() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open('dpp-studio', 2);
-      r.onupgradeneeded = () => { const d = r.result, has = n => d.objectStoreNames.contains(n); ['designs', 'assets', 'comments'].forEach(n => { if (!has(n)) d.createObjectStore(n, { keyPath: 'id' }); }); };
+      const r = indexedDB.open('dpp-studio', 3);
+      r.onupgradeneeded = () => { const d = r.result, has = n => d.objectStoreNames.contains(n); ['designs', 'assets', 'comments', 'suppliers'].forEach(n => { if (!has(n)) d.createObjectStore(n, { keyPath: 'id' }); }); };
       // An older tab holding the previous version blocks the upgrade: say so instead of hanging silently.
       r.onblocked = () => toast('Close other DPP Studio tabs to finish updating, then this page continues on its own', true);
       // …and this tab steps aside when a newer version needs the database.
@@ -575,7 +630,7 @@ async function openDesign(id, view = 'studio') {
   Art.reset(); renderCtx(); go(view); Presence.beat();
 }
 function go(view) {
-  if (view !== 'library' && view !== 'capture' && !S.current) view = 'library';
+  if (view !== 'library' && view !== 'capture' && view !== 'suppliers' && !S.current) view = 'library';
   S.view = view;
   $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   $$('.view').forEach(v => v.classList.toggle('on', v.id === 'view-' + view));
@@ -584,6 +639,7 @@ function go(view) {
   if (view === 'artwork') Art.show();
   if (view === 'capture') Capture.show();
   if (view === 'techpack') TechPack.render();
+  if (view === 'suppliers') Sup.render();
 }
 
 /* =========================================================================
@@ -710,8 +766,10 @@ function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null 
   s += `<path d="${F.body} ${neckScoop}Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
   // drawing's left sleeve is the wearer's right on the front view, the wearer's left on the back view
   if (sleeveHex(g).toLowerCase() !== fill.toLowerCase() || sleeveHexR(g).toLowerCase() !== fill.toLowerCase()) [0, 1].forEach(m => { const c = (m === 0) === front ? sleeveHexR(g) : sleeveHex(g); s += `<path d="${F.sleeve}Z" fill="${c}" stroke="${stroke}" stroke-width="${sw}"${m ? ' transform="matrix(-1 0 0 1 400 0)"' : ''}/>`; });
+  s += topFlatUnder(d, side, F, stroke, neckScoop);
   s += `<path d="M158 40 Q200 ${front ? 54 : 46} 242 40 ${front ? 'Q200 100 158 40' : 'Q200 54 158 40'}Z" fill="${dark}" stroke="${stroke}" stroke-width="${sw * .8}"/>`;
   if (d.category !== 'hoodie' || !front) s += `<path d="${rib}" stroke="${stroke}" stroke-width="${sw * .8}"/><path d="M158 40 ${neckScoop.replace('Q', 'Q')}" stroke="${stroke}" stroke-width="${sw * .8}"/>`;
+  s += topFlatOver(d, side, stroke);
   if (d.category === 'hoodie' && !front) s += `<path d="M146 64 C128 -4 272 -4 254 64 C246 116 154 116 146 64Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/><path d="M200 -2 L200 108" stroke="${stroke}" stroke-width="${sw * .7}" stroke-dasharray="3 3"/>`;
   (F.stitch || []).forEach(p => s += `<path d="${p}" stroke="${stroke}" stroke-width=".9" stroke-dasharray="3 2.5"/>`);
   (F.cuffs || []).forEach(p => s += `<path d="${p}" stroke="${stroke}" stroke-width="${sw * .8}"/>`);
@@ -726,6 +784,37 @@ function flatSVG(d, side = 'front', { art = true, stroke = '#14172B', bg = null 
     if (url) { const R = artRectFlat(d, side); s += `<image href="${url}" x="${R.x}" y="${R.y}" width="${R.w}" height="${R.w}" transform="rotate(${front ? d.place[side].r : -d.place[side].r} ${R.x + R.w / 2} ${R.y + R.w / 2})"/>`; }
   }
   return s + '</svg>';
+}
+// Flats for the tops construction: raglan seams, cuffs / ringer bands, sleeve stripes, rugby hoops (under the neck),
+// then the collar, placket, zip and buttons (over it).
+function topFlatUnder(d, side, F, stroke, neckScoop) {
+  const g = d.garment, T = topSpec(d), front = side === 'front', ppi = 380 / (pomAt(d, 'A') || 28); let s = '';
+  const P = (F.sleeve.match(/-?\d+(\.\d+)?/g) || []).map(Number), pts = []; for (let i = 0; i < P.length; i += 2) pts.push([P[i], P[i + 1]]);
+  const n = pts.length, O0 = pts[0], O1 = pts[n / 2 - 1], I0 = pts[n - 1], I1 = pts[n / 2], at = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const band = (t0, t1, col, m) => { const a = at(O0, O1, t0), b = at(O0, O1, t1), c = at(I0, I1, t1), e = at(I0, I1, t0); return `<path d="M${a} L${b} L${c} L${e}Z" fill="${col}" stroke="${stroke}" stroke-width=".9"${m ? ' transform="matrix(-1 0 0 1 400 0)"' : ''}/>`; };
+  const sideCol = m => (m === 0) === front ? sleeveHexR(g) : sleeveHex(g), slen = pomAt(d, 'G1') || (T.long ? 25 : 9);
+  if (T.hoops) { const hw = T.hoopW * ppi, x0 = T.hoops === 'all' ? 0 : I0[0], x1 = T.hoops === 'all' ? 400 : 400 - I0[0]; const cid = uid('hc'); s += `<clipPath id="${cid}"><path d="${F.body} ${neckScoop}Z"/></clipPath><g clip-path="url(#${cid})">`; for (let y = 420 - hw, k = 1; y > 0; y -= hw, k++) if (k % 2) s += `<rect x="${x0}" y="${y - hw}" width="${x1 - x0}" height="${hw}" fill="${T.hoopCol}"/>`; s += '</g>'; }
+  [0, 1].forEach(m => {
+    if (T.raglan) s += `<path d="M152 43 L${I0[0]} ${I0[1]}" stroke="${stroke}" stroke-width="1.3"${m ? ' transform="matrix(-1 0 0 1 400 0)"' : ''}/>` + (sideCol(m).toLowerCase() !== g.color.toLowerCase() ? `<path d="M152 43 L${O0} ${F.sleeve.replace(/^M[\d.]+ [\d.]+/, '').trim()} Z" fill="${sideCol(m)}" stroke="${stroke}" stroke-width="1.3"${m ? ' transform="matrix(-1 0 0 1 400 0)"' : ''}/>` : '');
+    if (T.stripes) { const w = .75 / slen, gap = .5 / slen, tot = T.stripes * w + (T.stripes - 1) * gap, tc = T.stripePos === 'elbow' ? .52 : 1 - ((T.long || g.cuffColor ? (T.long ? 2.5 : 1) : 0) + .5) / slen - tot / 2; for (let k = 0; k < T.stripes; k++) { const t0 = tc - tot / 2 + k * (w + gap); s += band(t0, t0 + w, T.stripeCol, m); } }
+    if (T.long || g.cuffColor) { const c = T.cuffCol || sideCol(m), h = (T.long ? (pomAt(d, 'N') || 2.5) : (pomAt(d, 'M') || 1)) / slen; if (c.toLowerCase() !== sideCol(m).toLowerCase()) s += band(1 - h, 1, c, m); }
+  });
+  if (T.fleece && T.hemCol.toLowerCase() !== g.color.toLowerCase()) s += `<rect x="111" y="386" width="178" height="33" fill="${T.hemCol}" stroke="${stroke}" stroke-width=".9"/>`;
+  return s;
+}
+function topFlatOver(d, side, stroke) {
+  const g = d.garment, T = topSpec(d), front = side === 'front', ppi = 380 / (pomAt(d, 'A') || 28), cc = T.collarCol; let s = '';
+  if (T.collar === 'hood') return '';
+  const btn = (y, r = 4) => `<circle cx="200" cy="${y}" r="${r}" fill="${T.btn}" stroke="${stroke}" stroke-width=".8"/>`;
+  if (T.collar === 'crew' || T.collar === 'henley' || T.collar === 'vinsert') s += `<path d="${front ? 'M150 43 Q200 118 250 43 L242 40 Q200 100 158 40 Z' : 'M150 43 Q200 66 250 43 L242 40 Q200 54 158 40 Z'}" fill="${cc}" stroke="${stroke}" stroke-width=".9"/>`;
+  if (T.collar === 'vinsert' && front) s += `<path d="M176 86 L200 ${86 + 4.25 * ppi * .6} L224 86 Q200 94 176 86Z" fill="${cc}" stroke="${stroke}" stroke-width="1"/>`;
+  if (T.collar === 'mock' || T.collar === 'qzip') { const h = T.standH * ppi; s += front ? `<path d="M154 42 Q200 ${T.collar === 'qzip' ? 70 : 52} 246 42 L242 ${42 - h} Q200 ${36 - h} 158 ${42 - h} Z" fill="${cc}" stroke="${stroke}" stroke-width="1.3"/>` : `<path d="M154 42 Q200 50 246 42 L242 ${42 - h} Q200 ${36 - h} 158 ${42 - h} Z" fill="${cc}" stroke="${stroke}" stroke-width="1.3"/>`;
+    if (T.collar === 'qzip' && front) { const y0 = 42 - h + 3, y1 = 68 + T.zipLen * ppi; s += `<path d="M200 ${y0} V${y1}" stroke="${ZIPS[T.zip].c}" stroke-width="5"/><path d="M200 ${y0} V${y1}" stroke="${stroke}" stroke-width="5" stroke-dasharray="1 1.6" stroke-opacity=".6"/><rect x="195" y="${y0 + 2}" width="10" height="13" rx="2" fill="${ZIPS[T.zip].c}" stroke="${stroke}" stroke-width=".8"/><rect x="197" y="${y0 + 14}" width="6" height="14" rx="2" fill="${ZIPS[T.zip].c}" stroke="${stroke}" stroke-width=".8"/>`; } }
+  if (T.placketLen && front) { const w = T.placketW * ppi, y0 = 70, y1 = y0 + T.placketLen * ppi * .8; s += `<rect x="${200 - w / 2}" y="${y0}" width="${w}" height="${y1 - y0}" fill="${T.placketCol}" stroke="${stroke}" stroke-width="1.1"/><path d="M${200 - w / 2 + 2} ${y1 - 4} H${200 + w / 2 - 2}" stroke="${stroke}" stroke-width=".8" stroke-dasharray="2 2"/>`; for (let k = 0; k < T.buttons; k++) s += btn(y0 + (y1 - y0) * (k + .6) / (T.buttons + .3), T.collar === 'rugby' ? 4.6 : 3.8); }
+  if ((T.collar === 'polo' || T.collar === 'rugby')) s += front
+    ? `<path d="M158 36 L132 54 L188 ${T.collar === 'rugby' ? 104 : 98} L196 68 Z" fill="${cc}" stroke="${stroke}" stroke-width="1.3"/><path d="M242 36 L268 54 L212 ${T.collar === 'rugby' ? 104 : 98} L204 68 Z" fill="${cc}" stroke="${stroke}" stroke-width="1.3"/><path d="M158 36 Q200 46 242 36" stroke="${stroke}" stroke-width="1"/>`
+    : `<path d="M148 46 Q200 64 252 46 L246 26 Q200 40 154 26 Z" fill="${cc}" stroke="${stroke}" stroke-width="1.3"/>`;
+  return s;
 }
 function artRectFlat(d, side) {
   const fit = FITS[d.garment.fit] || FITS.boxy, P = d.place[side];
@@ -1688,9 +1777,242 @@ const Studio = {
     }
     if ((d.category === 'pants' || d.category === 'shorts') && g.doubleWB === '1') this.addSecondWaistband(d, box);
     if (d.category === 'socks' && !g.model) this.paintSockZones(d, box);
-    this.slv = isTop(d.category) ? this.sleeveZones(d, box) : null;
+    this.zfx = { fx, surf, dis }; this.neck = null;
+    this.slv = isTop(d.category) ? this.sleeveZones(d, box, false) : null; // tops: sleeves, collar, cuffs and stripes are cut into their own materials below
+    if (this.slv) { let ok = false; try { ok = this.constructZones(d); } catch (e) { console.error('[construction] zones', e); } if (!ok) this.slv = this.sleeveZones(d, box); try { this.buildCollar(d); } catch (e) { console.error('[construction] collar', e); } }
     if (isTop(d.category) || isBottom(d.category)) this.addTags(d, box);
     this.updateDecals();
+  },
+  // ---- Tops construction: neckline, zones, collars -------------------------------------------------------------
+  // The neckline, read off the mesh. Around a vertical axis through the neck, the neck edge is the highest torso
+  // point on each bearing, because shoulders, chest and back all fall away from it. 72 bearings; gaps are filled and smoothed.
+  // Bearing 0 = centre front (+z); +x = wearer's left.
+  neckLoop(S) {
+    const N = 72, best = new Array(N).fill(null); let maxY = -9, zs = 0, zn = 0;
+    S.W.forEach((wp, mi) => { const fl = S.flag[mi]; for (let i = 0; i < wp.length / 3; i++) if (!fl[i]) maxY = Math.max(maxY, wp[i * 3 + 1]); });
+    S.W.forEach((wp, mi) => { const fl = S.flag[mi]; for (let i = 0; i < wp.length / 3; i++) { if (fl[i]) continue; if (wp[i * 3 + 1] > maxY - .2 && Math.abs(wp[i * 3]) < .45) { zs += wp[i * 3 + 2]; zn++; } } });
+    if (!zn) return null; const zc = zs / zn;
+    S.W.forEach((wp, mi) => { const fl = S.flag[mi]; for (let i = 0; i < wp.length / 3; i++) {
+      if (fl[i]) continue; const x = wp[i * 3], y = wp[i * 3 + 1], z = wp[i * 3 + 2], r = Math.hypot(x, z - zc); if (r < .14 || r > .8 || y < maxY - 1) continue;
+      const b = ((Math.round(Math.atan2(x, z - zc) / (2 * Math.PI) * N) % N) + N) % N; if (!best[b] || y > best[b].y) best[b] = { y, r }; } });
+    if (best.filter(Boolean).length < N / 3) return null;
+    for (let i = 0; i < N; i++) if (!best[i]) { let a = 1, b = 1; while (!best[(i - a + N) % N]) a++; while (!best[(i + b) % N]) b++; const A = best[(i - a + N) % N], B = best[(i + b) % N], t = a / (a + b); best[i] = { y: lerp(A.y, B.y, t), r: lerp(A.r, B.r, t) }; }
+    const sm = best.map((_, i) => { let y = 0, r = 0; for (let k = -2; k <= 2; k++) { const p = best[(i + k + N) % N]; y += p.y; r += p.r; } return { y: y / 5, r: r / 5 }; });
+    const pts = sm.map((p, i) => { const a = i / N * Math.PI * 2; return new THREE.Vector3(Math.sin(a) * p.r, p.y, zc + Math.cos(a) * p.r); });
+    const bin = a => ((Math.round(a / (2 * Math.PI) * N) % N) + N) % N;
+    return { pts, N, zc, maxY, minY: Math.min(...pts.map(p => p.y)), front: pts[0], back: pts[N / 2], bin, at: a => pts[bin(a)] };
+  },
+  // Each triangle of the garment mesh goes to a zone (body, left/right sleeve, collar band, cuff, waistband, sleeve
+  // stripe, rugby hoop, V-insert). Each zone gets its own material, so it can take its own colour and fabric, and washes
+  // and distressing still run across the whole piece. The index buffer is regrouped by material: one mesh, many groups.
+  constructZones(d) {
+    const S = this.slv, ms = this.modelMeshes; if (!S || !ms?.length) return false;
+    const g = d.garment, T = topSpec(d), Z = this.zfx || {}, L = d.category === 'hoodie' ? null : this.neckLoop(S); this.neck = L; this.grids = null;
+    if (L && !['crew', 'vinsert'].includes(T.collar)) this.surfGrids(S);
+    const AX = { 1: this.sleeveAxis(S, 1), [-1]: this.sleeveAxis(S, -1) };
+    const ribH = (pomAt(d, 'L') || 1) / 10, cuffH = T.long ? (pomAt(d, 'N') || 2.5) / 10 : (pomAt(d, 'M') || 1) / 10, hemH = (pomAt(d, 'P') || 3) / 10;
+    const yUA = S.hps - (pomAt(d, 'E') || 10.25) * .95 / 10;
+    const RG = {}; [1, -1].forEach(s => { if (!T.raglan || !L) return; const n = L.at(s * 1.2); RG[s] = { xU: S.panel ? S.torsoX : (s > 0 ? S.xT[0] : S.xT[1]), yU: yUA, xN: Math.abs(n.x), yN: n.y }; });
+    const VI = T.collar === 'vinsert' && L ? { yTop: L.front.y + .05, yApex: L.front.y - .42, xH: Math.abs(L.at(.8).x) * .9, zc: L.zc } : null;
+    const bands = s => { const a = AX[s]; if (!a || !T.stripes) return []; const w = .07, gap = .045, tot = T.stripes * w + (T.stripes - 1) * gap;
+      const tc = T.stripePos === 'elbow' ? a.len * (T.long ? .52 : .5) : a.len - (T.long || g.cuffColor ? cuffH : 0) - .05 - tot / 2;
+      return Array.from({ length: T.stripes }, (_, k) => { const t0 = tc - tot / 2 + k * (w + gap); return [t0, t0 + w]; }); };
+    const BD = { 1: bands(1), [-1]: bands(-1) }, hw = T.hoopW / 10;
+    const loopD = (x, y, z) => { let best = 9; const P = L.pts; for (let i = 0; i < L.N; i++) { const a = P[i], b = P[(i + 1) % L.N], ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z, wx = x - a.x, wy = y - a.y, wz = z - a.z, ll = ux * ux + uy * uy + uz * uz || 1e-9, t = clamp((wx * ux + wy * uy + wz * uz) / ll, 0, 1), dx = wx - ux * t, dy = wy - uy * t, dz = wz - uz * t, dd = dx * dx + dy * dy + dz * dz; if (dd < best) best = dd; } return Math.sqrt(best); };
+    const slvCol = s => s > 0 ? sleeveHex(g) : sleeveHexR(g);
+    // zone → [colour, fabric key (FABRICS or TRIM_FABS), rib]
+    const zoneOf = (x, y, z, s) => {
+      if (L && y > L.minY - ribH - .02 && Math.hypot(x, z - L.zc) < 1) { const lp = L.at(Math.atan2(x, z - L.zc)); if (y < lp.y + .015 && loopD(x, y, z) < ribH) return [T.collarCol, T.collarFab]; }
+      if (VI && !s && z > VI.zc && y > VI.yApex && y < VI.yTop && Math.abs(x) < VI.xH * (y - VI.yApex) / (VI.yTop - VI.yApex)) return [T.collarCol, g.fabric];
+      if (s) {
+        const a = AX[s]; const t = a ? (x - a.root.x) * a.u.x + (y - a.root.y) * a.u.y + (z - a.root.z) * a.u.z : 0;
+        if (a && t > a.len - cuffH && (T.long || g.cuffColor)) return [T.cuffCol || slvCol(s), T.cuffFab];
+        if (a && BD[s].some(([t0, t1]) => t > t0 && t < t1)) return [T.stripeCol, T.sleeveFab];
+        if (a && T.hoops === 'all' && Math.floor(t / hw) % 2 === 1) return [T.hoopCol, T.sleeveFab];
+        return [slvCol(s), T.sleeveFab];
+      }
+      if (T.fleece && y < S.torsoHem + hemH) return [T.hemCol, 'rib1'];
+      if (T.hoops && Math.floor((y - S.torsoHem) / hw) % 2 === 1) return [T.hoopCol, g.fabric];
+      return null; // body
+    };
+    const plans = ms.map((o, mi) => {
+      const geo = o.geometry, wp = S.W[mi], fl = S.flag[mi], n = wp.length / 3;
+      const ix = geo.index ? geo.index.array : Uint32Array.from({ length: n }, (_, i) => i), groups = new Map(), keys = ['body'];
+      groups.set('body', []);
+      for (let t = 0; t < ix.length; t += 3) {
+        const a = ix[t], b = ix[t + 1], c = ix[t + 2], x = (wp[a * 3] + wp[b * 3] + wp[c * 3]) / 3, y = (wp[a * 3 + 1] + wp[b * 3 + 1] + wp[c * 3 + 1]) / 3, z = (wp[a * 3 + 2] + wp[b * 3 + 2] + wp[c * 3 + 2]) / 3;
+        let s = 0;
+        if (S.panel) { const sum = fl[a] + fl[b] + fl[c]; s = sum >= 2 ? 1 : sum <= -2 ? -1 : 0; } else { const sg = x > 0 ? 1 : -1; if (sg * x > S.bnd(sg, y)) s = sg; }
+        if (!s && RG[x > 0 ? 1 : -1]) { const sg = x > 0 ? 1 : -1, R = RG[sg]; if (y > R.yU && y < R.yN && Math.abs(x) > R.xU + (y - R.yU) * (R.xN - R.xU) / (R.yN - R.yU)) s = sg; }
+        const zn = zoneOf(x, y, z, s); let k = 'body';
+        if (zn) { const [col, fab] = zn; if (!(String(col).toLowerCase() === g.color.toLowerCase() && (fab === g.fabric || fab === 'self'))) k = String(col).toLowerCase() + '|' + fab; }
+        if (!groups.has(k)) { groups.set(k, []); keys.push(k); }
+        groups.get(k).push(a, b, c);
+      }
+      return { o, groups, keys };
+    });
+    // Colour is decided per fragment with the same rules (clean seams, stripes and hoops whatever the mesh density);
+    // the triangle groups carry the fabric (bump, roughness, sheen) of each zone.
+    const C = h => new THREE.Color(h), V3 = (v, k = 1) => v ? v.clone() : new THREE.Vector3(), ax = s => AX[s] || { root: new THREE.Vector3(), u: new THREE.Vector3(1, 0, 0), len: 0 };
+    const tcOf = s => { const a = AX[s]; if (!a || !T.stripes) return 0; const tot = T.stripes * .07 + (T.stripes - 1) * .045; return T.stripePos === 'elbow' ? a.len * (T.long ? .52 : .5) : a.len - (T.long || g.cuffColor ? cuffH : 0) - .05 - tot / 2; };
+    const U = { uZXT: { value: new THREE.Vector2(S.xT[0], S.xT[1]) }, uZSA: { value: S.yA }, uZSH: { value: S.hps }, uZSlvL: { value: C(slvCol(1)) }, uZSlvR: { value: C(slvCol(-1)) }, uZBody: { value: C(g.color) },
+      uZRag: { value: T.raglan && RG[1] ? 1 : 0 }, uZRagP: { value: RG[1] ? new THREE.Vector4(RG[1].xU, RG[1].yU, RG[1].xN, RG[1].yN) : new THREE.Vector4() }, uZRagN: { value: RG[-1] ? new THREE.Vector4(RG[-1].xU, RG[-1].yU, RG[-1].xN, RG[-1].yN) : new THREE.Vector4() },
+      uZRootL: { value: V3(ax(1).root) }, uZAxL: { value: V3(ax(1).u) }, uZLenL: { value: ax(1).len }, uZRootR: { value: V3(ax(-1).root) }, uZAxR: { value: V3(ax(-1).u) }, uZLenR: { value: ax(-1).len },
+      uZCuffOn: { value: T.long || g.cuffColor ? 1 : 0 }, uZCuffH: { value: cuffH }, uZCuffL: { value: C(T.cuffCol || slvCol(1)) }, uZCuffR: { value: C(T.cuffCol || slvCol(-1)) },
+      uZStripeN: { value: T.stripes }, uZTcL: { value: tcOf(1) }, uZTcR: { value: tcOf(-1) }, uZStripe: { value: C(T.stripeCol) },
+      uZHoop: { value: T.hoops === 'all' ? 2 : T.hoops ? 1 : 0 }, uZHoopW: { value: hw }, uZHoopCol: { value: C(T.hoopCol) }, uZHem0: { value: S.torsoHem },
+      uZFleece: { value: T.fleece ? 1 : 0 }, uZHemH: { value: hemH }, uZHemCol: { value: C(T.hemCol) },
+      uZVIOn: { value: VI ? 1 : 0 }, uZVI: { value: VI ? new THREE.Vector4(VI.yTop, VI.yApex, VI.xH, VI.zc) : new THREE.Vector4() },
+      uZCollarOn: { value: L ? 1 : 0 }, uZLoop: { value: L ? L.pts.map(p => p.clone()) : Array.from({ length: 72 }, () => new THREE.Vector3()) }, uZRibH: { value: ribH }, uZCollar: { value: C(T.collarCol) }, uZLoopZc: { value: L ? L.zc : 0 }, uZLoopMin: { value: L ? L.minY : 0 } };
+    const FRAG = `{
+      vec3 P = vFP; float s = 0.;
+      #ifdef ZP_PANEL
+      s = vZs > .5 ? 1. : vZs < -.5 ? -1. : 0.;
+      #else
+      float xt = P.x > 0. ? uZXT.x : uZXT.y; if (abs(P.x) > xt + .02 - smoothstep(uZSA, uZSH, P.y) * .08) s = P.x > 0. ? 1. : -1.;
+      #endif
+      if (s == 0. && uZRag > .5) { vec4 R = P.x > 0. ? uZRagP : uZRagN; if (P.y > R.y && P.y < R.w && abs(P.x) > R.x + (P.y - R.y) * (R.z - R.x) / (R.w - R.y)) s = P.x > 0. ? 1. : -1.; }
+      vec3 zc = vec3(-1.);
+      if (uZCollarOn > .5 && P.y > uZLoopMin - uZRibH - .02 && length(vec2(P.x, P.z - uZLoopZc)) < 1.) {
+        float best = 9.; for (int i = 0; i < 72; i++) { vec3 a = uZLoop[i], u = uZLoop[i == 71 ? 0 : i + 1] - a; float t = clamp(dot(P - a, u) / max(dot(u, u), 1e-9), 0., 1.); best = min(best, length(P - a - u * t)); }
+        int bi = int(mod(floor(atan(P.x, P.z - uZLoopZc) / 6.2831853 * 72. + .5) + 72., 72.));
+        if (P.y < uZLoop[bi].y + .015 && best < uZRibH) zc = uZCollar;
+      }
+      if (zc.r < 0. && uZVIOn > .5 && s == 0. && P.z > uZVI.w && P.y > uZVI.y && P.y < uZVI.x && abs(P.x) < uZVI.z * (P.y - uZVI.y) / (uZVI.x - uZVI.y)) zc = uZCollar;
+      if (zc.r < 0. && s != 0.) {
+        vec3 root = s > 0. ? uZRootL : uZRootR, ax = s > 0. ? uZAxL : uZAxR; float len = s > 0. ? uZLenL : uZLenR, tc = s > 0. ? uZTcL : uZTcR, t = dot(P - root, ax);
+        if (len > 0. && uZCuffOn > .5 && t > len - uZCuffH) zc = s > 0. ? uZCuffL : uZCuffR;
+        else if (len > 0. && uZStripeN > .5) { float tot = uZStripeN * .07 + (uZStripeN - 1.) * .045, k = t - (tc - tot * .5); if (k > 0. && k < tot && mod(k, .115) < .07) zc = uZStripe; }
+        if (zc.r < 0. && len > 0. && uZHoop > 1.5 && mod(floor(t / uZHoopW), 2.) > .5) zc = uZHoopCol;
+        if (zc.r < 0.) zc = s > 0. ? uZSlvL : uZSlvR;
+      }
+      if (zc.r < 0. && s == 0.) { if (uZFleece > .5 && P.y < uZHem0 + uZHemH) zc = uZHemCol; else if (uZHoop > .5 && mod(floor((P.y - uZHem0) / uZHoopW), 2.) > .5) zc = uZHoopCol; }
+      if (zc.r >= 0.) diffuseColor.rgb = zc; else if (uZIsBody < .5) diffuseColor.rgb = uZBody;
+    }`;
+    const DECL = 'uniform vec2 uZXT; uniform float uZSA, uZSH, uZRag, uZLenL, uZLenR, uZCuffOn, uZCuffH, uZStripeN, uZTcL, uZTcR, uZHoop, uZHoopW, uZHem0, uZFleece, uZHemH, uZVIOn, uZCollarOn, uZRibH, uZLoopZc, uZLoopMin, uZIsBody; uniform vec3 uZSlvL, uZSlvR, uZBody, uZRootL, uZAxL, uZRootR, uZAxR, uZCuffL, uZCuffR, uZStripe, uZHoopCol, uZHemCol, uZCollar; uniform vec4 uZRagP, uZRagN, uZVI; uniform vec3 uZLoop[72]; varying float vZs;';
+    const zpatch = (m, body) => {
+      if (S.panel) m.defines = { ...(m.defines || {}), ZP_PANEL: '' };
+      addPatch(m, 'zone' + (S.panel ? 'P' : ''), sh => {
+        Object.assign(sh.uniforms, U, { uZIsBody: { value: body ? 1 : 0 } });
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vZs;\n#ifdef ZP_PANEL\nattribute float aZs;\n#endif').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n#ifdef ZP_PANEL\nvZs = aZs;\n#else\nvZs = 0.;\n#endif');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + DECL).replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAG);
+      });
+    };
+    // materials + regrouped index
+    const own = this.zoneMats = [];
+    plans.forEach(({ o, groups, keys }, mi) => {
+      if (S.panel) o.geometry.setAttribute('aZs', new THREE.BufferAttribute(Float32Array.from(S.flag[mi]), 1));
+      const base = o.material, mats = [base], order = []; zpatch(base, true);
+      keys.forEach(k => { if (k === 'body') { order.push([0, groups.get(k)]); return; } const [col, fab] = k.split('|'); const m = this.zoneMat(o, col, fab, d); zpatch(m, false); mats.push(m); order.push([mats.length - 1, groups.get(k)]); });
+      if (keys.length === 1) return;
+      const total = order.reduce((s, [, a]) => s + a.length, 0), arr = new Uint32Array(total); let at = 0;
+      o.geometry.clearGroups(); order.forEach(([mi2, a]) => { if (!a.length) return; arr.set(a, at); o.geometry.addGroup(at, a.length, mi2); at += a.length; });
+      o.geometry.setIndex(new THREE.BufferAttribute(arr, 1)); o.material = mats; own.push(...mats.slice(1));
+    });
+    return true;
+  },
+  // One zone's material: body fabric shader settings, its own colour and fabric, the model's baked folds kept.
+  zoneMat(o, col, fab, d) {
+    const g = d.garment, Z = this.zfx || {}, tf = TRIM_FABS[fab], f = tf ? (fab === 'twill' ? 'twill' : fab === 'self' ? g.fabric : 'jersey') : FABRICS[fab] ? fab : g.fabric, F = FABRICS[f] || FABRICS.jersey;
+    const m = this.fabricMat(col, f, false, 30, 18, null);
+    if (tf?.rib) { m.bumpMap?.dispose(); m.bumpMap = TEX.rib(); m.bumpScale = fab === 'rib2' ? 2.2 : 1.5; m.roughness = .95; m.sheen = .6; }
+    fabricFX(m, { ...(Z.fx || {}), woven: !!F.weave, tile: tf?.rib ? (fab === 'rib2' ? 3 : 4.5) : (F.weave ? 7 : 5) * (F.k || 1), edge: Z.dis !== 'none' && !!o.geometry.attributes.aEdge });
+    const b = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (b.normalMap) { m.normalMap = b.normalMap; m.normalScale = b.normalScale.clone(); m.bumpScale *= .5; }
+    if (b.aoMap) { m.aoMap = b.aoMap; m.aoMapIntensity = 1; }
+    return m;
+  },
+  // Surface lookups from the mesh's own vertices: a front heightfield (z at x, y) for plackets and zips, and a top-down one
+  // (y at x, z) for collar leaves. A raycast into a ~100k-triangle garment costs ~0.1 s; these are a few ms to build.
+  surfGrids(S) {
+    const zc = this.neck ? this.neck.zc : 0, y0 = (this.neck ? this.neck.minY : S.hps) - 1.4;
+    const F = { x0: -.6, y0, c: .01, nx: 120, ny: 170 }, Tg = { x0: -1.1, y0: zc - 1.1, c: .015, nx: 147, ny: 147 };
+    F.a = new Float32Array(F.nx * F.ny).fill(-99); Tg.a = new Float32Array(Tg.nx * Tg.ny).fill(-99);
+    S.W.forEach((wp, mi) => { const fl = S.flag[mi]; for (let i = 0; i < wp.length / 3; i++) {
+      if (fl[i]) continue; const x = wp[i * 3], y = wp[i * 3 + 1], z = wp[i * 3 + 2];
+      let ix = Math.floor((x - F.x0) / F.c), iy = Math.floor((y - F.y0) / F.c); if (z > zc && ix >= 0 && ix < F.nx && iy >= 0 && iy < F.ny) { const k = iy * F.nx + ix; if (z > F.a[k]) F.a[k] = z; }
+      ix = Math.floor((x - Tg.x0) / Tg.c); iy = Math.floor((z - Tg.y0) / Tg.c); if (ix >= 0 && ix < Tg.nx && iy >= 0 && iy < Tg.ny) { const k = iy * Tg.nx + ix; if (y > Tg.a[k]) Tg.a[k] = y; } } });
+    this.grids = { F, Tg };
+  },
+  gridAt(G, u, v) { const i0 = Math.floor((u - G.x0) / G.c), j0 = Math.floor((v - G.y0) / G.c); for (let r = 0; r <= 4; r++) { let best = -99; for (let j = j0 - r; j <= j0 + r; j++) for (let i = i0 - r; i <= i0 + r; i++) { if (i < 0 || j < 0 || i >= G.nx || j >= G.ny) continue; best = Math.max(best, G.a[j * G.nx + i]); } if (best > -99) return best; } return null; },
+  // Front surface z at (x, y), for laying plackets and zips on the chest
+  surfZ(x, y) { if (this.grids) { const z = this.gridAt(this.grids.F, x, y); if (z !== null) return z; } const h = new THREE.Raycaster(new THREE.Vector3(x, y, 20), new THREE.Vector3(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0]; return h ? h.point.z : null; },
+  // Collars built in geometry from the neckline: mock neck, quarter-zip stand + zip, polo / rugby collar + placket, henley placket.
+  buildCollar(d) {
+    const L = this.neck, T = topSpec(d), g = d.garment; if (!L || ['crew', 'vinsert', 'hood'].includes(T.collar)) return;
+    const V = THREE.Vector3, N = L.N, Z = this.zfx || {}, ang = i => i / N * Math.PI * 2, out = a => new V(Math.sin(a), 0, Math.cos(a));
+    const mat = (hex, fab, rx = 5) => { const tf = TRIM_FABS[fab], f = fab === 'twill' ? 'twill' : fab === 'self' ? g.fabric : FABRICS[fab] ? fab : 'jersey'; const m = this.fabricMat(hex, f, !!tf?.rib, rx, 1.2); fabricFX(m, { ...(Z.fx || {}), woven: !!FABRICS[f]?.weave, uv: true, tile: 5 }); return m; };
+    // a band between two rows of points: outer face, inner face pushed toward the neck centre, and the edge between
+    const band = (bot, top, m, th = .007) => {
+      const n = bot.length, inw = p => { const v = new V(-p.x, 0, L.zc - p.z); return v.lengthSq() > 1e-8 ? v.normalize() : new V(); };
+      const rows = [bot, top, top.map(p => p.clone().addScaledVector(inw(p), th)), bot.map(p => p.clone().addScaledVector(inw(p), th))], pos = [], uv = [], idx = [];
+      rows.forEach((R, ri) => R.forEach((p, i) => { pos.push(p.x, p.y, p.z); uv.push(i / (n - 1), [0, 1, 1, 0][ri]); }));
+      for (let r = 0; r < 3; r++) for (let i = 0; i < n - 1; i++) { const a = r * n + i, b = a + 1, c = a + n, e = c + 1; idx.push(a, c, b, b, c, e); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+      return this.add(geo, m);
+    };
+    const all = [...Array(N).keys()];
+    if (T.collar === 'mock' || T.collar === 'qzip') {
+      const h = T.standH / 10, gap = T.collar === 'qzip', seq = gap ? all.slice(1) : [...all, 0];
+      const topY = i => Math.max(L.pts[i].y + h * .55, L.back.y + h - (1 + Math.cos(ang(i))) / 2 * .02);
+      const bot = seq.map(i => L.pts[i].clone().addScaledVector(out(ang(i)), .004).add(new V(0, -.012, 0)));
+      const top = seq.map(i => { const p = L.pts[i], r = Math.hypot(p.x, p.z - L.zc) * .9, a = ang(i); return new V(Math.sin(a) * r, topY(i), L.zc + Math.cos(a) * r); });
+      band(bot, top, mat(T.collarCol, T.collarFab, 4.5));
+      if (gap) this.buildZip(d, top[0].clone().lerp(top[top.length - 1], .5), L.front.y);
+      return;
+    }
+    // polo / rugby / henley: placket down the centre front
+    const pw = T.placketW / 10, pl = T.placketLen / 10, yTop = L.front.y + .004, yBot = yTop - pl;
+    const cols = 5, rowsN = Math.max(4, Math.round(pl / .025)), pos = [], idx = [], uv = []; let ok = true;
+    for (let r = 0; r <= rowsN && ok; r++) for (let c = 0; c <= cols; c++) { const x = -pw / 2 + c * pw / cols, y = yTop - r * pl / rowsN, z = this.surfZ(x, y); if (z === null) { ok = false; break; } pos.push(x, y, z + .005); uv.push(c / cols, r / rowsN); }
+    if (ok) {
+      for (let r = 0; r < rowsN; r++) for (let c = 0; c < cols; c++) { const a = r * (cols + 1) + c, b = a + 1, e = a + cols + 1, f = e + 1; idx.push(a, e, b, b, e, f); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+      this.add(geo, mat(T.placketCol, T.collar === 'rugby' ? 'twill' : 'self', 2));
+      // edge stitching round the placket and the bottom box
+      const st = new THREE.MeshStandardMaterial({ color: g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() ? g.stitch : shade(T.placketCol, lum(T.placketCol) > .5 ? -.35 : .35), roughness: .8 });
+      const sz = (x, y) => (this.surfZ(x, y) ?? 0) + .0065;
+      [[-pw / 2 + .008, 1], [pw / 2 - .008, 1]].forEach(([x]) => { const P = []; for (let k = 0; k <= 16; k++) { const y = yTop - k * pl / 16; P.push(new V(x, y, sz(x, y))); } this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 48, .0011, 4, false), st, false); });
+      { const P = []; for (let k = 0; k <= 8; k++) { const x = -pw / 2 + .008 + k * (pw - .016) / 8; P.push(new V(x, yBot + .008, sz(x, yBot + .008))); } this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 24, .0011, 4, false), st, false); }
+      // buttons with four holes
+      const bt = TEX.canvas(128, 128, x => { x.fillStyle = '#fff'; x.fillRect(0, 0, 128, 128); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 10; x.beginPath(); x.arc(64, 64, 50, 0, 7); x.stroke(); x.fillStyle = 'rgba(0,0,0,.75)'; [[48, 48], [80, 48], [48, 80], [80, 80]].forEach(([a, b]) => { x.beginPath(); x.arc(a, b, 7, 0, 7); x.fill(); }); });
+      const btex = new THREE.CanvasTexture(bt); btex.colorSpace = THREE.SRGBColorSpace; btex.userData.own = true;
+      const bc = new THREE.MeshPhysicalMaterial({ color: T.btn, roughness: T.collar === 'rugby' ? .7 : .25, clearcoat: T.collar === 'rugby' ? 0 : .6 }), bf = new THREE.MeshPhysicalMaterial({ color: T.btn, map: btex, roughness: T.collar === 'rugby' ? .7 : .25, clearcoat: T.collar === 'rugby' ? 0 : .6 });
+      const br = T.collar === 'rugby' ? .028 : .0225;
+      for (let k = 0; k < T.buttons; k++) { const y = yTop - pl * (k + .75) / (T.buttons + .5), z = this.surfZ(0, y); if (z === null) continue; const geo = new THREE.CylinderGeometry(br, br, .006, 24); geo.rotateX(Math.PI / 2); const m = this.add(geo, [bc, bf, bc]); m.position.set(0, y, z + .009); }
+    }
+    if (T.collar === 'henley') return;
+    // polo / rugby: a short stand, then the collar leaf folds down over the shoulders, points at the front
+    const h = T.standH / 10, keep = all.filter(i => !(Math.cos(ang(i)) > 0 && Math.abs(L.pts[i].x) < pw / 2 + .004));
+    const seq = [...keep.filter(i => i > 0 && i <= N / 2), ...keep.filter(i => i > N / 2)];
+    const bot = seq.map(i => L.pts[i].clone().addScaledVector(out(ang(i)), .004).add(new V(0, -.01, 0)));
+    const top = seq.map(i => { const p = L.pts[i], a = ang(i), r = Math.hypot(p.x, p.z - L.zc) * .96; return new V(Math.sin(a) * r, Math.max(p.y + h, L.back.y + h * .8), L.zc + Math.cos(a) * r); });
+    const cm = mat(T.collarCol, T.collarFab, T.collar === 'rugby' ? 3 : 4.5);
+    band(bot, top, cm, .006);
+    const tips = seq.map((i, k) => {
+      const a = ang(i), fr = Math.max(0, Math.cos(a)), p = L.pts[i], r = Math.hypot(p.x, p.z - L.zc) + .19 + fr ** 2 * .06;
+      const qx = Math.sin(a) * r, qz = L.zc + Math.cos(a) * r, hy = this.grids ? this.gridAt(this.grids.Tg, qx, qz) : null;
+      const t = hy !== null && hy > top[k].y - .45 ? new V(qx, hy + .012, qz).addScaledVector(out(a), .006) : top[k].clone().addScaledVector(out(a), .17).add(new V(0, -.16, 0));
+      const end = Math.min(k, seq.length - 1 - k); if (end < 3) { const e = (3 - end) / 3; t.y -= e * .1; t.x *= 1 - e * .25; } // collar points run down toward the placket
+      return t;
+    });
+    const roll = top.map((p, k) => p.clone().lerp(tips[k], .35).addScaledVector(out(ang(seq[k])), .02).add(new V(0, .02, 0)));
+    band(top.map(p => p.clone().add(new V(0, .002, 0))), roll, cm, .004); band(roll, tips, cm, .004);
+  },
+  // Quarter-zip: tapes, interlocking teeth and a slider with a pull, down the collar and the chest
+  buildZip(d, topPt, neckY) {
+    const T = topSpec(d), Zp = ZIPS[T.zip], V = THREE.Vector3, len = T.zipLen / 10, P = [];
+    for (let y = topPt.y; y > neckY; y -= .02) P.push(new V(0, y, lerp(topPt.z, this.surfZ(0, neckY) ?? topPt.z, (topPt.y - y) / Math.max(.01, topPt.y - neckY)) + .006));
+    for (let y = neckY; y >= neckY - len; y -= .02) { const z = this.surfZ(0, y); if (z !== null) P.push(new V(0, y, z + .006)); }
+    if (P.length < 4) return;
+    const metal = new THREE.MeshStandardMaterial({ color: Zp.c, metalness: 1, roughness: Zp.r }), tape = new THREE.MeshStandardMaterial({ color: shade(d.garment.color, -.25), roughness: .9 });
+    const curve = new THREE.CatmullRomCurve3(P), L = curve.getLength(), n = Math.floor(L / .0065);
+    [-1, 1].forEach(s => { const pts = P.map(p => new V(p.x + s * .018, p.y, p.z - .001)); this.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, .009, 3, false), tape, false); });
+    const tooth = new THREE.BoxGeometry(.012, .0042, .005), inst = new THREE.InstancedMesh(tooth, metal, n), M = new THREE.Matrix4();
+    for (let k = 0; k < n; k++) { const p = curve.getPointAt(k / n); M.makeTranslation(p.x + (k % 2 ? .003 : -.003), p.y, p.z + .001); inst.setMatrixAt(k, M); }
+    inst.castShadow = true; this.root.add(inst);
+    const top = curve.getPointAt(0), slider = this.add(new RoundedBoxGeometry(.026, .04, .012, 2, .004), metal); slider.position.set(top.x, top.y - .028, top.z + .006);
+    const pull = this.add(new RoundedBoxGeometry(.016, .05, .004, 2, .0015), metal); pull.position.set(top.x, top.y - .07, top.z + .014); pull.rotation.x = -.15;
   },
   // Sock zones painted in the shader by world position: heel cup, toe, cuff band, athletic stripes.
   // Works on any sock mesh (feet point +z) and layers over the body colour or a fabric pattern.
@@ -3038,6 +3360,24 @@ const Panels = {
   },
   range(path, label, val, min, max, step, fmt = v => v) { return `<div class="fld"><label>${label}<b data-out="${path}" data-fmt="${fmt === frac ? 'frac' : ''}">${fmt(val)}</b></label><input type="range" data-bind="${path}" data-num min="${min}" max="${max}" step="${step}" value="${val}"></div>`; },
   select(path, label, val, opts) { return `<div class="fld"><label>${label}</label><select class="in" data-bind="${path}">${opts.map(([v, l]) => `<option value="${v}" ${String(v) === String(val) ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`; },
+  seg(path, label, val, opts) { return `<div class="fld"><label>${label}</label><div class="seg" data-segbind="${path}">${opts.map(([v, l]) => `<button data-v="${v}" class="${String(v) === String(val) ? 'on' : ''}">${l}</button>`).join('')}</div></div>`; },
+  // colour that follows a default (rib, sleeve, body) until set; the button hands it back to the default
+  trimColor(path, label, val, clearLabel) { return `<div class="fld"><label>${label}</label><div class="row"><input type="color" data-bind="${path}" value="${val}"><button class="btn sm" data-clear="${path}" title="Follow the default again">${clearLabel}</button></div></div>`; },
+  // Tops: trend presets, collar, waistband rib, rugby hoops
+  topSecs(d) {
+    const T = topSpec(d), hood = T.collar === 'hood', kv = o => Object.entries(o).map(([k, v]) => [k, v.label]);
+    return `<div class="sec"><h4><em>K</em>Trend presets<span class="r cap">FW26</span></h4><div class="grid2">${TOP_PRESETS.map(([n, , cat], i) => `<button class="btn sm" style="justify-content:flex-start" data-tpre="${i}" title="Sets collar, sleeves, stripes and trim colours${cat !== d.category ? '. Switches to ' + CATS[cat].label : ''}">${n}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:8px">Looks from the Nov 2026 trend read. A preset sets the collar, sleeves, stripes and trim colours and, where the look needs it, the fabric, fit or silhouette. Body colour and prints stay as they are.</p></div>
+    <div class="sec"><h4><em>N</em>Collar &amp; ribs</h4>${hood ? '<p class="hint">Hoodie: the hood is the collar. Cuffs are under Sleeves, the waistband is below.</p>' : `
+      <div class="fld"><label>Style</label><div class="seg wrap" data-segbind="garment.collar">${Object.entries(COLLARS).map(([k, v]) => `<button data-v="${k}" class="${k === T.collar ? 'on' : ''}">${v.seg}</button>`).join('')}</div></div>
+      <div class="grid2" style="margin-top:10px">${this.trimColor('garment.collarColor', T.collar === 'vinsert' ? 'Collar + V' : 'Collar', T.collarCol, '= Rib')}${this.select('garment.collarFab', 'Collar fabric', T.collarFab, kv(TRIM_FABS))}</div>
+      ${T.placketLen ? `<div class="grid2" style="margin-top:10px">${this.trimColor('garment.placketColor', 'Placket', T.placketCol, T.collar === 'rugby' ? '= Collar' : '= Body')}<div class="fld"><label>Buttons<b>${T.buttons}</b></label><input type="color" data-bind="garment.btnColor" value="${T.btn}"></div></div>` : ''}
+      ${T.collar === 'qzip' ? `<div style="margin-top:10px">${this.seg('garment.zipFinish', 'Zip', T.zip, Object.entries(ZIPS).map(([k, v]) => [k, v.label]))}</div>` : ''}`}
+      ${T.fleece ? `<div class="grid2" style="margin-top:10px">${this.trimColor('garment.hemColor', 'Waistband rib', T.hemCol, '= Rib')}<div></div></div>` : ''}
+      <p class="hint" style="margin-top:8px">Collar, cuffs and waistband follow <b>Rib / trim</b> under Color until you set them.</p></div>
+    <div class="sec"><h4><em>R</em>Rugby hoops</h4><div class="grid3">${this.select('garment.hoops', 'Hoops', T.hoops, [['', 'None'], ['body', 'Body'], ['all', 'Body + sleeves']])}${T.hoops ? `<div class="fld"><label>Hoop</label><input type="color" data-bind="garment.hoopCol" value="${T.hoopCol}"></div>${this.range('garment.hoopW', 'Width in', T.hoopW, 1, 8, .5, frac)}` : '<div></div><div></div>'}</div>
+      <p class="hint" style="margin-top:6px">Bands of body colour and hoop colour, counted up from the hem.</p></div>`;
+  },
   // Labels & tags: every category gets one. Text and logo are shared by the sewn label and the hang tag.
   tagSec(d) {
     const g = d.garment, cat = d.category, kinds = tagKinds(cat), apparel = kinds.includes('label'), hem = kinds.includes('hem');
@@ -3111,10 +3451,15 @@ const Panels = {
           <div style="margin-top:10px">${this.range(`place.${s}.dx`, 'Offset from CF', P.dx, -6, 6, .125, v => frac(v) + '"')}</div>
           <div class="grid2" style="margin-top:10px">${this.range(`place.${s}.s`, 'Scale', P.s, .2, 1.6, .01, v => Math.round(v * 100) + '%')}${this.range(`place.${s}.r`, 'Rotate', P.r, -45, 45, 1, v => v + '°')}</div>
           <button class="btn sm block" style="margin-top:12px" data-goart="${s}">Edit ${s} artwork</button></div>`; }).join('')}
+        ${isTop(d.category) ? this.topSecs(d) : ''}
         ${isTop(d.category) ? `<div class="sec"><h4><em>S</em>Sleeves</h4>
-          <div class="grid2"><div class="fld"><label>Left sleeve<b>as worn</b></label><div class="row"><input type="color" data-bind="garment.sleeveColor" value="${sleeveHex(g)}"><button class="btn sm" data-copy="garment.sleeveColor">= Body</button></div></div>
+          ${this.seg('garment.sleeveStyle', 'Sleeve', topSpec(d).raglan ? 'raglan' : 'setin', Object.entries(SLEEVE_STYLES))}
+          <div class="grid2" style="margin-top:10px"><div class="fld"><label>Left sleeve<b>as worn</b></label><div class="row"><input type="color" data-bind="garment.sleeveColor" value="${sleeveHex(g)}"><button class="btn sm" data-copy="garment.sleeveColor">= Body</button></div></div>
           <div class="fld"><label>Right sleeve</label><div class="row"><input type="color" data-bind="garment.sleeveColorR" value="${sleeveHexR(g)}"><button class="btn sm" data-copyl="1">= Left</button></div></div></div>
           <p class="hint" style="margin-top:6px">Set them apart for a split-sleeve look. Right follows left until you change it.</p>
+          ${(T => `<div style="margin-top:10px">${this.select('garment.sleeveFab', 'Sleeve fabric', FABRICS[g.sleeveFab] ? g.sleeveFab : '', [['', 'Same as body'], ...Object.entries(FABRICS).filter(([k, v]) => v.for === 'any' || v.for === 'top' || k === 'nylon').map(([k, v]) => [k, v.label])])}</div>
+          <div class="grid2" style="margin-top:10px">${this.trimColor('garment.cuffColor', T.long ? 'Cuffs' : 'Sleeve hem band', g.cuffColor || (T.long ? T.cuffCol : sleeveHex(g)), T.long ? '= Rib' : '= Sleeve')}${T.long ? this.select('garment.cuffFab', 'Cuff fabric', T.cuffFab, Object.entries(TRIM_FABS).filter(([k]) => k !== 'twill' && k !== 'flatknit').map(([k, v]) => [k, v.label])) : '<div class="fld"><label>Ringer band</label><p class="hint" style="margin:2px 0 0">Set a colour for a contrast band at the sleeve hem.</p></div>'}</div>
+          <div class="grid3" style="margin-top:10px">${this.select('garment.slvStripes', 'Sleeve stripes', String(T.stripes), [['0', 'None'], ['1', '1'], ['2', '2'], ['3', '3']])}${T.stripes ? `${this.select('garment.slvStripePos', 'Where', T.stripePos, [['elbow', T.long ? 'Elbow' : 'Mid'], ['cuff', T.long ? 'Above cuff' : 'At hem']])}<div class="fld"><label>Color</label><input type="color" data-bind="garment.slvStripeCol" value="${T.stripeCol}"></div>` : '<div></div><div></div>'}</div>`)(topSpec(d))}
           <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveLogo', 'Sleeve logo', g.sleeveLogo || 'none', [['none', 'None'], ['mark', 'DPP mark'], ['word', 'Wordmark · down sleeve']])}${this.select('garment.sleeveSide', 'Side (as worn)', g.sleeveSide || 'left', [['left', 'Left'], ['right', 'Right'], ['both', 'Both']])}</div>
           ${g.sleeveLogo && g.sleeveLogo !== 'none' ? `<div class="grid2" style="margin-top:10px">${this.range('garment.sleeveLogoSize', g.sleeveLogo === 'word' ? 'Size · length 4×' : 'Logo width', num(g.sleeveLogoSize) || 3, 1, 5, .25, v => frac(v) + '"')}${g.sleeveLogo === 'mark' ? this.range('garment.sleeveDrop', 'Below shoulder seam', num(g.sleeveDrop ?? 2.5), .5, 12, .25, v => frac(v) + '"') : '<div></div>'}</div>
           <div class="grid2" style="margin-top:10px">${this.select('garment.sleeveTech', 'Technique', g.sleeveTech || 'Screen print', [['Screen print', 'Screen print'], ['Flat embroidery', 'Flat embroidery']])}<div class="fld"><label>Logo color</label><div class="row"><input type="color" data-bind="garment.sleeveLogoColor" value="${g.sleeveLogoColor || (lum(sleeveHex(g)) > .5 ? '#14172B' : '#EEF1F9')}"></div></div></div>` : ''}</div>` : ''}
@@ -3157,6 +3502,14 @@ const Panels = {
     $$('[data-goart]', L).forEach(b => b.onclick = () => { Art.side = b.dataset.goart; go('artwork'); });
     $$('[data-copy]', L).forEach(b => b.onclick = () => { setPath(d, b.dataset.copy, d.garment.color); if (b.dataset.copy === 'garment.sleeveColor') d.garment.sleeveColorR = ''; touch(); Studio.build(); this.studio(); });
     $$('[data-copyl]', L).forEach(b => b.onclick = () => { d.garment.sleeveColorR = ''; touch(); Studio.build(); this.studio(); });
+    $$('[data-clear]', L).forEach(b => b.onclick = () => { setPath(d, b.dataset.clear, ''); syncSpec(d); touch(); Studio.build(); this.studio(); });
+    $$('[data-tpre]', L).forEach(b => b.onclick = () => {
+      const [name, set, cat] = TOP_PRESETS[b.dataset.tpre], g = d.garment;
+      if (cat !== d.category) setCategory(d, cat);
+      [...CONSTRUCTION_KEYS, 'sleeveColor', 'sleeveColorR'].forEach(k => { if (!(k in set)) g[k] = { collar: 'crew', sleeveStyle: 'setin', slvStripes: 0, slvStripeCol: '#B98A4A', slvStripePos: 'elbow', hoopCol: '#14172B', hoopW: 3, zipFinish: 'nickel' }[k] ?? ''; });
+      Object.entries(set).forEach(([k, v]) => { if (k === 'fit') { applyFitPOM(d, d.pom.fit || 'boxy', v, true); } g[k] = v; });
+      syncSpec(d); touch(); Studio.build(); this.studio(); toast(`${name} applied · collar, sleeves and trim set`);
+    });
     Places.panel();
   },
 };
@@ -3167,7 +3520,7 @@ function onBind(e) {
     let v = el.value;
     if (el.dataset.hex !== undefined) { if (!/^#[0-9a-f]{6}$/i.test(v)) return; }
     if (el.dataset.num !== undefined) v = num(v);
-    followBody(d, el.dataset.bind, v); setPath(d, el.dataset.bind, v); if (/^garment\.(doubleWB|wb2|plaid|fabric)/.test(el.dataset.bind)) syncSpec(d); touch();
+    followBody(d, el.dataset.bind, v); setPath(d, el.dataset.bind, v); if (/^garment\.(doubleWB|wb2|plaid|fabric|collar|placket|btn|zip|sleeveStyle|sleeveFab|cuff|hem|slvStripe|hoop|trim)/.test(el.dataset.bind)) syncSpec(d); touch();
     const root = el.closest('.side');
     $$(`[data-out="${el.dataset.bind}"]`, root).forEach(o => { const f = o.dataset.fmt; o.textContent = f === 'frac' ? frac(v) + '"' : el.type === 'range' ? o.textContent.replace(/^-?[\d.]+(?: \d\/\d)?|^-?\d\/\d/, '') && formatOut(el.dataset.bind, v) : String(v).toUpperCase(); });
     $$(`[data-bind="${el.dataset.bind}"]`, root).forEach(o => { if (o !== el) o.value = o.dataset.hex !== undefined ? String(v).toUpperCase() : v; });
@@ -3189,6 +3542,16 @@ function formatOut(path, v) {
   return v;
 }
 const rebuildSoon = debounce(() => Studio.build(), 120);
+// Switch silhouette: a different measurement set brings its own POM / BOM / construction template
+function setCategory(d, cat) {
+  const prev = d.category; if (prev === cat) return; d.category = cat; d.place.front.s = clamp(d.place.front.s, .2, 1.6);
+  const pom = presetPOM(cat), codes = x => x.rows.map(r => r.code).join();
+  if (codes(pom) !== codes(d.pom)) { d.pom = pom; d.bom = tagShell(presetBOM(cat)); d.construction = presetConstruction(cat); toast(`Specs switched to the ${CATS[cat].label} template`); }
+  if (d.labels === presetLabels(prev)) d.labels = presetLabels(cat); if (d.packaging === presetPackaging(prev)) d.packaging = presetPackaging(cat);
+  syncSpec(d);
+  d.styleNo = d.styleNo.replace(/^DPP-[A-Z]{2}-/, `DPP-${CATS[cat].code}-`);
+  renderCtx();
+}
 function tagPreview(d) {
   const a = $('#tagPrev'), b = $('#hangPrev'); if (!d) return;
   if (a) { const printed = d.garment.tag === 'printed'; a.src = tagCanvas(d, printed ? 'printed' : 'woven').toDataURL(); a.style.background = printed ? d.garment.color : ''; a.style.width = printed ? '70%' : '100%'; }
@@ -3198,8 +3561,8 @@ function studioChanged(path, type) {
   if (path.startsWith('place.')) { Studio.updateDecals(); if (path.endsWith('.tech')) Panels.studio(); return; }
   if (path === 'notes' || path === 'watch.engraving' && type === 'input') return;
   if (/^garment\.tag(Color|Ink|Size|Text|Logo)$/.test(path)) tagPreview(S.current);
-  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|cordBrand|wb2Pattern|wb2Style|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag)$/.test(path)) { Studio.build(); Panels.studio(); return; }
-  if (path === 'garment.fabric' || path === 'watch.movement') { Studio.build(); return; }
+  if (/^watch\.(caseMat|bezelStyle|strap|dialStyle|head)$|^garment\.(pattern|doubleWB|cordBrand|wb2Pattern|wb2Style|sockStyle|pantStyle|bagSize|hardware|sleeveLogo|tag|hangTag|hoops|slvStripes|collarFab|cuffFab)$/.test(path)) { Studio.build(); Panels.studio(); return; }
+  if (path === 'garment.fabric' || path === 'garment.sleeveFab' || path === 'watch.movement') { Studio.build(); return; }
   rebuildSoon();
 }
 document.addEventListener('input', e => { if (e.target.closest('.side') && e.target.dataset.bind) onBind(e); });
@@ -3209,18 +3572,11 @@ document.addEventListener('click', e => {
   if (sw && S.current) { followBody(S.current, sw.dataset.sw, sw.dataset.hexv); setPath(S.current, sw.dataset.sw, sw.dataset.hexv); touch(); const side = sw.closest('.side'); if (side?.id.startsWith('studio')) { Studio.build(); Panels.studio(); } return; }
   const seg = e.target.closest('[data-segbind] button');
   if (seg && S.current) {
-    const p = seg.parentElement.dataset.segbind, prev = getPath(S.current, p); setPath(S.current, p, seg.dataset.v); touch();
+    const p = seg.parentElement.dataset.segbind;
+    if (p === 'category') { setCategory(S.current, seg.dataset.v); touch(); Studio.build(); Panels.studio(); return; }
+    setPath(S.current, p, seg.dataset.v); touch();
     if (p === 'garment.fit') applyFitPOM(S.current, S.current.pom.fit || 'boxy', seg.dataset.v);
-    if (p === 'category') {
-      const d = S.current, cat = d.category; d.place.front.s = clamp(d.place.front.s, .2, 1.6);
-      // a different silhouette needs its own POM / BOM / construction when the measurement set differs
-      const pom = presetPOM(cat), codes = x => x.rows.map(r => r.code).join();
-      if (codes(pom) !== codes(d.pom)) { d.pom = pom; d.bom = tagShell(presetBOM(cat)); d.construction = presetConstruction(cat); toast(`Specs switched to the ${CATS[cat].label} template`); }
-      if (d.labels === presetLabels(prev)) d.labels = presetLabels(cat); if (d.packaging === presetPackaging(prev)) d.packaging = presetPackaging(cat);
-      syncSpec(d);
-      d.styleNo = d.styleNo.replace(/^DPP-[A-Z]{2}-/, `DPP-${CATS[cat].code}-`);
-      renderCtx();
-    }
+    if (/^garment\.(collar|sleeveStyle|zipFinish)$/.test(p)) syncSpec(S.current);
     Studio.build(); Panels.studio();
   }
 });
@@ -3751,7 +4107,76 @@ function syncDoubleWaist(d) {
   d.construction.forEach(r => { if (r.notes === 'Double waistband: second band joined above main band, see WB2.') { r.notes = ''; changed = true; } }); // stale note from the first build
   return changed;
 }
-const syncSpec = d => { const a = syncDoubleWaist(d), b = syncShell(d); return a || b; };
+// Spec-driven rows for tops construction (auto: 'cs'). Same rules as the double waist: supplier + unit cost survive.
+function csRows(d) {
+  const g = d.garment, T = topSpec(d), U = h => String(h).toUpperCase(), q = v => frac(v) + '"', pom = [], bom = [], con = [];
+  if (!isTop(d.category)) return { pom, bom, construction: con };
+  const tf = TRIM_FABS[T.collarFab], cc = `${colorName(T.collarCol)} ${U(T.collarCol)}`;
+  if (T.standH) pom.push({ key: 'CL1', code: 'CL1', desc: T.collar === 'qzip' || T.collar === 'mock' ? 'Collar stand height at CB, finished' : 'Collar stand height at CB', tol: .0625, base: T.standH, grade: 0 });
+  if (T.collar === 'polo' || T.collar === 'rugby') pom.push({ key: 'CL2', code: 'CL2', desc: 'Collar point length, neck seam to point', tol: .125, base: T.collar === 'rugby' ? 3 : 2.75, grade: 0 }, { key: 'CL3', code: 'CL3', desc: 'Collar leaf width at CB', tol: .125, base: T.collar === 'rugby' ? 2.5 : 2.25, grade: 0 });
+  if (T.placketLen) pom.push({ key: 'PL1', code: 'PL1', desc: 'Placket length from CF neck, finished', tol: .125, base: T.placketLen, grade: 0 }, { key: 'PL2', code: 'PL2', desc: 'Placket width, finished', tol: .0625, base: T.placketW, grade: 0 });
+  if (T.collar === 'qzip') pom.push({ key: 'QZ1', code: 'QZ1', desc: 'Zip opening from CF neck seam, finished', tol: .125, base: T.zipLen, grade: 0 });
+  if (T.collar === 'vinsert') pom.push({ key: 'VI1', code: 'VI1', desc: 'V-insert depth from CF neck seam', tol: .125, base: 4.25, grade: 0 });
+  if (T.raglan) pom.push({ key: 'RG1', code: 'RG1', desc: 'Raglan seam, neck to underarm (straight)', tol: .25, base: Math.round(((pomAt(d, 'E') || 10.25) * 1.3) * 8) / 8, grade: .375 });
+  if (T.stripes) pom.push({ key: 'ST1', code: 'ST1', desc: `Sleeve stripes: ${T.stripes} × width, gap 1/2"`, tol: .0625, base: .75, grade: 0 });
+  if (T.hoops) pom.push({ key: 'HP1', code: 'HP1', desc: 'Rugby hoop width (each band)', tol: .125, base: T.hoopW, grade: 0 });
+  if (T.collar !== 'hood' && (T.collar !== 'crew' || T.collarCol.toLowerCase() !== g.color.toLowerCase() || T.collarFab !== 'rib1'))
+    bom.push({ key: 'collar', component: T.collar === 'vinsert' ? 'Collar + V-insert' : 'Collar', material: tf.rib ? tf.comp : T.collarFab === 'twill' ? 'Woven cotton twill 8 oz, fused, sewn collar' : FABRICS[g.fabric]?.label + ' (self)', supplier: '', spec: `${COLLARS[T.collar]?.label || 'Crew'} · ${cc}`, qty: T.collarFab === 'flatknit' ? 1 : .1, uom: T.collarFab === 'flatknit' ? 'pc' : 'yd', cost: 0 });
+  if (T.placketLen) {
+    bom.push({ key: 'placket', component: 'Placket', material: T.collar === 'rugby' ? 'Woven cotton twill 8 oz' : 'Self fabric', supplier: '', spec: `${q(T.placketW)} × ${q(T.placketLen)} · ${colorName(T.placketCol)} ${U(T.placketCol)}`, qty: .05, uom: 'yd', cost: 0 });
+    bom.push({ key: 'fuse', component: 'Placket interlining', material: 'Woven fusible, 30 gsm', supplier: '', spec: 'Both placket sides', qty: .05, uom: 'yd', cost: 0 });
+    bom.push({ key: 'btn', component: 'Buttons', material: T.collar === 'rugby' ? 'Rubber rugby button, 24L, 2-hole' : T.collar === 'polo' ? 'Resin button, 18L, 4-hole' : 'Resin button, 16L, 4-hole', supplier: '', spec: `${U(T.btn)} · ${T.buttons} + 1 spare`, qty: T.buttons + 1, uom: 'pc', cost: 0 });
+  }
+  if (T.collar === 'qzip') bom.push({ key: 'zip', component: 'Zipper', material: `#5 metal, closed end, ${ZIPS[T.zip].label.toLowerCase()} teeth + slider`, supplier: '', spec: `${q(T.zipLen + T.standH)} chain · auto-lock slider, branded pull`, qty: 1, uom: 'pc', cost: 0 });
+  if (T.sleeveFab !== g.fabric) bom.push({ key: 'sleeve', component: 'Sleeve fabric', material: `${FABRICS[T.sleeveFab].label} · ${FABRICS[T.sleeveFab].comp}`, supplier: '', spec: `Sleeves only · ${colorName(sleeveHex(g))} ${U(sleeveHex(g))}`, qty: .5, uom: 'yd', cost: 0 });
+  if (T.stripes) bom.push({ key: 'stripe', component: 'Sleeve stripes', material: 'Contrast knit, cut and sewn (or knit-in on a full-fashioned sleeve)', supplier: '', spec: `${T.stripes} × 3/4" · ${colorName(T.stripeCol)} ${U(T.stripeCol)} · ${T.stripePos === 'elbow' ? 'at the elbow' : 'above the cuff'}`, qty: .1, uom: 'yd', cost: 0 });
+  if (T.hoops) bom.push({ key: 'hoops', component: 'Hoop stripe', material: 'Yarn-dyed stripe in the body fabric (preferred) or cut-and-sewn bands', supplier: '', spec: `${q(T.hoopW)} hoops · ${colorName(g.color)} / ${colorName(T.hoopCol)} ${U(T.hoopCol)} · ${T.hoops === 'all' ? 'body + sleeves' : 'body only'}`, qty: 0, uom: 'yd', cost: 0 });
+  const cm = {
+    crew: `1×1 rib crew neck attached 4-thread overlock, coverstitch topstitch 1/4"${T.collarCol.toLowerCase() !== g.color.toLowerCase() ? ` · contrast rib ${cc} (ringer)` : ''}`,
+    mock: `Mock neck: ${tf.label.toLowerCase()} folded double to ${q(T.standH)}, attached 4-thread overlock, coverstitch at the seam`,
+    qzip: `Stand collar ${q(T.standH)} in ${tf.label.toLowerCase()}, faced; #5 zip set from collar top to ${q(T.zipLen)} below CF neck, edge-stitched, zip garage at top`,
+    polo: `Flat-knit polo collar on a ${q(T.standH)} stand, set between the placket fronts; neck seam taped and covered`,
+    rugby: 'Woven twill rugby collar, sewn and turned, set on a 1" stand; twill neck tape inside',
+    henley: '1×1 rib crew band; henley placket set below it, see Placket',
+    vinsert: `Jersey V-insert in ${cc}, set into a 4 1/4" V at CF, rib band round the neck`,
+  }[T.collar];
+  if (cm) con.push({ key: 'collar', area: 'Collar', method: cm, spi: '12', notes: T.collarFab === 'flatknit' ? 'Collar knit to shape; no raw edges.' : '' });
+  if (T.placketLen) con.push({ key: 'placket', area: 'Placket', method: `${q(T.placketW)} placket, ${q(T.placketLen)} long, left over right (as worn), fused both sides, edge-stitched, box-stitched at the base`, spi: '12', notes: `${T.buttons} buttons + horizontal buttonholes; spare on the care label.` });
+  if (T.raglan) con.push({ key: 'raglan', area: 'Raglan seams', method: 'Raglan sleeves, 4-thread overlock neck to underarm, coverstitch topstitch', spi: '12', notes: sleeveHex(g).toLowerCase() !== g.color.toLowerCase() ? 'Contrast sleeve runs up to the neckline (baseball raglan).' : '' });
+  if (T.stripes) con.push({ key: 'stripe', area: 'Sleeve stripes', method: `${T.stripes} contrast bands cut and sewn into the sleeve, flatlock`, spi: '12', notes: 'Match stripe position across left and right sleeves within 1/8".' });
+  if (T.hoops) con.push({ key: 'hoops', area: 'Hoops', method: 'Yarn-dyed hoops, matched at the side seams' + (T.hoops === 'all' ? ' and the armhole' : ''), spi: '', notes: 'Hoop repeat starts at the hem. Approve a strike-off before bulk.' });
+  return { pom, bom, construction: con };
+}
+const RAGLAN_ARMHOLE = 'Raglan, 4-thread overlock neck to underarm', SETIN_ARMHOLE = 'Set-in, 4-thread overlock';
+function syncConstructionRows(d) {
+  if (!d?.pom?.rows || !isTop(d.category)) return false;
+  const want = csRows(d); let changed = false;
+  const apply = (list, rows, anchor) => {
+    const old = list.filter(r => r.auto === 'cs');
+    const next = rows.map(w => { const o = old.find(x => x.key === w.key); return { id: o?.id || uid('r'), auto: 'cs', ...w, ...(o && 'supplier' in w ? { supplier: o.supplier, supplierId: o.supplierId, cost: o.cost } : {}) }; });
+    if (JSON.stringify(old) === JSON.stringify(next)) return list;
+    changed = true; const rest = list.filter(r => r.auto !== 'cs'); let at = rest.reduce((a, r, i) => anchor(r) ? i + 1 : a, -1); if (at < 0) at = rest.length;
+    return [...rest.slice(0, at), ...next, ...rest.slice(at)];
+  };
+  d.pom.rows = apply(d.pom.rows, want.pom, r => /^[A-M]$/.test(r.code || ''));
+  d.bom = apply(d.bom, want.bom, r => r.component === 'Rib trim' || r.auto === 'shell');
+  d.construction = apply(d.construction, want.construction, r => r.area === 'Neck' || r.area === 'Armhole');
+  const arm = d.construction.find(r => r.area === 'Armhole'), raglan = topSpec(d).raglan;
+  if (arm && raglan && arm.method === SETIN_ARMHOLE) { arm.method = RAGLAN_ARMHOLE; changed = true; }
+  if (arm && !raglan && arm.method === RAGLAN_ARMHOLE) { arm.method = SETIN_ARMHOLE; changed = true; }
+  return changed;
+}
+const syncSpec = d => { const a = syncDoubleWaist(d), b = syncShell(d), c = syncConstructionRows(d); return a || b || c; };
+// Tops: the construction sentence, written from the collar / sleeve / rib spec
+function topBuild(d) {
+  const g = d.garment, T = topSpec(d), cat = d.category, q = v => frac(v) + '"', tf = TRIM_FABS[T.collarFab].label.toLowerCase(), parts = [];
+  parts.push(`${T.raglan ? 'Raglan' : 'Set-in'} ${T.long ? 'long ' : ''}sleeves${T.sleeveFab !== g.fabric ? ` in ${FABRICS[T.sleeveFab].label.split('·')[0].trim().toLowerCase()}` : ''}`);
+  parts.push({ crew: `${tf} crew neck`, mock: `${q(T.standH)} mock neck in ${tf}`, qzip: `${q(T.standH)} stand collar in ${tf} with a ${q(T.zipLen)} ${ZIPS[T.zip].label.toLowerCase()} quarter-zip`, polo: `${tf} polo collar with a ${T.buttons}-button placket`, rugby: `woven twill rugby collar with a ${T.buttons}-button placket and rubber buttons`, henley: `rib crew band with a ${T.buttons}-button henley placket`, vinsert: 'rib neck band with a jersey V-insert at centre front', hood: 'two-ply self-lined hood with centre seam, flat drawcords through metal eyelets, kangaroo pocket bartacked at the corners' }[T.collar]);
+  if (T.long && cat !== 'tee') parts.push(`${TRIM_FABS[T.cuffFab].label.toLowerCase()} cuffs`);
+  parts.push(T.fleece ? 'rib waistband cut to 75% of the opening' : cat === 'tee' ? 'twin-needle coverstitch at sleeve and body hems' : 'twin-needle body hem');
+  if (T.collar !== 'hood') parts.push('taped back neck shoulder to shoulder');
+  const s = parts.filter(Boolean).join(', '); return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+}
 // Style description for the Overview page: what a pattern room needs to picture the piece before reading the tables.
 function styleDescription(d) {
   const g = d.garment, cat = d.category, out = [], q = v => frac(v) + '"', pv = c => { const r = d.pom.rows.find(x => x.code === c); return r ? num(r.base) : 0; };
@@ -3768,11 +4193,7 @@ function styleDescription(d) {
   const f = FABRICS[g.fabric] || FABRICS.jersey, fit = FITS[g.fit]?.label || 'Boxy', fabric = `${f.label.split('·')[0].trim().toLowerCase()} (${f.comp}${f.gsm ? `, ${f.gsm} gsm` : ''})`;
   const noun = { tee: `${fit}-fit short-sleeve tee`, longsleeve: `${fit}-fit long-sleeve tee`, crewneck: `${fit}-fit crewneck sweatshirt`, hoodie: `${fit}-fit pullover hoodie`, pants: `${g.pantStyle === 'slim' ? 'Slim' : 'Straight'}-leg five-pocket pant, ${fit.toLowerCase()} fit`, shorts: `Pull-on short, ${fit.toLowerCase()} fit`, boxers: 'Boxer brief', socks: g.sockStyle === 'noshow' ? 'No-show sock' : 'Crew sock', scarf: 'Hooded wrap scarf', balaclava: 'Single-opening balaclava', duffle: 'Barrel duffle', satchel: 'Mini crossbody satchel' }[cat];
   out.push(`${noun} in ${fabric}, body ${hx(g.color)}.`);
-  const build = {
-    tee: 'Set-in sleeves, 1×1 rib crew neck, taped back neck shoulder to shoulder, twin-needle coverstitch at sleeve and body hems.',
-    longsleeve: 'Set-in long sleeves with 1×1 rib cuffs, rib crew neck, taped back neck, twin-needle body hem.',
-    crewneck: 'Set-in sleeves, rib crew neck, rib cuffs and waistband cut to 75% of the opening, taped back neck.',
-    hoodie: 'Two-ply self-lined hood with centre seam, flat drawcords through metal eyelets, kangaroo pocket bartacked at the corners, rib cuffs and waistband.',
+  const build = isTop(cat) ? topBuild(d) : {
     pants: 'Five-pocket build: two scoop front pockets, two back patch pockets, coin pocket. Zip fly with shank button, five belt loops, chain-stitched hem.',
     shorts: 'Elasticated waistband with drawcord, two side-seam pockets, coverstitched hem.',
     boxers: 'Jacquard elastic waistband, contoured double-layer pouch, flatlock seams throughout, coverstitched leg hems.',
@@ -3792,7 +4213,14 @@ function styleDescription(d) {
   if (g.pattern && g.pattern !== 'solid' && !isBag(cat)) out.push(`Body fabric pattern: ${PATTERNS[g.pattern].toLowerCase()} in ${hx(g.plaid1)}, ${hx(g.plaid2)} and ${hx(g.plaid3)}.`);
   const trims = [];
   if (g.trim && g.trim.toLowerCase() !== g.color.toLowerCase()) trims.push(`${isBag(cat) ? 'trim' : cat === 'socks' ? 'cuff' : isBottom(cat) ? 'waistband / trim' : 'rib'} in ${hx(g.trim)}`);
-  if (isTop(cat)) { const L = sleeveHex(g), R = sleeveHexR(g), b = g.color.toLowerCase(); if (L.toLowerCase() !== R.toLowerCase()) trims.push(`split sleeves, ${hx(L)} left and ${hx(R)} right as worn`); else if (L.toLowerCase() !== b) trims.push(`contrast sleeves in ${hx(L)}`); }
+  if (isTop(cat)) { const L = sleeveHex(g), R = sleeveHexR(g), b = g.color.toLowerCase(), T = topSpec(d), dif = h => h && String(h).toLowerCase() !== b;
+    if (L.toLowerCase() !== R.toLowerCase()) trims.push(`split sleeves, ${hx(L)} left and ${hx(R)} right as worn`); else if (L.toLowerCase() !== b) trims.push(`contrast ${T.raglan ? 'raglan ' : ''}sleeves in ${hx(L)}`);
+    if (T.collar !== 'hood' && dif(T.collarCol) && T.collarCol.toLowerCase() !== String(g.trim).toLowerCase()) trims.push(`${T.collar === 'vinsert' ? 'collar and V-insert' : 'collar'} in ${hx(T.collarCol)}`);
+    if (T.placketLen && dif(T.placketCol)) trims.push(`placket in ${hx(T.placketCol)}`);
+    if (T.cuffCol && dif(T.cuffCol) && T.cuffCol.toLowerCase() !== String(g.trim).toLowerCase()) trims.push(`${T.long ? 'cuffs' : 'ringer sleeve bands'} in ${hx(T.cuffCol)}`);
+    if (T.fleece && dif(T.hemCol) && T.hemCol.toLowerCase() !== String(g.trim).toLowerCase()) trims.push(`waistband rib in ${hx(T.hemCol)}`);
+    if (T.stripes) trims.push(`${T.stripes} sleeve stripe${T.stripes > 1 ? 's' : ''} in ${hx(T.stripeCol)} ${T.stripePos === 'elbow' ? 'at the elbow' : 'above the cuff'}`);
+    if (T.hoops) trims.push(`${frac(T.hoopW)}" rugby hoops in ${hx(T.hoopCol)} across the ${T.hoops === 'all' ? 'body and sleeves' : 'body'}`); }
   if (g.stitch && g.stitch.toLowerCase() !== g.color.toLowerCase() && cat !== 'socks') trims.push(`thread in ${hx(g.stitch)}`);
   if (trims.length) out.push(`Contrast: ${trims.join('; ')}.`);
   const wash = [g.finish && g.finish !== 'none' ? FINISHES[g.finish].label.toLowerCase() : '', g.distress && g.distress !== 'none' ? 'distressing: ' + DISTRESS[g.distress].label.toLowerCase() : ''].filter(Boolean);
@@ -3817,8 +4245,8 @@ const TechPack = {
   render() {
     const d = S.current; if (!d) return;
     const changed = syncSpec(d); // spec-driven rows follow the 3D Studio before the pages are drawn
-    const isW = d.category === 'watch', pages = [this.cover(d), this.materials(d), this.measure(d), isW ? null : this.art(d), this.build(d), this.cost(d)].filter(Boolean);
-    $('#tpScroll').innerHTML = pages.map((p, i) => `<div class="tp-page">${this.head(d, p.title, i + 1, pages.length)}${p.body}${this.foot(d)}</div>`).join('');
+    const isW = d.category === 'watch', pages = [this.cover(d), this.materials(d), this.measure(d), isW ? null : this.art(d), this.build(d), this.cost(d), Sup.techPage(d)].filter(Boolean);
+    $('#tpScroll').innerHTML = pages.map((p, i) => `<div class="tp-page">${this.head(d, p.title, i + 1, pages.length)}${p.body}${this.foot(d)}</div>`).join('') + Sup.datalist();
     Mark.paint($('#tpScroll')); this.calc(); this.fitCells();
     if (changed) touch();
   },
@@ -3833,14 +4261,14 @@ const TechPack = {
   fig(img, cap, right = '') { return `<div class="tp-fig"><div class="im">${img || `<div class="missing">Not captured<br>3D Studio → Save renders</div>`}</div><div class="cp"><span>${cap}</span><span>${right}</span></div></div>`; },
   table(key, cols, rows, opts = {}) {
     return `<table class="tp-tbl"><thead><tr>${cols.map(c => `<th class="${c.num ? 'num' : ''}" style="${c.w ? 'width:' + c.w : ''}">${c.label}</th>`).join('')}<th class="x"></th></tr></thead>
-      <tbody>${rows.map(r => `<tr>${cols.map(c => c.calc ? `<td class="calc ${c.cls?.(r) || ''}" data-calc="${key}:${r.id}:${c.key}"></td>` : `<td class="${c.num ? 'num' : ''}">${c.color ? `<span class="tp-sw" style="background:${esc(r[c.key])}"></span>` : ''}${c.num || c.color ? `<input class="tp-in" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}" ${c.num ? 'type="number" step="any"' : ''} value="${esc(r[c.key] ?? '')}" ${c.color ? 'style="width:72%"' : ''}>` : `<textarea class="tp-in" rows="1" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}">${esc(r[c.key] ?? '')}</textarea>`}</td>`).join('')}<td class="x"><button data-del="${key}:${r.id}" title="Remove row">×</button></td></tr>`).join('')}</tbody>${opts.foot || ''}</table>`;
+      <tbody>${rows.map(r => `<tr>${cols.map(c => c.calc ? `<td class="calc ${c.cls?.(r) || ''}" data-calc="${key}:${r.id}:${c.key}"></td>` : `<td class="${c.num ? 'num' : ''}">${c.color ? `<span class="tp-sw" style="background:${esc(r[c.key])}"></span>` : ''}${c.list ? `${Sup.dot(r.supplierId)}<input class="tp-in" list="${c.list}" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}" value="${esc(r[c.key] ?? '')}" style="width:calc(100% - 10px)">` : c.num || c.color ? `<input class="tp-in" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}" ${c.num ? 'type="number" step="any"' : ''} value="${esc(r[c.key] ?? '')}" ${c.color ? 'style="width:72%"' : ''}>` : `<textarea class="tp-in" rows="1" data-tbl="${key}" data-id="${r.id}" data-f="${c.key}">${esc(r[c.key] ?? '')}</textarea>`}</td>`).join('')}<td class="x"><button data-del="${key}:${r.id}" title="Remove row">×</button></td></tr>`).join('')}</tbody>${opts.foot || ''}</table>`;
   },
   cover(d) {
     const isW = d.category === 'watch';
     const meta = [['Style no', 'styleNo'], ['Name', 'name'], ['Drop', 'drop'], ['Season', 'season'], ['Designer', 'designer'], ['Factory', 'factory'], [isW ? 'Edition cap' : 'Retail (USD)', isW ? 'edition' : 'msrp'], ['Status', 'status']];
     const r = d.renders || {};
     return {
-      title: 'Overview', body: `<div class="tp-meta">${meta.map(([l, k]) => `<div><label>${l}</label>${k === 'status' ? `<select class="tp-in" data-tp="status">${STATUSES.map(s => `<option ${s === d.status ? 'selected' : ''}>${s}</option>`).join('')}</select>` : this.inp(k, d[k])}</div>`).join('')}</div>
+      title: 'Overview', body: `<div class="tp-meta">${meta.map(([l, k]) => `<div><label>${l}</label>${k === 'status' ? `<select class="tp-in" data-tp="status">${STATUSES.map(s => `<option ${s === d.status ? 'selected' : ''}>${s}</option>`).join('')}</select>` : k === 'factory' ? `<span style="display:flex;align-items:center">${Sup.dot(d.factoryId)}<input class="tp-in" list="supList" data-tp="factory" value="${esc(d.factory ?? '')}"></span>` : this.inp(k, d[k])}</div>`).join('')}</div>
       <div class="tp-figs" style="margin-top:18px">${this.fig(r.front && `<img src="${r.front}">`, '3D · Front')}${this.fig(r.back && `<img src="${r.back}">`, isW ? '3D · 3/4' : '3D · Back')}${this.fig(flatSVG(d, 'front'), 'Flat · Front', 'NTS')}${this.fig(flatSVG(d, 'back'), 'Flat · Back', 'NTS')}</div>
       <h3 style="margin-top:18px">Style description <em>written from the 3D Studio spec · updates with the design</em></h3>
       <div class="tp-desc">${styleDescription(d).map(s => `<p>${esc(s)}</p>`).join('')}</div>
@@ -3863,6 +4291,13 @@ const TechPack = {
         ['Strap', STRAPS[W.strap] + (W.strap === 'woodlinks' ? `: ${WOODS[W.strapWood].label} / ${WOODS[W.strapAccent].label}` : ['leather', 'rubber', 'nato'].includes(W.strap) ? ' · ' + sw(W.strapColor) : '')],
         ['Edition', `N° ${String(W.editionNo).padStart(3, '0')} of ${d.edition || 150}`], ['Caseback', esc(W.engraving)], ...tagRows(d)]; })()
       : [['Body fabric', `${f.label} · ${f.comp}`], ['Fit', FITS[g.fit].label], ['Wash / finish', FINISHES[g.finish || 'none'].label], ...(d.category === 'socks' ? [['Sock style', g.sockStyle === 'noshow' ? 'No-show' : 'Crew'], ['Heel & toe', g.sockAccent === '1' ? `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()}` : 'Self'], ['Cuff', g.sockCuff === '1' ? `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}` : 'Self'], ['Cuff stripes', num(g.stripes) ? ` × 1/2" · <span class="tp-sw" style="background:${g.stripeCol}"></span>${String(g.stripeCol).toUpperCase()}` : 'None']] : []), ...(g.pattern && g.pattern !== 'solid' ? [['Fabric pattern', ` · <span class="tp-sw" style="background:${g.plaid1}"></span><span class="tp-sw" style="background:${g.plaid2}"></span><span class="tp-sw" style="background:${g.plaid3}"></span>`]] : []), ...(g.doubleWB === '1' ? (w => { const sw = h => `<span class="tp-sw" style="background:${h}"></span>`, fab = w.pattern === 'solid' ? `Solid poplin ${sw(w.color)}${String(w.color).toUpperCase()}` : `${PATTERNS[w.pattern].split(' ')[0]} poplin ${sw(g.plaid1)}${sw(g.plaid2)}${sw(g.plaid3)}`; return [['Double waist', w.style === 'boxer' ? `Built-in boxer · ${frac(w.H)}" above main waistband` : `Second band · ${frac(w.H)}" above main waistband`], [w.style === 'boxer' ? 'Inner yoke' : 'Second band', `${fab}${w.style === 'boxer' ? ` · ${frac(w.reveal)}" showing` : ''}`], ...(w.style === 'boxer' ? [['Inner elastic', `Jacquard · ${frac(w.E)}" · ${sw(w.elastic)}${String(w.elastic).toUpperCase()} / ${sw(w.ink)}${String(w.ink).toUpperCase()}${w.text ? ` · “${esc(w.text)}”` : ''}`]] : [])]; })(wb2Spec(g)) : []), ['Distressing', DISTRESS[g.distress || 'none'].label], ['Body color', `<span class="tp-sw" style="background:${g.color}"></span>${g.color.toUpperCase()}`], ['Rib / trim', `<span class="tp-sw" style="background:${g.trim}"></span>${g.trim.toUpperCase()}`], ['Thread', `<span class="tp-sw" style="background:${g.stitch}"></span>${g.stitch.toUpperCase()} · tonal`], ['Front print', `${d.place.front.tech}${d.artwork.front.length ? '' : ' — no art'}`], ['Back print', `${d.place.back.tech}${d.artwork.back.length ? '' : ' — no art'}`],
+        ...(isTop(d.category) ? (T => { const sw = h => `<span class="tp-sw" style="background:${h}"></span>${String(h).toUpperCase()}`; return [
+          ['Collar', T.collar === 'hood' ? 'Hood' : `${esc(COLLARS[T.collar].label)} · ${TRIM_FABS[T.collarFab].label} · ${sw(T.collarCol)}${T.placketLen ? ` · placket ${sw(T.placketCol)}, ${T.buttons} buttons ${sw(T.btn)}` : ''}${T.collar === 'qzip' ? ` · ${ZIPS[T.zip].label} zip ${frac(T.zipLen)}"` : ''}`],
+          ['Sleeve build', `${SLEEVE_STYLES[T.raglan ? 'raglan' : 'setin']} · ${FABRICS[T.sleeveFab].label}${T.sleeveFab === g.fabric ? ' (self)' : ''}`],
+          ...(T.long || g.cuffColor ? [[T.long ? 'Cuffs' : 'Sleeve hem band', `${sw(T.cuffCol || sleeveHex(g))}${T.long ? ' · ' + TRIM_FABS[T.cuffFab].label : ' · ringer band'}`]] : []),
+          ...(T.fleece ? [['Waistband', `Rib · ${sw(T.hemCol)}`]] : []),
+          ...(T.stripes ? [['Sleeve stripes', `${T.stripes} × 3/4" · ${T.stripePos === 'elbow' ? 'elbow' : 'above cuff'} · ${sw(T.stripeCol)}`]] : []),
+          ...(T.hoops ? [['Rugby hoops', `${frac(T.hoopW)}" · ${T.hoops === 'all' ? 'body + sleeves' : 'body'} · ${sw(T.hoopCol)}`]] : [])]; })(topSpec(d)) : []),
         ...(isTop(d.category) ? [['Sleeves', `<span class="tp-sw" style="background:${sleeveHex(g)}"></span>${sleeveHex(g).toUpperCase()}${sleeveHex(g).toLowerCase() === g.color.toLowerCase() ? ' · self' : ' · contrast'}`], ['Sleeve logo', !g.sleeveLogo || g.sleeveLogo === 'none' ? 'None' : `${g.sleeveLogo === 'word' ? "DON'T POSTPONE PASSION wordmark, shoulder to cuff" : `DPP mark ${frac(num(g.sleeveLogoSize) || 3)}" wide, ${frac(num(g.sleeveDrop ?? 2.5))}" below shoulder seam`} · ${g.sleeveSide === 'both' ? 'both sleeves' : g.sleeveSide === 'right' ? 'right sleeve' : 'left sleeve'} · ${g.sleeveTech || 'Screen print'}`]] : []),
         ...tagRows(d)];
     return {
@@ -3871,7 +4306,7 @@ const TechPack = {
           <h3 style="margin-top:18px">Colorways <button class="tp-add add" data-add="colorways">+ Row</button></h3>
           ${this.table('colorways', [{ key: 'name', label: 'Name' }, { key: 'hex', label: 'Hex', color: 1 }, { key: 'pantone', label: 'Pantone TCX' }], d.colorways)}</div>
         <div><h3>Bill of materials <button class="tp-add add" data-add="bom">+ Row</button></h3>
-          ${this.table('bom', [{ key: 'component', label: 'Component', w: '16%' }, { key: 'material', label: 'Material', w: '25%' }, { key: 'spec', label: 'Spec / placement' }, { key: 'supplier', label: 'Supplier', w: '10%' }, { key: 'qty', label: 'Qty', num: 1, w: '7%' }, { key: 'uom', label: 'UoM', w: '6%' }, { key: 'cost', label: 'Unit $', num: 1, w: '7%' }, { key: 'ext', label: 'Ext $', calc: 1, w: '7%' }], d.bom,
+          ${this.table('bom', [{ key: 'component', label: 'Component', w: '16%' }, { key: 'material', label: 'Material', w: '25%' }, { key: 'spec', label: 'Spec / placement' }, { key: 'supplier', label: 'Supplier', w: '12%', list: 'supList' }, { key: 'qty', label: 'Qty', num: 1, w: '7%' }, { key: 'uom', label: 'UoM', w: '6%' }, { key: 'cost', label: 'Unit $', num: 1, w: '7%' }, { key: 'ext', label: 'Ext $', calc: 1, w: '7%' }], d.bom,
         { foot: `<tfoot><tr><td colspan="7">Materials total / unit</td><td class="calc" data-calc="bomTotal"></td><td></td></tr></tfoot>` })}</div></div>`
     };
   },
@@ -3962,8 +4397,8 @@ function artInks(d, side) { const s = new Set(); d.artwork[side].filter(l => !l.
 // tech pack events
 document.addEventListener('input', e => {
   const t = e.target; if (!t.closest('#tpScroll') || !S.current) return; const d = S.current;
-  if (t.dataset.tp) { setPath(d, t.dataset.tp, t.type === 'number' ? num(t.value) : t.value); if (t.dataset.tp === 'name' || t.dataset.tp === 'status') renderCtx(); if (t.dataset.tp === 'pom.base') TechPack.render(); }
-  if (t.dataset.tbl) { const r = (t.dataset.tbl === 'pom' ? d.pom.rows : d[t.dataset.tbl]).find(x => x.id === t.dataset.id); r[t.dataset.f] = t.type === 'number' ? num(t.value) : t.value; if (t.tagName === 'TEXTAREA') TechPack.fitCells(t.parentElement); if (t.dataset.f === 'hex') t.previousElementSibling?.style.setProperty('background', t.value); }
+  if (t.dataset.tp) { setPath(d, t.dataset.tp, t.type === 'number' ? num(t.value) : t.value); if (t.dataset.tp === 'name' || t.dataset.tp === 'status') renderCtx(); if (t.dataset.tp === 'pom.base') TechPack.render(); if (t.dataset.tp === 'factory') { const id = Sup.byName(t.value)?.id || ''; if (id !== (d.factoryId || '')) { d.factoryId = id; Sup.relink(t); } } }
+  if (t.dataset.tbl) { const r = (t.dataset.tbl === 'pom' ? d.pom.rows : d[t.dataset.tbl]).find(x => x.id === t.dataset.id); r[t.dataset.f] = t.type === 'number' ? num(t.value) : t.value; if (t.dataset.f === 'supplier') { const id = Sup.byName(t.value)?.id || ''; if (id !== (r.supplierId || '')) { r.supplierId = id; Sup.relink(t); } } if (t.tagName === 'TEXTAREA') TechPack.fitCells(t.parentElement); if (t.dataset.f === 'hex') t.previousElementSibling?.style.setProperty('background', t.value); }
   if (t.dataset.tpnote) d[t.dataset.tpnote] = t.innerText;
   touch(); TechPack.calc();
 });
@@ -4096,7 +4531,7 @@ function settingsModal() {
 }
 async function exportBackup() {
   const assets = await DB.all('assets');
-  download(`dpp-studio-backup-${today()}.json`, JSON.stringify({ app: 'dpp-studio', v: 1, exported: new Date().toISOString(), designs: S.designs, assets, comments: [...Notes.map.values()] }), 'application/json');
+  download(`dpp-studio-backup-${today()}.json`, JSON.stringify({ app: 'dpp-studio', v: 1, exported: new Date().toISOString(), designs: S.designs, assets, comments: [...Notes.map.values()], suppliers: Sup.list }), 'application/json');
 }
 async function importJSON(text) {
   const j = JSON.parse(text); let n = 0;
@@ -4104,6 +4539,7 @@ async function importJSON(text) {
   for (const a of j.assets || []) await DB.put('assets', a);
   for (const c of j.comments || []) if (!Notes.map.has(c.id)) { Notes.map.set(c.id, c); await DB.raw.put('comments', c); Cloud.setComment(c); }
   for (const d of designs) { const i = S.designs.findIndex(x => x.id === d.id); if (i >= 0) S.designs[i] = d; else S.designs.push(d); await DB.put('designs', d); n++; }
+  for (const s of j.suppliers || []) { const i = Sup.list.findIndex(x => x.id === s.id); if (i >= 0) { if ((Sup.list[i].updated || 0) > (s.updated || 0)) continue; Sup.list[i] = s; } else Sup.list.push(s); Sup.save(s, true); }
   Art.thumbsDirty(); Library.render(); toast(`Imported ${n} design${n === 1 ? '' : 's'}`);
 }
 async function exportDesign() {
@@ -4140,7 +4576,7 @@ function gate() {
 }
 
 function wire() {
-  $$('#tabs button').forEach(b => b.onclick = () => { if (b.dataset.view !== 'library' && b.dataset.view !== 'capture' && !S.current) { toast('Open or create a design first'); return; } go(b.dataset.view); });
+  $$('#tabs button').forEach(b => b.onclick = () => { if (b.dataset.view !== 'library' && b.dataset.view !== 'capture' && b.dataset.view !== 'suppliers' && !S.current) { toast('Open or create a design first'); return; } go(b.dataset.view); });
   $('#btnSettings').onclick = settingsModal;
   $('#btnNew').onclick = () => Library.newModal();
   $('#btnPrompt').onclick = () => promptModal(null);
@@ -4442,6 +4878,7 @@ const Cloud = {
     const F = this.F, col = n => F.collection(this.db, n);
     F.onSnapshot(col('designs'), s => this.onDesigns(s).catch(e => console.error('[cloud] designs', e)), e => this.fail(e));
     F.onSnapshot(col('comments'), s => s.docChanges().forEach(ch => ch.type === 'removed' ? Notes.removed(ch.doc.id) : Notes.remote({ id: ch.doc.id, ...ch.doc.data() })), e => this.fail(e));
+    F.onSnapshot(col('suppliers'), s => Sup.snapshot(s), e => Sup.cloudErr(e)); // needs the suppliers rule in firestore.rules
     F.onSnapshot(col('members'), s => { this.members = s.docs.map(d => ({ email: d.id, ...d.data() })); }, () => { });
     F.onSnapshot(col('presence'), s => { Presence.all = s.docs.map(d => ({ uid: d.id, ...d.data() })); Presence.render(); }, () => { });
     Presence.start();
@@ -4758,7 +5195,246 @@ const Notes = {
   },
 };
 
-window.DPP = { Studio, S, Models, Cloud, Notes, Places }; // console debug handle (internal tool)
+/* =========================================================================
+   16. Suppliers — vetting, lookup and a finder tethered to the tech pack.
+   Every BOM row and the factory field can link to a supplier record; the tech
+   pack's Sourcing page reads status, certificates, MOQ and distance back from it.
+   Distances are straight-line miles to the DPP hubs (Danville, Greensboro, Raleigh).
+   ========================================================================= */
+const SUP_TYPES = ['Cut & sew', 'Blanks', 'Screen print', 'Embroidery', 'DTG / DTF', 'Knit mill / fabric', 'Trims & labels', 'Packaging', 'Leather goods', 'Watch / OEM'];
+const SUP_STATUS = ['Lead', 'Contacted', 'Vetting', 'Sampling', 'Approved', 'Preferred', 'Paused', 'Rejected'];
+const SUP_CERTS = ['WRAP', 'amfori BSCI', 'SMETA', 'SA8000', 'OEKO-TEX Standard 100', 'GOTS', 'GRS', 'ISO 9001', 'Fair Trade'];
+const VET_STEPS = [['call', 'Intro call'], ['caps', 'Capabilities confirmed in writing'], ['refs', 'Two brand references checked'], ['price', 'Price sheet + MOQ in writing'], ['sample', 'Sample ordered'], ['approved', 'Sample approved against the tech pack'], ['visit', 'Visit or live video walkthrough'], ['terms', 'Terms signed: payment, QC / AQL, IP']];
+const RED_FLAGS = [['origin', "Can't say where fabric is knit, dyed and finished"], ['cert', 'No current certificate or audit (over 12 months)'], ['video', 'Refuses a visit or video walkthrough'], ['upfront', 'Wants 100% up front'], ['miss', 'Sample missed the tech pack'], ['late', 'Missed an agreed date'], ['qc', 'Pushes back on written QC / AQL terms']];
+const SCORE_KEYS = [['quality', 'Quality', 3], ['accuracy', 'Sample accuracy', 2.5], ['comms', 'Communication', 2], ['price', 'Price', 2], ['speed', 'Speed', 1.5], ['compliance', 'Compliance', 1]];
+const HUBS = { danville: { label: 'Danville', ll: [36.586, -79.395] }, greensboro: { label: 'Greensboro', ll: [36.0726, -79.792] }, raleigh: { label: 'Raleigh', ll: [35.7796, -78.6382] } };
+const CITY_LL = { 'danville, va': [36.586, -79.395], 'martinsville, va': [36.6915, -79.8725], 'rocky mount, va': [36.9976, -79.892], 'south boston, va': [36.6987, -78.9014], 'lynchburg, va': [37.4138, -79.1422], 'roanoke, va': [37.271, -79.9414], 'richmond, va': [37.5407, -77.436], 'greensboro, nc': [36.0726, -79.792], 'gibsonville, nc': [36.1057, -79.5423], 'burlington, nc': [36.0957, -79.4378], 'high point, nc': [35.9557, -80.0053], 'thomasville, nc': [35.8826, -80.082], 'winston-salem, nc': [36.0999, -80.2442], 'asheboro, nc': [35.7079, -79.8136], 'raleigh, nc': [35.7796, -78.6382], 'durham, nc': [35.994, -78.8986], 'chapel hill, nc': [35.9132, -79.0558], 'cary, nc': [35.7915, -78.7811], 'charlotte, nc': [35.2271, -80.8431], 'mount gilead, nc': [35.2146, -80.0028], 'asheville, nc': [35.5951, -82.5515], 'wilmington, nc': [34.2257, -77.9447], 'washington, dc': [38.9072, -77.0369], 'atlanta, ga': [33.749, -84.388], 'new york, ny': [40.7128, -74.006], 'fall river, ma': [41.7015, -71.155], 'los angeles, ca': [34.0522, -118.2437], 'porto, portugal': [41.1579, -8.6291], 'barcelos, portugal': [41.5388, -8.6151], 'sialkot, pakistan': [32.4945, 74.5229], 'lahore, pakistan': [31.5204, 74.3587], 'karachi, pakistan': [24.8607, 67.0011], 'dakar, senegal': [14.7167, -17.4677] };
+const milesBetween = (a, b) => { if (!a || !b) return null; const r = x => x * Math.PI / 180, h = Math.sin(r(b[0] - a[0]) / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(r(b[1] - a[1]) / 2) ** 2; return 2 * 3958.8 * Math.asin(Math.sqrt(h)); };
+// Which supplier types can do a decoration technique
+const TECH_TYPE = t => /embroider|chenille|patch/i.test(t) ? 'Embroidery' : /DTG|Heat transfer/i.test(t) ? 'DTG / DTF' : /Deboss|Emboss/i.test(t) ? 'Leather goods' : 'Screen print';
+// Seed leads from the Nov 23 2026 research pass. Every one starts as an unverified Lead: confirm before trusting any detail.
+const SUP_SEED_V = '2026-11-23';
+const SUP_SEED = (() => {
+  const src = 'Web research 2026-11-23 (directory / site listing). Unverified: confirm capabilities, minimums and contact before relying on it.';
+  const L = (id, name, city, types, extra = {}) => ({ id: 'seed-' + id, name, city, ll: CITY_LL[city.toLowerCase()] || null, types, source: src, ...extra });
+  return [
+    L('kgg', 'KG Graphics', 'Danville, VA', ['Screen print', 'Embroidery'], { website: 'https://kg-graphics.net/', notes: 'Woman-owned design + print shop, founded 2009. Says low minimums and ships nationwide. Closest decorator to Galileo / home base.' }),
+    L('markii', 'MarKii Custom Prints', 'Danville, VA', ['Screen print', 'Embroidery'], { listing: 'https://bbb.org/us/va/danville/category/screen-printing', notes: '311 Court St, Danville per one BBB listing (other listings show Martinsville / Henrico addresses). BBB A+. No website found.' }),
+    L('pudding', 'Pudding Pop Stitches', 'Danville, VA', ['Screen print'], { listing: 'https://bbb.org/us/va/danville/category/screen-printing', notes: 'BBB listing only: screen printing, T-shirts, custom shirts. No address or website found.' }),
+    L('fullarmor', 'Full Armor Custom Apparel', 'Rocky Mount, VA', ['Screen print', 'Embroidery'], { listing: 'https://www.visitroanokeva.com/listings/full-armor-custom-apparel/8872/', notes: '400 N Main St, Rocky Mount. 20+ years; screen print, embroidery, sublimation, vinyl. No website found.' }),
+    L('pthread', 'Perfectly Threaded, LLC', 'Gibsonville, NC', ['Embroidery', 'Screen print'], { phone: '(336) 229-0152', listing: 'https://bbb.org/us/nc/greensboro/category/embroidery/accredited', notes: '6578 Bethel Church Rd, Gibsonville (also a Greensboro address). BBB accredited, A+. No website found.' }),
+    L('newleaf', 'New Leaf Graphics', 'Greensboro, NC', ['Screen print', 'Embroidery'], { phone: '(336) 580-1566', listing: 'https://bbb.org/us/nc/greensboro/category/screen-printing', notes: '111 Longale Rd, Greensboro (another listing: 3018 W Gate City Blvd). BBB A+. No website found.' }),
+    L('triad', 'Triad Printing NC', 'Greensboro, NC', ['Screen print'], { listing: 'https://threebestrated.com/printing-services-in-greensboro-nc', notes: '1306 E Wendover Ave. General print shop that also does custom tees; phone differs between listings. Weak lead for garment work.' }),
+    L('questra', 'Questra, Inc.', 'Burlington, NC', ['Screen print', 'Embroidery'], { phone: '(336) 226-3050', listing: 'https://bbb.org/us/nc/elon/category/screen-printing', notes: '2125-A N Church St, Burlington. Serves customers nationally. No website found.' }),
+    L('trotters', 'Trotters Sewing Company', 'Asheboro, NC', ['Cut & sew'], { listing: 'https://manufacturednc.com/BJ-Con-Sew-Inc', notes: '321 Industrial Park Ave, est. 1992. Contract cut & sew, but their work is home textiles (cushions, pillow covers, pet beds), not apparel. Ask before assuming they can sew knits.' }),
+    L('ames', 'AMES Cut & Sew', 'Asheville, NC', ['Cut & sew'], { website: 'https://amescutandsew.com/', moq: 20, cats: ['tee', 'longsleeve', 'crewneck', 'hoodie'], notes: 'Says minimums start at 20–50 pieces per style and works with small brands and jersey knits.' }),
+    L('ccns', 'Mt. Gilead Cut & Sew', 'Mount Gilead, NC', ['Cut & sew'], { phone: '910-439-9909', listing: 'https://www.manufacturednc.com/mt-gilead-cut--sew', notes: '112 N Main St. Est. 2019, ~10 people. Clothing, masks, bags; small and large orders. Closest apparel cut-and-sew lead to Greensboro found so far.' }),
+    L('rsp', 'Raleigh Screen Print, Inc.', 'Raleigh, NC', ['Screen print'], { website: 'http://www.raleighscreenprint.com', notes: '4906 Connell Dr. Founded 2008, serves the Triangle. Website from a directory listing, not opened.' }),
+    L('redbird', 'RedBird Screen Printing', 'Raleigh, NC', ['Screen print'], { listing: 'https://shoplocalraleigh.org/?p=103630', notes: 'Shop Local Raleigh profile. No website found.' }),
+    L('inkfinity', 'Inkfinity Printing', 'Durham, NC', ['Screen print', 'Embroidery', 'DTG / DTF'], { listing: 'https://downtowndurham.com/directory/inkfinity-printing/', notes: '601 Foster St, Suite C. Est. 2009. Screen print, embroidery, heat transfer. No website found.' }),
+    L('richs', "Rich's Stitches", 'Richmond, VA', ['Embroidery', 'Screen print'], { phone: '(804) 262-3477', website: 'https://www.richsstitches.com/', notes: '4013 MacArthur Ave. Running since 1988.' }),
+    L('tsrva', 'T-Shirts RVA (Image Designers Inc.)', 'Richmond, VA', ['Screen print', 'Embroidery'], { website: 'https://tshirtsrva.com/', bulkDays: 14, notes: '2032 Dabney Rd, Suite C. Standard turnaround 2 weeks, rush for a fee.' }),
+    L('tland', 'Adventures in T-Shirt Land', 'Richmond, VA', ['Screen print'], { website: 'https://tshirtlandrva.com/', notes: '18+ years printing in Richmond.' }),
+    L('rj', 'R and J Creations & Embroidery', 'Richmond, VA', ['Embroidery', 'Screen print'], { phone: '(804) 351-9933', website: 'https://randjembroidery.com/', notes: 'Woman- and veteran-owned.' }),
+    L('renebassett', 'René Bassett', 'Porto, Portugal', ['Blanks', 'Cut & sew'], { website: 'https://renebassett.com/collections/hoodie-wholesale', moq: 1, cats: ['hoodie', 'crewneck', 'tee'], fabrics: ['heavy', 'fleece'], notes: 'Portuguese heavyweight blanks for independent brands. No MOQ on in-stock blanks; made-to-order and special colours have minimums. City approximate.' }),
+    L('cfb', 'Create Fashion Brand', 'Porto, Portugal', ['Blanks', 'Cut & sew'], { website: 'https://createfashionbrand.com/', moq: 50, cats: ['hoodie'], notes: '480 gsm organic hoodie blank, no MOQ from €24.50; custom logo from 50 pieces. City approximate.' }),
+  ];
+})();
+const supBlank = () => ({ id: uid('sup_'), name: 'New supplier', types: [], status: 'Lead', city: '', ll: null, website: '', listing: '', contact: '', email: '', phone: '', ig: '', cats: [], techs: [], fabrics: [], moq: null, sampleDays: null, bulkDays: null, deposit: null, priceNotes: '', certs: [], vet: {}, flags: {}, scores: {}, samples: [], source: '', notes: '' });
+const Sup = {
+  list: [], q: '', type: '', status: '', hub: 'any', radius: 0, forId: null, run: 150, sel: null, seeded: false, errShown: false,
+  async load() { try { this.list = (await DB.all('suppliers')) || []; } catch { this.list = []; } if (!Cloud.auth) await this.seed(); },
+  // seed only what's missing (deterministic ids, so devices never duplicate); with the team cloud on this runs after the first snapshot
+  async seed() { if (this.seeded) return; this.seeded = true; for (const s of SUP_SEED) if (!this.list.some(x => x.id === s.id)) { const v = { ...supBlank(), ...s, created: Date.now() }; this.list.push(v); this.save(v, true); } },
+  get: id => Sup.list.find(s => s.id === id),
+  byName(n) { n = String(n || '').trim().toLowerCase(); return n ? this.list.find(s => s.name.trim().toLowerCase() === n) : null; },
+  save(v, quiet) { if (!quiet) { v.updated = Date.now(); v.by = Settings.get().designer; } else v.updated ||= Date.now(); DB.raw.put('suppliers', v).catch(() => { }); if (Cloud.on) Cloud.F.setDoc(Cloud.ref('suppliers', v.id), JSON.parse(JSON.stringify(v))).catch(e => this.cloudErr(e)); },
+  _st: {}, saveSoon(v) { clearTimeout(this._st[v.id]?.t); this._st[v.id] = { v, t: setTimeout(() => { delete this._st[v.id]; this.save(v); }, 600) }; }, // per supplier, so quick edits to two records both land
+  flush() { Object.values(this._st).forEach(({ v, t }) => { clearTimeout(t); this.save(v); }); this._st = {}; },
+  async del(v) { if (!await confirmBox('Delete supplier?', `${v.name} is removed for everyone. Designs that link to it keep the name as text.`)) return; this.list = this.list.filter(x => x.id !== v.id); DB.raw.del('suppliers', v.id).catch(() => { }); if (Cloud.on) Cloud.F.deleteDoc(Cloud.ref('suppliers', v.id)).catch(e => this.cloudErr(e)); this.sel = null; this.render(); },
+  snapshot(s) {
+    s.docChanges().forEach(ch => { const id = ch.doc.id, i = this.list.findIndex(x => x.id === id);
+      if (ch.type === 'removed') { if (i >= 0) this.list.splice(i, 1); DB.raw.del('suppliers', id).catch(() => { }); return; }
+      const v = { id, ...ch.doc.data() }; if (i >= 0 && (this.list[i].updated || 0) > (v.updated || 0)) return; if (i >= 0) this.list[i] = v; else this.list.push(v); DB.raw.put('suppliers', v).catch(() => { }); });
+    if (!this.seeded) this.seed();
+    if (S.view === 'suppliers' && !document.activeElement?.closest?.('#supRight')) this.render();
+  },
+  cloudErr(e) { console.warn('[suppliers]', e); if (this.errShown) return; this.errShown = true; toast('Supplier sync is off for now: publish the updated firestore.rules (suppliers). Suppliers still save on this device.', true); if (!this.seeded) this.seed(); },
+  // ---- derived ----
+  dist(s, hub = this.hub) { if (!s.ll) return null; const hs = hub === 'any' ? Object.entries(HUBS) : [[hub, HUBS[hub]]]; let best = null; hs.forEach(([k, h]) => { const m = milesBetween(s.ll, h.ll); if (best === null || m < best.mi) best = { mi: m, hub: h.label, k }; }); return best; },
+  score(s) { let t = 0, w = 0; SCORE_KEYS.forEach(([k, , wt]) => { const v = num(s.scores?.[k]); if (v) { t += v * wt; w += wt; } }); return w ? Math.round(t / w / 5 * 100) : null; },
+  vet(s) { return VET_STEPS.filter(([k]) => s.vet?.[k]).length; },
+  flagN(s) { return RED_FLAGS.filter(([k]) => s.flags?.[k]).length; },
+  certState(c) { if (!c.verified) return 'unverified'; if (c.expires && c.expires < today()) return 'expired'; return 'ok'; },
+  dot(id) { const s = id && this.get(id); if (!s) return ''; const c = { Approved: 'ok', Preferred: 'ok', Rejected: 'bad', Paused: 'bad' }[s.status] || 'wip'; return `<i class="sup-dot ${c}" title="${esc(s.name)} · ${esc(s.status)}"></i>`; },
+  datalist() { return `<datalist id="supList">${this.list.filter(s => s.status !== 'Rejected').sort((a, b) => a.name.localeCompare(b.name)).map(s => `<option value="${esc(s.name)}">${esc(s.status)} · ${esc(s.types.join(', '))} · ${esc(s.city)}</option>`).join('')}</datalist>`; },
+  relink(input) { const td = input.closest('td') || input.parentElement; const old = td?.querySelector('.sup-dot'); old?.remove(); const r = S.current; if (!r) return; const id = input.dataset.tp === 'factory' ? r.factoryId : (r[input.dataset.tbl] || []).find(x => x.id === input.dataset.id)?.supplierId; if (id) input.insertAdjacentHTML('beforebegin', this.dot(id)); },
+  usedIn(s) { return S.designs.filter(d => d.factoryId === s.id || (d.bom || []).some(r => r.supplierId === s.id)); },
+  // what a design asks of a supplier
+  needs(d) {
+    const g = d.garment || {}, techs = new Set(), add = t => t && techs.add(t);
+    ['front', 'back'].forEach(s => { if (d.artwork?.[s]?.some(l => !l.hidden)) add(d.place[s].tech); });
+    (d.placements || []).forEach(p => add(p.patch ? 'Woven patch' : p.tech)); if (isTop(d.category) && g.sleeveLogo && g.sleeveLogo !== 'none') add(g.sleeveTech || 'Screen print');
+    const make = d.category === 'watch' ? 'Watch / OEM' : isBag(d.category) ? 'Leather goods' : 'Cut & sew';
+    const fabrics = [g.fabric, isTop(d.category) ? topSpec(d).sleeveFab : null].filter((f, i, a) => f && a.indexOf(f) === i);
+    return { make, techs: [...techs], fabrics, cat: d.category };
+  },
+  fit(s, d) {
+    const N = this.needs(d), why = [], miss = []; let pts = 0;
+    const types = s.types || [], makes = types.includes(N.make) || (N.make === 'Cut & sew' && types.includes('Blanks')), decor = N.techs.filter(t => (s.techs || []).includes(t) || types.includes(TECH_TYPE(t)));
+    if (makes) { pts += (s.cats || []).includes(N.cat) ? 30 : (s.cats || []).length ? 12 : 22; why.push((s.cats || []).includes(N.cat) ? `makes ${CATS[N.cat].label.toLowerCase()}s` : types.includes('Blanks') ? 'blanks' : N.make.toLowerCase()); if ((s.cats || []).length && !(s.cats || []).includes(N.cat)) miss.push(`${CATS[N.cat].label} not listed`); }
+    if (N.techs.length) { pts += 25 * decor.length / N.techs.length; if (decor.length) why.push(decor.join(', ').toLowerCase()); const lack = N.techs.filter(t => !decor.includes(t)); if (lack.length && (makes || decor.length)) miss.push('no ' + lack.join(', ').toLowerCase()); }
+    if (!makes && !decor.length) return { pts: 0, why, miss: ['not a fit for this piece'] };
+    if (makes) { if ((s.fabrics || []).some(f => N.fabrics.includes(f))) { pts += 10; why.push('has the fabric'); } else pts += (s.fabrics || []).length ? 0 : 5; }
+    if (s.moq) { if (num(s.moq) <= this.run) { pts += 15; why.push(`MOQ ${s.moq}`); } else miss.push(`MOQ ${s.moq} > run ${this.run}`); } else pts += 6;
+    const dd = this.dist(s, 'any'); if (dd) { pts += dd.mi <= 75 ? 10 : dd.mi <= 200 ? 6 : dd.mi <= 500 ? 2 : 0; if (dd.mi <= 200) why.push(`${Math.round(dd.mi)} mi from ${dd.hub}`); }
+    pts += { Preferred: 10, Approved: 9, Sampling: 6, Vetting: 4, Contacted: 3, Lead: 2 }[s.status] || 0;
+    if (['Rejected', 'Paused'].includes(s.status)) { pts -= 30; miss.push(s.status.toLowerCase()); }
+    const fl = this.flagN(s); if (fl) { pts -= fl * 8; miss.push(`${fl} red flag${fl > 1 ? 's' : ''}`); }
+    if ((s.certs || []).some(c => this.certState(c) === 'ok')) { pts += 5; why.push('verified cert'); }
+    return { pts: clamp(Math.round(pts), 0, 100), why, miss };
+  },
+  filtered() {
+    const q = this.q.toLowerCase(), d = this.forId && S.designs.find(x => x.id === this.forId);
+    let L = this.list.filter(s => (!q || [s.name, s.city, s.notes, (s.types || []).join(' '), s.contact].join(' ').toLowerCase().includes(q)) && (!this.type || (s.types || []).includes(this.type)) && (!this.status || s.status === this.status));
+    if (this.radius) L = L.filter(s => { const x = this.dist(s); return x && x.mi <= this.radius; });
+    L = L.map(s => ({ s, f: d ? this.fit(s, d) : null, x: this.dist(s) }));
+    if (d) L = L.filter(o => o.f.pts > 0).sort((a, b) => b.f.pts - a.f.pts);
+    else L.sort((a, b) => (SUP_STATUS.indexOf(a.s.status) >= 6) - (SUP_STATUS.indexOf(b.s.status) >= 6) || (a.x?.mi ?? 1e9) - (b.x?.mi ?? 1e9));
+    return L;
+  },
+  // ---- UI ----
+  render() {
+    const v = $('#view-suppliers'); if (!v) return;
+    if (this.forId && !S.designs.some(d => d.id === this.forId)) this.forId = null;
+    const L = this.filtered(), d = this.forId && S.designs.find(x => x.id === this.forId), counts = SUP_STATUS.map(st => [st, this.list.filter(s => s.status === st).length]).filter(([, n]) => n);
+    $('#supLeft').innerHTML = `<div class="sec"><h4><em>A</em>Find for a design</h4>
+        <div class="fld"><label>Design</label><select class="in" id="supFor"><option value="">Browse all suppliers</option>${S.designs.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0)).map(x => `<option value="${x.id}" ${x.id === this.forId ? 'selected' : ''}>${esc(x.styleNo)} · ${esc(x.name)}</option>`).join('')}</select></div>
+        ${S.current ? `<button class="btn sm block" id="supCur" style="margin-top:8px">Use the open design</button>` : ''}
+        <div class="fld" style="margin-top:10px"><label>Run size<b>units per style</b></label><input class="in mono" id="supRun" type="number" min="1" value="${this.run}"></div>
+        ${d ? (N => `<p class="hint" style="margin-top:10px">Needs: <b>${esc(N.make)}</b>${N.techs.length ? ` + ${esc(N.techs.join(', '))}` : ''} · ${esc(N.fabrics.map(f => FABRICS[f]?.label.split('·')[0].trim()).join(', '))}. Ranked by fit: capability, MOQ vs run, distance, status, flags, certificates.</p>`)(this.needs(d)) : '<p class="hint" style="margin-top:10px">Pick a design to rank suppliers against its tech pack.</p>'}</div>
+      <div class="sec"><h4><em>B</em>Filter</h4>
+        <input class="in" id="supQ" placeholder="Search name, city, notes…" value="${esc(this.q)}">
+        <div class="grid2" style="margin-top:10px"><div class="fld"><label>Type</label><select class="in" id="supType"><option value="">All types</option>${SUP_TYPES.map(t => `<option ${t === this.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div class="fld"><label>Status</label><select class="in" id="supStatus"><option value="">All</option>${SUP_STATUS.map(t => `<option ${t === this.status ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
+        <div class="fld" style="margin-top:10px"><label>Near</label><div class="seg" id="supHub">${[['any', 'Any hub'], ...Object.entries(HUBS).map(([k, h]) => [k, h.label])].map(([k, l]) => `<button data-h="${k}" class="${k === this.hub ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+        <div class="fld" style="margin-top:10px"><label>Within</label><select class="in" id="supRad">${[[0, 'Any distance'], [50, '50 mi'], [100, '100 mi'], [150, '150 mi'], [250, '250 mi'], [500, '500 mi']].map(([k, l]) => `<option value="${k}" ${k === this.radius ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <p class="hint" style="margin-top:8px">Straight-line miles. Drive time is roughly 1.25× that.</p></div>
+      <div class="sec"><h4><em>C</em>Database<span class="r cap">${this.list.length}</span></h4><div class="sup-counts">${counts.map(([st, n]) => `<span class="pill" data-s="${st}">${st} ${n}</span>`).join('')}</div>
+        <div class="grid2" style="margin-top:12px"><button class="btn primary sm" id="supAdd">+ Supplier</button><button class="btn sm" id="supCsv">Export CSV</button></div></div>`;
+    $('#supMain').innerHTML = `<div class="sup-head"><h2>${d ? 'Best fit for ' + esc(d.name) : 'Suppliers'}</h2><span class="cap">${L.length} shown${d ? ' · ranked by fit' : this.hub !== 'any' ? ' · nearest ' + HUBS[this.hub].label + ' first' : ' · nearest hub first'}</span></div>
+      ${L.length ? L.map(({ s, f, x }) => `<button class="sup-row ${s.id === this.sel ? 'on' : ''}" data-sid="${s.id}">
+        <div class="nm"><b>${esc(s.name)}</b><span>${esc(s.city || 'Location not set')}${x ? ` · ${Math.round(x.mi)} mi ${esc(x.hub)}` : ''}</span></div>
+        <div class="ty">${(s.types || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
+        <div class="st"><span class="pill" data-s="${esc(s.status)}">${esc(s.status)}</span></div>
+        <div class="kp"><span title="Vetting steps done">${this.vet(s)}/${VET_STEPS.length}</span><span title="Scorecard">${this.score(s) ?? '—'}</span><span title="Verified certificates">${(s.certs || []).filter(c => this.certState(c) === 'ok').length}✓</span>${this.flagN(s) ? `<span class="bad" title="Red flags">${this.flagN(s)}⚑</span>` : ''}</div>
+        ${f ? `<div class="fit"><b>${f.pts}</b><span>${esc(f.why.join(' · '))}${f.miss.length ? ` <em>${esc(f.miss.join(' · '))}</em>` : ''}</span></div>` : ''}
+      </button>`).join('') : `<div class="empty"><h3>No suppliers match</h3><p class="hint">Clear a filter or add one.</p></div>`}`;
+    this.detail();
+    this.wire();
+  },
+  detail() {
+    const R = $('#supRight'), s = this.sel && this.get(this.sel);
+    if (!s) { R.innerHTML = `<div class="sec"><h4><em>D</em>Supplier</h4><p class="hint">Select a supplier to see and edit its record: contact, capabilities, minimums, certificates, the vetting checklist, red flags, the scorecard and samples.</p></div>`; return; }
+    const ck = (path, on, label) => `<label class="ck"><input type="checkbox" data-supck="${path}" ${on ? 'checked' : ''}><span>${label}</span></label>`;
+    const f = (path, label, val, type = 'text', ph = '') => `<div class="fld"><label>${label}</label><input class="in${type === 'number' ? ' mono' : ''}" data-sup="${path}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}"></div>`;
+    const x = this.dist(s, 'any'), used = this.usedIn(s), sc = this.score(s);
+    R.innerHTML = `<div class="sec"><h4><em>D</em>Supplier<span class="r"><button class="btn sm danger" id="supDel">Delete</button></span></h4>
+        <input class="in sup-name" data-sup="name" value="${esc(s.name)}">
+        <div class="grid2" style="margin-top:10px"><div class="fld"><label>Status</label><select class="in" data-sup="status">${SUP_STATUS.map(t => `<option ${t === s.status ? 'selected' : ''}>${t}</option>`).join('')}</select></div>${f('website', 'Website', s.website, 'url', 'https://')}</div>
+        <div class="grid2" style="margin-top:10px">${f('contact', 'Contact', s.contact)}${f('phone', 'Phone', s.phone, 'tel')}</div>
+        <div class="grid2" style="margin-top:10px">${f('email', 'Email', s.email, 'email')}${f('ig', 'Instagram', s.ig, 'text', '@')}</div>
+        <div style="margin-top:10px">${f('listing', 'Directory listing', s.listing, 'url', 'BBB, ManufacturedNC…')}</div>
+        <div class="row" style="margin-top:8px;gap:14px">${[[s.website, 'Open website ↗'], [s.listing, 'Open listing ↗']].filter(([u]) => u).map(([u, l]) => `<a class="hint" href="${esc(/^https?:/.test(u) ? u : 'https://' + u)}" target="_blank" rel="noopener">${l}</a>`).join('')}</div></div>
+      <div class="sec"><h4><em>E</em>Location</h4><div class="fld"><label>City, ST / country<b>${x ? Math.round(x.mi) + ' mi · ' + esc(x.hub) : 'no coordinates'}</b></label><input class="in" data-sup="city" value="${esc(s.city)}" placeholder="Greensboro, NC"></div>
+        <div class="grid2" style="margin-top:10px">${f('lat', 'Lat', s.ll?.[0], 'number')}${f('lng', 'Lng', s.ll?.[1], 'number')}</div>
+        <p class="hint" style="margin-top:6px">Known cities fill the coordinates on their own; otherwise paste lat / lng from Google Maps.</p>
+        <div class="sup-dists">${Object.entries(HUBS).map(([k, h]) => { const m = milesBetween(s.ll, h.ll); return `<span>${h.label} <b>${m === null ? '—' : Math.round(m) + ' mi'}</b></span>`; }).join('')}</div></div>
+      <div class="sec"><h4><em>F</em>Capabilities</h4><div class="ck-grid">${SUP_TYPES.map(t => ck('types:' + t, (s.types || []).includes(t), t)).join('')}</div>
+        <label class="lbl" style="margin-top:12px">Makes</label><div class="ck-grid">${Object.entries(CATS).map(([k, c]) => ck('cats:' + k, (s.cats || []).includes(k), c.label)).join('')}</div>
+        <details style="margin-top:10px"><summary class="cap">Techniques · ${(s.techs || []).length}</summary><div class="ck-grid" style="margin-top:8px">${TECHNIQUES.map(t => ck('techs:' + t, (s.techs || []).includes(t), t)).join('')}</div></details>
+        <details style="margin-top:8px"><summary class="cap">Fabrics · ${(s.fabrics || []).length}</summary><div class="ck-grid" style="margin-top:8px">${Object.entries(FABRICS).map(([k, v]) => ck('fabrics:' + k, (s.fabrics || []).includes(k), v.label.split('·')[0].trim())).join('')}</div></details></div>
+      <div class="sec"><h4><em>G</em>Commercials</h4><div class="grid3">${f('moq', 'MOQ / style', s.moq, 'number')}${f('sampleDays', 'Sample days', s.sampleDays, 'number')}${f('bulkDays', 'Bulk days', s.bulkDays, 'number')}</div>
+        <div class="grid2" style="margin-top:10px">${f('deposit', 'Deposit %', s.deposit, 'number')}<div></div></div>
+        <div class="fld" style="margin-top:10px"><label>Pricing notes</label><textarea class="in" data-sup="priceNotes" rows="3" placeholder="Unit price by quantity, setup / screen fees, sample cost">${esc(s.priceNotes)}</textarea></div></div>
+      <div class="sec"><h4><em>H</em>Certificates<span class="r"><button class="btn sm" id="supCert">+ Add</button></span></h4>
+        ${(s.certs || []).map(c => `<div class="sup-cert" data-cid="${c.id}"><select class="in" data-cf="kind">${SUP_CERTS.map(k => `<option ${k === c.kind ? 'selected' : ''}>${k}</option>`).join('')}</select><input class="in mono" data-cf="number" placeholder="Cert / audit no." value="${esc(c.number || '')}"><input class="in mono" data-cf="expires" type="date" value="${esc(c.expires || '')}"><label class="ck"><input type="checkbox" data-cf="verified" ${c.verified ? 'checked' : ''}><span>Verified</span></label><span class="cs ${this.certState(c)}">${this.certState(c)}</span><button class="x" data-cx="${c.id}" title="Remove">×</button></div>`).join('') || '<p class="hint">None on file.</p>'}
+        <p class="hint" style="margin-top:8px">Verified means checked at the source, not a logo on their site: <a href="https://www.oeko-tex.com/en/label-check" target="_blank" rel="noopener">OEKO-TEX label check</a> · <a href="https://wrapcompliance.org/certified-facilities/" target="_blank" rel="noopener">WRAP facilities</a> · <a href="https://global-standard.org/find-suppliers-shops-and-inputs/certified-suppliers" target="_blank" rel="noopener">GOTS database</a>. Treat social audits older than 12 months as stale.</p></div>
+      <div class="sec"><h4><em>I</em>Vetting<span class="r cap">${this.vet(s)} / ${VET_STEPS.length}</span></h4>${VET_STEPS.map(([k, l]) => ck('vet.' + k, s.vet?.[k], l)).join('')}</div>
+      <div class="sec"><h4><em>J</em>Red flags<span class="r cap ${this.flagN(s) ? 'bad' : ''}">${this.flagN(s)}</span></h4>${RED_FLAGS.map(([k, l]) => ck('flags.' + k, s.flags?.[k], l)).join('')}</div>
+      <div class="sec"><h4><em>K</em>Scorecard<span class="r cap">${sc === null ? 'not scored' : sc + ' / 100'}</span></h4><div class="grid2">${SCORE_KEYS.map(([k, l]) => `<div class="fld"><label>${l}</label><select class="in" data-sup="scores.${k}"><option value="">—</option>${[1, 2, 3, 4, 5].map(n => `<option ${num(s.scores?.[k]) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`).join('')}</div><p class="hint" style="margin-top:6px">Weighted: quality and sample accuracy count most.</p></div>
+      <div class="sec"><h4><em>L</em>Samples<span class="r"><button class="btn sm" id="supSmp">+ Log</button></span></h4>
+        ${(s.samples || []).map(m => `<div class="sup-smp" data-mid="${m.id}"><input class="in mono" type="date" data-mf="date" value="${esc(m.date || '')}"><select class="in" data-mf="design"><option value="">Design…</option>${S.designs.map(x => `<option value="${x.id}" ${x.id === m.design ? 'selected' : ''}>${esc(x.styleNo)}</option>`).join('')}</select><select class="in" data-mf="result">${['Pending', 'Pass', 'Revise', 'Fail'].map(r => `<option ${r === m.result ? 'selected' : ''}>${r}</option>`).join('')}</select><button class="x" data-mx="${m.id}">×</button><input class="in" data-mf="notes" placeholder="What was off / what to fix" value="${esc(m.notes || '')}"></div>`).join('') || '<p class="hint">No samples yet.</p>'}</div>
+      <div class="sec"><h4><em>M</em>Used in<span class="r cap">${used.length}</span></h4>${used.length ? used.map(u => `<button class="layer" data-open="${u.id}"><span class="ty">${esc(CATS[u.category]?.code || '')}</span><span class="nm">${esc(u.styleNo)} · ${esc(u.name)}</span></button>`).join('') : '<p class="hint">Not linked yet. Pick it in a tech pack: Factory on the Overview, or the Supplier column of the BOM.</p>'}</div>
+      <div class="sec"><h4><em>N</em>Source &amp; notes</h4><div class="fld"><label>Found via</label><input class="in" data-sup="source" value="${esc(s.source)}" placeholder="Referral, directory, trade show…"></div><div class="fld" style="margin-top:10px"><label>Notes</label><textarea class="in" data-sup="notes" rows="5">${esc(s.notes)}</textarea></div>
+        <p class="hint" style="margin-top:8px">Last edit ${s.updated ? ago(s.updated) : '—'}${s.by ? ' by ' + esc(s.by) : ''}.</p></div>`;
+  },
+  wire() {
+    const v = $('#view-suppliers'), rer = debounce(() => this.render(), 150);
+    $('#supFor').onchange = e => { this.forId = e.target.value || null; this.render(); };
+    const cur = $('#supCur'); if (cur) cur.onclick = () => { this.forId = S.current.id; this.render(); };
+    $('#supRun').oninput = e => { this.run = Math.max(1, num(e.target.value) || 150); rer(); };
+    $('#supQ').oninput = e => { this.q = e.target.value; rer(); };
+    $('#supType').onchange = e => { this.type = e.target.value; this.render(); };
+    $('#supStatus').onchange = e => { this.status = e.target.value; this.render(); };
+    $('#supRad').onchange = e => { this.radius = num(e.target.value); this.render(); };
+    $$('#supHub button').forEach(b => b.onclick = () => { this.hub = b.dataset.h; this.render(); });
+    $('#supAdd').onclick = () => { const s = { ...supBlank(), created: Date.now(), source: 'Added by ' + Settings.get().designer }; this.list.push(s); this.save(s); this.sel = s.id; this.q = ''; this.type = ''; this.status = ''; this.radius = 0; this.render(); $('#supRight .sup-name')?.select(); };
+    $('#supCsv').onclick = () => this.csv();
+    $$('[data-sid]', v).forEach(b => b.onclick = () => { this.sel = b.dataset.sid; this.render(); });
+    const s = this.sel && this.get(this.sel); if (!s) return;
+    const R = $('#supRight'), changed = (full) => { this.saveSoon(s); if (full) this.render(); else { const row = $(`[data-sid="${s.id}"] .nm b`, v); if (row) row.textContent = s.name; } };
+    $('#supDel').onclick = () => this.del(s);
+    $$('[data-sup]', R).forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+      const p = el.dataset.sup, val = el.type === 'number' ? (el.value === '' ? null : num(el.value)) : el.value;
+      if (p === 'lat' || p === 'lng') { const ll = s.ll ? [...s.ll] : [0, 0]; ll[p === 'lat' ? 0 : 1] = val ?? 0; s.ll = ll[0] || ll[1] ? ll : null; changed(false); return; }
+      setPath(s, p, val);
+      if (p === 'city') { const hit = CITY_LL[String(val).trim().toLowerCase()]; if (hit) { s.ll = hit; changed(false); clearTimeout(this._t); this._t = setTimeout(() => this.render(), 700); return; } }
+      changed(p === 'status' || p.startsWith('scores.'));
+    }));
+    $$('[data-supck]', R).forEach(el => el.onchange = () => {
+      const p = el.dataset.supck;
+      if (p.includes(':')) { const [k, item] = p.split(':'); const a = new Set(s[k] || []); el.checked ? a.add(item) : a.delete(item); s[k] = [...a]; } else setPath(s, p, el.checked);
+      changed(true);
+    });
+    $('#supCert').onclick = () => { (s.certs ||= []).push({ id: uid('c'), kind: 'OEKO-TEX Standard 100', number: '', expires: '', verified: false }); changed(true); };
+    $$('.sup-cert', R).forEach(row => { const c = s.certs.find(x => x.id === row.dataset.cid); $$('[data-cf]', row).forEach(el => el.onchange = el.oninput = () => { c[el.dataset.cf] = el.type === 'checkbox' ? el.checked : el.value; changed(el.type === 'checkbox' || el.dataset.cf === 'expires'); }); });
+    $$('[data-cx]', R).forEach(b => b.onclick = () => { s.certs = s.certs.filter(c => c.id !== b.dataset.cx); changed(true); });
+    $('#supSmp').onclick = () => { (s.samples ||= []).unshift({ id: uid('m'), date: today(), design: S.current?.id || '', result: 'Pending', notes: '' }); changed(true); };
+    $$('.sup-smp', R).forEach(row => { const m = s.samples.find(x => x.id === row.dataset.mid); $$('[data-mf]', row).forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { m[el.dataset.mf] = el.value; changed(false); })); });
+    $$('[data-mx]', R).forEach(b => b.onclick = () => { s.samples = s.samples.filter(m => m.id !== b.dataset.mx); changed(true); });
+    $$('[data-open]', R).forEach(b => b.onclick = () => openDesign(b.dataset.open, 'techpack'));
+  },
+  csv() {
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`, rows = [['Name', 'Status', 'Types', 'City', 'Lat', 'Lng', 'Miles to Danville', 'Miles to Greensboro', 'Miles to Raleigh', 'MOQ', 'Sample days', 'Bulk days', 'Deposit %', 'Contact', 'Phone', 'Email', 'Website', 'Listing', 'Vetting', 'Score', 'Red flags', 'Verified certs', 'Source', 'Notes'].map(q).join(',')];
+    this.list.forEach(s => rows.push([s.name, s.status, (s.types || []).join('; '), s.city, s.ll?.[0], s.ll?.[1], ...Object.values(HUBS).map(h => { const m = milesBetween(s.ll, h.ll); return m === null ? '' : Math.round(m); }), s.moq, s.sampleDays, s.bulkDays, s.deposit, s.contact, s.phone, s.email, s.website, s.listing, `${this.vet(s)}/${VET_STEPS.length}`, this.score(s) ?? '', this.flagN(s), (s.certs || []).filter(c => this.certState(c) === 'ok').map(c => c.kind).join('; '), s.source, s.notes].map(q).join(',')));
+    download(`dpp-suppliers-${today()}.csv`, rows.join('\r\n'), 'text/csv');
+  },
+  // Tech pack page: every supplier this design links to, with the warnings a factory hand-off needs cleared
+  techPage(d) {
+    const links = [], warn = [], run = this.run;
+    if (d.factory) links.push(['Factory', d.factory, d.factoryId]); else warn.push('No factory set on the Overview page.');
+    (d.bom || []).forEach(r => { if (r.supplier) links.push([r.component || 'BOM row', r.supplier, r.supplierId]); });
+    const unlisted = (d.bom || []).filter(r => !r.supplier).length; if (unlisted) warn.push(`${unlisted} BOM row${unlisted > 1 ? 's have' : ' has'} no supplier.`);
+    const rows = links.map(([role, name, id]) => {
+      const s = id && this.get(id); if (!s) { warn.push(`${name} (${role}) is not in the supplier database.`); return `<tr><td>${esc(role)}</td><td>${esc(name)}</td><td colspan="6" class="tp-warn">Not in the supplier database</td></tr>`; }
+      const x = this.dist(s, 'danville'), certs = s.certs || [], okC = certs.filter(c => this.certState(c) === 'ok'), bad = certs.filter(c => this.certState(c) === 'expired');
+      if (!['Approved', 'Preferred'].includes(s.status)) warn.push(`${s.name} is still at "${s.status}", not Approved.`);
+      if (bad.length) warn.push(`${s.name}: ${bad.map(c => c.kind).join(', ')} expired.`);
+      if (s.moq && num(s.moq) > run) warn.push(`${s.name}: MOQ ${s.moq} is above the ${run}-unit run.`);
+      if (this.flagN(s)) warn.push(`${s.name}: ${RED_FLAGS.filter(([k]) => s.flags?.[k]).map(([, l]) => l.toLowerCase()).join('; ')}.`);
+      return `<tr><td>${esc(role)}</td><td><b>${esc(s.name)}</b><br><span class="tp-small">${esc(s.city)}${x ? ` · ${Math.round(x.mi)} mi from Danville` : ''}</span></td><td>${esc(s.status)}</td><td>${s.moq ?? '—'}</td><td>${s.sampleDays ?? '—'} / ${s.bulkDays ?? '—'} d</td><td>${okC.map(c => esc(c.kind)).join(', ') || '—'}${certs.length > okC.length ? `<br><span class="tp-small">${certs.length - okC.length} unverified / expired</span>` : ''}</td><td>${this.vet(s)}/${VET_STEPS.length}</td><td>${this.score(s) ?? '—'}</td></tr>`;
+    });
+    const uniq = [...new Set(warn)];
+    return { title: 'Sourcing & suppliers', body: `<h3>Linked suppliers <em>from the DPP supplier database · run size ${run}</em><button class="tp-add add" data-supgo="1">Find suppliers for this design →</button></h3>
+      <table class="tp-tbl"><thead><tr><th>Role</th><th>Supplier</th><th>Status</th><th class="num">MOQ</th><th>Sample / bulk</th><th>Verified certs</th><th>Vetting</th><th>Score</th></tr></thead><tbody>${rows.join('') || '<tr><td colspan="8" class="tp-small">No suppliers linked yet. Type a supplier name in the Factory field or the BOM Supplier column; names from the database autocomplete.</td></tr>'}</tbody></table>
+      <h3 style="margin-top:18px">Before this goes to a factory</h3><div class="tp-desc">${uniq.length ? uniq.map(w => `<p>• ${esc(w)}</p>`).join('') : '<p>All linked suppliers are approved, certificates are current and minimums fit the run.</p>'}</div>` };
+  },
+};
+document.addEventListener('click', e => { if (e.target.closest('[data-supgo]') && S.current) { Sup.forId = S.current.id; go('suppliers'); } });
+addEventListener('beforeunload', () => Sup.flush());
+
+window.DPP = { Studio, S, Models, Cloud, Notes, Places, Sup }; // console debug handle (internal tool)
 (async function boot() {
   await Mark.init();
   const cfg = await Cloud.config();
@@ -4767,7 +5443,7 @@ window.DPP = { Studio, S, Models, Cloud, Notes, Places }; // console debug handl
   }
   if (Cloud.auth) await Cloud.signIn(); else await gate();
   await DB.open();
-  S.designs = await DB.all('designs'); await Notes.load();
+  S.designs = await DB.all('designs'); await Notes.load(); await Sup.load();
   wire(); renderCtx(); Library.render();
   if (Cloud.on) Cloud.start();
   document.fonts.ready.then(() => { if (S.view === 'artwork') Art.render(); });
