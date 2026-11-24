@@ -57,7 +57,7 @@ Open a GitHub issue. Include the tab, what you clicked, and a screenshot. If the
 ## Collars, sleeves & trend presets (tops)
 In 3D Studio, tops get **K · Trend presets**, **N · Collar & ribs**, **R · Rugby hoops** and an expanded **S · Sleeves**:
 - **Trend presets (FW26):** Ringer tee, Rugby, Polo, Quarter-zip, Raglan baseball, Hockey jersey and Football jersey. A preset sets the collar, sleeves, stripes and trim colours and, where the look needs it, the fabric, fit or silhouette. Body colour and prints stay.
-- **Collar styles:** crew rib, mock neck, polo (knit collar + 3-button placket), rugby (woven twill collar + 2 rubber buttons), henley, quarter-zip (stand collar with a real zip: tapes, teeth, slider, pull) and V-insert. Each has its own colour and fabric (1×1 rib, 2×2 rib, flat-knit, woven twill, self). Placket and button colours are editable, and so is the zip finish.
+- **Collar styles:** crew rib, mock neck, polo (knit collar + 3-button placket), rugby (woven twill collar + 2 rubber buttons), henley, quarter-zip (stand collar with a real zip: tapes, teeth, slider, pull) and V-insert. Polo and rugby leaves are draped onto the body (they lie on the shoulders and back and run down the chest at the points); mock and quarter-zip stands sit on a cleaned neckline (the body's own crew rib is smoothed away) with the zip running in one line from the stand down the chest. Each has its own colour and fabric (1×1 rib, 2×2 rib, flat-knit, woven twill, self). Placket and button colours are editable, and so is the zip finish.
 - **Sleeves:** set-in or raglan, left and right colours, their own fabric (e.g. mesh or nylon sleeves on a cotton body), cuff (or tee hem band) colour and fabric, and 1–3 hockey / varsity stripes at the elbow or the cuff.
 - **Body:** rugby hoops on the body or body + sleeves, any width. Fleece gets its own waistband rib colour.
 - Collar, cuffs and waistband follow **Rib / trim** until set; **= Rib / = Body / = Sleeve** buttons hand a colour back to its default.
@@ -70,6 +70,16 @@ An internal supplier database with vetting, lookup and a finder.
 - **Tethered to the tech pack:** the Overview **Factory** field and the BOM **Supplier** column autocomplete from the database and link to the record (coloured dot = status). The **Sourcing & suppliers** page lists every linked supplier and the warnings to clear before a factory hand-off (not approved, expired certificates, MOQ above the run, red flags, unlinked BOM rows).
 - Seeded with 20 regional leads from the Nov 23 2026 research pass, all at **Lead** and unverified. **Export CSV** is in the left panel.
 - **Team cloud:** suppliers sync through Firestore like designs. One-time step: publish the updated `firestore.rules` (it adds `match /suppliers/{id}`). Until then suppliers save on each device and the studio shows one warning.
+
+## Send to supplier
+**3D Studio → Output → Send to supplier**, or a supplier record → **O · Sent → Send a design**.
+- **What goes out:** renders at 2000 px on the studio background (3/4, front, back, side and a close-up of the neckline / dial / waistband), the tech pack, the artwork files (4096 px PNG) and optionally the 3D model (.glb).
+- **Supplier-safe tech pack:** a read-only copy of Overview, Materials & BOM, Measurements, Artwork and Construction. Stripped before it leaves: retail price, the Costing page, BOM unit / extended costs and supplier names, and the Sourcing page. The Factory field shows the recipient.
+- **Private link (team cloud):** `share.html#<token>` shows the renders, the full tech pack (print / save PDF) and per-file downloads. No login. It expires after 30 days, counts views and can be revoked from the supplier record. The token is the only key: nobody can list packets.
+- **Channels:** Gmail (compose opens pre-filled), mail app, WhatsApp, the device share sheet (sends the render files themselves), copy message, or download every file (one file each, never a zip). The message is written from the spec: piece, fabric, colour, construction, decoration, sizes, run size and the four quote questions.
+- **On the record:** each send is logged on the supplier (date, design, channel, link) and in the design's revision log. A supplier at **Lead** moves to **Contacted**.
+- **Preview what the supplier sees** opens the supplier page with the packet before anything is sent (works without the cloud).
+- **One-time step:** publish the updated `firestore.rules` (it adds `match /shares/{t}`). Until then the private link step fails with a permissions error. Files, share sheet and downloads work either way.
 
 ## What you can design
 - **Tops:** tee, long sleeve, crewneck, hoodie

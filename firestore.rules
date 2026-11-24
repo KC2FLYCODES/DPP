@@ -21,6 +21,26 @@ service cloud.firestore {
     match /comments/{id} { allow read, write: if member(); }
     match /suppliers/{id} { allow read, write: if member(); }
 
+    // Supplier packets (Send to supplier). The token in the link is the only key: anyone holding it can READ that one
+    // packet while it is live (not revoked, not expired) and add one view. Nobody outside the team can list packets,
+    // write them, or touch any other field. Members create, revoke and delete.
+    match /shares/{t} {
+      function head() { return get(/databases/$(database)/documents/shares/$(t)).data; }
+      function live() { return head().revoked != true && head().exp > request.time; }
+      allow get: if member() || (resource.data.revoked != true && resource.data.exp > request.time);
+      allow list: if member();
+      allow create, delete: if member();
+      allow update: if member()
+        || (resource.data.revoked != true && resource.data.exp > request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'seen'])
+            && request.resource.data.views == resource.data.views + 1);
+      match /b/{k} {
+        allow get: if member() || live();
+        allow list, write: if member();
+        match /c/{p} { allow get: if member() || live(); allow list, write: if member(); }
+      }
+    }
+
     // Presence: everyone can see who's around; you can only write your own heartbeat.
     match /presence/{uid} {
       allow read: if member();

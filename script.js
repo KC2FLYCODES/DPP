@@ -191,6 +191,8 @@ const TRIM_FABS = {
 };
 const SLEEVE_STYLES = { setin: 'Set-in', raglan: 'Raglan' };
 const CONSTRUCTION_KEYS = ['collar', 'collarFab', 'collarColor', 'placketColor', 'btnColor', 'zipFinish', 'sleeveStyle', 'sleeveFab', 'cuffColor', 'cuffFab', 'hemColor', 'slvStripes', 'slvStripeCol', 'slvStripePos', 'hoops', 'hoopCol', 'hoopW'];
+const STAND_SHEAR = .26, FOLD_SHEAR = .14; // forward lean of built collars (the neck tilts ~15° forward): stands, folded polo / rugby collars
+const COLLAR_CLIP = .19; // stand collars (mock, ¼ zip): width of the band past the neckline where the body's own rib texture is erased
 const ZIPS = { nickel: { label: 'Nickel', c: '#c9c7c1', r: .3 }, gunmetal: { label: 'Gunmetal', c: '#4b4c50', r: .35 }, brass: { label: 'Brass', c: '#c9a24a', r: .3 }, black: { label: 'Matte black', c: '#1c1c1e', r: .55 } };
 // One-click looks from the FW26 research (Nov 2026). They only set construction + colour fields; everything stays editable.
 const TOP_PRESETS = [
@@ -220,7 +222,7 @@ function topSpec(d) {
     hoops: g.hoops === 'body' || g.hoops === 'all' ? g.hoops : '', hoopCol: g.hoopCol || '#14172B', hoopW: clamp(num(g.hoopW) || 3, 1, 8),
     placketLen: collar === 'polo' ? 6 : collar === 'rugby' ? 5 : collar === 'henley' ? 5.5 : 0, placketW: collar === 'henley' ? 1 : 1.25,
     buttons: collar === 'rugby' ? 2 : collar === 'polo' || collar === 'henley' ? 3 : 0, zipLen: 8,
-    standH: collar === 'mock' ? 1.5 : collar === 'qzip' ? 2.5 : collar === 'polo' ? .9 : collar === 'rugby' ? 1 : 0,
+    standH: collar === 'mock' ? 1.5 : collar === 'qzip' ? 2.25 : collar === 'polo' ? .9 : collar === 'rugby' ? 1 : 0,
   };
 }
 const WOODS = {
@@ -1668,7 +1670,7 @@ const Studio = {
   },
   clear() {
     this.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { [m.map, m.alphaMap].forEach(t => { if (t && t.userData.own) t.dispose(); }); m.dispose(); }); } });
-    this.root.clear(); this.decals = []; this.fitInfo = null; this.dial = null; this.hands = null; this.lcd = null; this.wheels = null; this.torso = null; this.modelMeshes = null; this.slv = null;
+    this.root.clear(); this.collarSeatBack = null; this.decals = []; this.fitInfo = null; this.dial = null; this.hands = null; this.lcd = null; this.wheels = null; this.torso = null; this.modelMeshes = null; this.slv = null;
   },
   build() {
     const d = S.current; if (!d || !this.ok) return;
@@ -1869,9 +1871,14 @@ const Studio = {
       uZHoop: { value: T.hoops === 'all' ? 2 : T.hoops ? 1 : 0 }, uZHoopW: { value: hw }, uZHoopCol: { value: C(T.hoopCol) }, uZHem0: { value: S.torsoHem },
       uZFleece: { value: T.fleece ? 1 : 0 }, uZHemH: { value: hemH }, uZHemCol: { value: C(T.hemCol) },
       uZVIOn: { value: VI ? 1 : 0 }, uZVI: { value: VI ? new THREE.Vector4(VI.yTop, VI.yApex, VI.xH, VI.zc) : new THREE.Vector4() },
-      uZCollarOn: { value: L && band ? 1 : 0 }, uZLoop: { value: L ? L.pts.map(p => p.clone()) : Array.from({ length: 72 }, () => new THREE.Vector3()) }, uZRibH: { value: ribH }, uZCollar: { value: C(T.collarCol) }, uZLoopZc: { value: L ? L.zc : 0 }, uZLoopMin: { value: L ? L.minY : 0 } };
+      uZCollarOn: { value: L && band ? 1 : 0 }, uZClip: { value: 0 } /* rim cut: off. Every built collar covers the neck, and any cut keyed to the raw neckline holed the back once the body was smoothed or scooped */, uZClipA: { value: T.collar === 'qzip' ? .07 : 0 }, uZErase: { value: L && ['mock', 'qzip'].includes(T.collar) ? COLLAR_CLIP : 0 }, uZBackNeck: { value: L && ['mock', 'qzip', 'polo', 'rugby'].includes(T.collar) ? new THREE.Vector4(1, L.maxY + .05, L.back.y - .42, .3) : new THREE.Vector4() } /* on, top, bottom, half width */, uZLoop: { value: L ? L.pts.map(p => p.clone()) : Array.from({ length: 72 }, () => new THREE.Vector3()) }, uZRibH: { value: ribH }, uZCollar: { value: C(T.collarCol) }, uZLoopZc: { value: L ? L.zc : 0 }, uZLoopMin: { value: L ? L.minY : 0 } };
     const FRAG = `{
       vec3 P = vFP; float s = 0.;
+      // collars built in geometry replace the body's neckline: its rib (top edge and inner face) is cut away inside them
+      if (uZClip > 0.) { vec2 q = vec2(P.x, P.z - uZLoopZc); float brg = atan(q.x, q.y), fb = mod(brg / 6.2831853 * 72. + 72., 72.); int i0 = int(floor(fb)), i1 = i0 == 71 ? 0 : i0 + 1; float tb = fract(fb);
+        vec3 la = uZLoop[i0], lb = uZLoop[i1]; float ly = mix(la.y, lb.y, tb), lr = mix(length(vec2(la.x, la.z - uZLoopZc)), length(vec2(lb.x, lb.z - uZLoopZc)), tb); // interpolated between bearings: no sawtooth
+        float rq = length(q); // deep inside the neck (the inner face), only a sliver at the rim, so the chest under a collar is never holed
+        if (abs(brg) > uZClipA && P.y > ly - .02 && rq < lr + uZClip) discard; } // only what pokes above the neckline: below it is the body itself // only what pokes above the neckline: below it is the body itself (a deeper cut holed the back panel)
       #ifdef ZP_PANEL
       s = vZs > .5 ? 1. : vZs < -.5 ? -1. : 0.;
       #else
@@ -1895,13 +1902,25 @@ const Studio = {
       if (zc.r < 0. && s == 0.) { if (uZFleece > .5 && P.y < uZHem0 + uZHemH) zc = uZHemCol; else if (uZHoop > .5 && mod(floor((P.y - uZHem0) / uZHoopW), 2.) > .5) zc = uZHoopCol; }
       if (zc.r >= 0.) diffuseColor.rgb = zc; else if (uZIsBody < .5) diffuseColor.rgb = uZBody;
     }`;
-    const DECL = 'uniform vec2 uZXT; uniform float uZSA, uZSH, uZRag, uZLenL, uZLenR, uZCuffOn, uZCuffH, uZStripeN, uZTcL, uZTcR, uZHoop, uZHoopW, uZHem0, uZFleece, uZHemH, uZVIOn, uZCollarOn, uZRibH, uZLoopZc, uZLoopMin, uZIsBody; uniform vec3 uZSlvL, uZSlvR, uZBody, uZRootL, uZAxL, uZRootR, uZAxR, uZCuffL, uZCuffR, uZStripe, uZHoopCol, uZHemCol, uZCollar; uniform vec4 uZRagP, uZRagN, uZVI; uniform vec3 uZLoop[72]; varying float vZs;';
+    const DECL = 'uniform vec2 uZXT; uniform float uZSA, uZSH, uZRag, uZLenL, uZLenR, uZCuffOn, uZCuffH, uZStripeN, uZTcL, uZTcR, uZHoop, uZHoopW, uZHem0, uZFleece, uZHemH, uZVIOn, uZCollarOn, uZClip, uZClipA, uZErase, uZRibH, uZLoopZc, uZLoopMin, uZIsBody; uniform vec3 uZSlvL, uZSlvR, uZBody, uZRootL, uZAxL, uZRootR, uZAxR, uZCuffL, uZCuffR, uZStripe, uZHoopCol, uZHemCol, uZCollar; uniform vec4 uZRagP, uZRagN, uZVI, uZBackNeck; uniform vec3 uZLoop[72]; varying float vZs;';
+    // stand collars: the body's own crew rib is baked into the model's normal map; inside a band round the neckline the
+    // normal falls back to the plain surface (fading out at the band's edge), so the body reads as clean fabric up to the seam
+    const NORM = `vec3 zNPre = normal;
+      #include <normal_fragment_maps>
+      if (uZErase > 0.) { vec2 q = vec2(vFP.x, vFP.z - uZLoopZc); float fb = mod(atan(q.x, q.y) / 6.2831853 * 72. + 72., 72.); int i0 = int(floor(fb)), i1 = i0 == 71 ? 0 : i0 + 1; float tb = fract(fb);
+        vec3 la = uZLoop[i0], lb = uZLoop[i1]; float ly = mix(la.y, lb.y, tb), lr = mix(length(vec2(la.x, la.z - uZLoopZc)), length(vec2(lb.x, lb.z - uZLoopZc)), tb);
+        float d = max(length(q) - lr, ly - vFP.y), m = 1. - smoothstep(uZErase * .7, uZErase, d);
+        normal = normalize(mix(normal, zNPre, m * .9)); }
+      // some models carry a label patch baked into the normal map at the outside back neck: under a built collar it
+      // reads as torn marks, so the patch goes back to the plain surface (soft edges)
+      if (uZBackNeck.x > 0. && vFP.z < uZLoopZc) { float bx = 1. - smoothstep(uZBackNeck.w * .75, uZBackNeck.w, abs(vFP.x)), by = smoothstep(uZBackNeck.z, uZBackNeck.z + .05, vFP.y) * (1. - smoothstep(uZBackNeck.y - .02, uZBackNeck.y, vFP.y));
+        normal = normalize(mix(normal, zNPre, bx * by)); }`;
     const zpatch = (m, body) => {
       if (S.panel) m.defines = { ...(m.defines || {}), ZP_PANEL: '' };
       addPatch(m, 'zone' + (S.panel ? 'P' : ''), sh => {
         Object.assign(sh.uniforms, U, { uZIsBody: { value: body ? 1 : 0 } });
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vZs;\n#ifdef ZP_PANEL\nattribute float aZs;\n#endif').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\n#ifdef ZP_PANEL\nvZs = aZs;\n#else\nvZs = 0.;\n#endif');
-        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + DECL).replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAG);
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + DECL).replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAG).replace('#include <normal_fragment_maps>', NORM);
       });
     };
     // materials + regrouped index
@@ -1958,33 +1977,149 @@ const Studio = {
   },
   // Front surface z at (x, y), for laying plackets and zips on the chest
   surfZ(x, y) { if (this.grids) { const z = this.gridAt(this.grids.F, x, y); if (z !== null) return z; } const h = new THREE.Raycaster(new THREE.Vector3(x, y, 20), new THREE.Vector3(0, 0, -1)).intersectObjects(this.modelMeshes, false)[0]; return h ? h.point.z : null; },
+  // Body proximity for draping collars: every body vertex and triangle centre near the neck, bucketed in a 3D grid.
+  // dist() is the distance to the nearest body sample, capped at `lim` (a 27-cell search when lim <= the cell size).
+  // Exact: distances are to the triangles themselves (garment meshes can be low-poly with big faces, so nearest-vertex
+  // distance would let a collar sink through). Triangles are bucketed by bounding box; a query checks 27 cells.
+  bodyCloud() {
+    if (this._bc) return this._bc;
+    const S = this.slv, L = this.neck; if (!S || !L) return null;
+    const c = .03, M = new Map(), K = (i, j, k) => ((i + 600) * 1200 + (j + 600)) * 1200 + (k + 600), T = [];
+    S.W.forEach((wp, mi) => {
+      const ix = this.modelMeshes[mi]?.geometry.index, n = ix ? ix.count : wp.length / 3, at = t => (ix ? ix.getX(t) : t) * 3;
+      for (let t = 0; t < n; t += 3) {
+        const a = at(t), b = at(t + 1), e = at(t + 2), v = [wp[a], wp[a + 1], wp[a + 2], wp[b], wp[b + 1], wp[b + 2], wp[e], wp[e + 1], wp[e + 2]];
+        const y0 = Math.min(v[1], v[4], v[7]), y1 = Math.max(v[1], v[4], v[7]); if (y1 < L.minY - 1.3 || y0 > L.maxY + .3) continue;
+        const x0 = Math.min(v[0], v[3], v[6]), x1 = Math.max(v[0], v[3], v[6]), z0 = Math.min(v[2], v[5], v[8]), z1 = Math.max(v[2], v[5], v[8]);
+        if (Math.hypot(clamp(0, x0, x1), clamp(L.zc, z0, z1) - L.zc) > 1.7) continue;
+        const id = T.length; T.push(v);
+        for (let i = Math.floor(x0 / c); i <= Math.floor(x1 / c); i++) for (let j = Math.floor(y0 / c); j <= Math.floor(y1 / c); j++) for (let k = Math.floor(z0 / c); k <= Math.floor(z1 / c); k++) { const key = K(i, j, k); let l = M.get(key); if (!l) M.set(key, l = []); l.push(id); }
+      }
+    });
+    // closest point on a triangle (Ericson, Real-Time Collision Detection 5.1.5), squared distance
+    const d2 = (v, px, py, pz) => {
+      const abx = v[3] - v[0], aby = v[4] - v[1], abz = v[5] - v[2], acx = v[6] - v[0], acy = v[7] - v[1], acz = v[8] - v[2], apx = px - v[0], apy = py - v[1], apz = pz - v[2];
+      const D = (x, y, z) => x * x + y * y + z * z;
+      const d1 = abx * apx + aby * apy + abz * apz, e1 = acx * apx + acy * apy + acz * apz; if (d1 <= 0 && e1 <= 0) return D(apx, apy, apz);
+      const bpx = px - v[3], bpy = py - v[4], bpz = pz - v[5], d3 = abx * bpx + aby * bpy + abz * bpz, e3 = acx * bpx + acy * bpy + acz * bpz; if (d3 >= 0 && e3 <= d3) return D(bpx, bpy, bpz);
+      const vc = d1 * e3 - d3 * e1; if (vc <= 0 && d1 >= 0 && d3 <= 0) { const t = d1 / (d1 - d3); return D(apx - abx * t, apy - aby * t, apz - abz * t); }
+      const cpx = px - v[6], cpy = py - v[7], cpz = pz - v[8], d5 = abx * cpx + aby * cpy + abz * cpz, e5 = acx * cpx + acy * cpy + acz * cpz; if (e5 >= 0 && d5 <= e5) return D(cpx, cpy, cpz);
+      const vb = d5 * e1 - d1 * e5; if (vb <= 0 && e1 >= 0 && e5 <= 0) { const t = e1 / (e1 - e5); return D(apx - acx * t, apy - acy * t, apz - acz * t); }
+      const va = d3 * e5 - d5 * e3; if (va <= 0 && e3 - d3 >= 0 && d5 - e5 >= 0) { const t = (e3 - d3) / ((e3 - d3) + (d5 - e5)); return D(bpx - (v[6] - v[3]) * t, bpy - (v[7] - v[4]) * t, bpz - (v[8] - v[5]) * t); }
+      const den = 1 / (va + vb + vc), s = vb * den, w = vc * den; return D(apx - abx * s - acx * w, apy - aby * s - acy * w, apz - abz * s - acz * w);
+    };
+    const seen = new Uint32Array(T.length); let stamp = 0;
+    const dist = (x, y, z, lim = .03) => { const R = Math.ceil(lim / c), i0 = Math.floor(x / c), j0 = Math.floor(y / c), k0 = Math.floor(z / c); let b = lim * lim; stamp++;
+      for (let i = i0 - R; i <= i0 + R; i++) for (let j = j0 - R; j <= j0 + R; j++) for (let k = k0 - R; k <= k0 + R; k++) { const l = M.get(K(i, j, k)); if (!l) continue; for (const id of l) { if (seen[id] === stamp) continue; seen[id] = stamp; const dd = d2(T[id], x, y, z); if (dd < b) b = dd; } }
+      return Math.sqrt(b); };
+    return this._bc = { dist, tris: T.length };
+  },
+  // Stand collars sit on the neckline seam, so the body's own crew rib (a modelled ridge on some meshes) has to go:
+  // body vertices in a band round the neckline are Laplacian-smoothed (welded across UV seams, weight fading out at the
+  // band's edge), on a clone of the geometry so the cached model is never touched. Normals are refreshed where it moved.
+  smoothNeckBand(width = .22, iters = 40) {
+    const L = this.neck, S = this.slv; if (!L || !S) return;
+    const v = new THREE.Vector3(), N = L.N;
+    const band = (x, y, z) => { const q = Math.atan2(x, z - L.zc), fb = ((q / (2 * Math.PI) * N) % N + N) % N, i0 = Math.floor(fb), i1 = (i0 + 1) % N, t = fb - i0, A = L.pts[i0], B = L.pts[i1];
+      const ly = lerp(A.y, B.y, t), lr = lerp(Math.hypot(A.x, A.z - L.zc), Math.hypot(B.x, B.z - L.zc), t), r = Math.hypot(x, z - L.zc); if (r < lr - .03) return 0;
+      const d = Math.max(r - lr, (ly - y) * 2.2); return d > width ? 0 : 1 - THREE.MathUtils.smoothstep(d, width * .7, width); }; // vertical drop counts double: where the chest falls away, the band stays on the shelf and never creases the chest
+    this.modelMeshes.forEach((m, mi) => {
+      const geo = m.geometry.clone(); m.geometry = geo; const P = geo.attributes.position, ix = geo.index, n = P.count, fl = S.flag[mi];
+      m.updateMatrixWorld(true); const M = m.matrixWorld, inv = M.clone().invert(), W = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { v.fromBufferAttribute(P, i).applyMatrix4(M); W[i * 3] = v.x; W[i * 3 + 1] = v.y; W[i * 3 + 2] = v.z; }
+      // weld by position so UV seams move together
+      const key = new Map(), wid = new Int32Array(n); let nw = 0;
+      for (let i = 0; i < n; i++) { const k = Math.round(W[i * 3] * 2e3) + ',' + Math.round(W[i * 3 + 1] * 2e3) + ',' + Math.round(W[i * 3 + 2] * 2e3); let w = key.get(k); if (w === undefined) key.set(k, w = nw++); wid[i] = w; }
+      const pos = new Float32Array(nw * 3), wt = new Float32Array(nw), nb = Array.from({ length: nw }, () => new Set());
+      for (let i = 0; i < n; i++) { const w = wid[i]; pos.set(W.subarray(i * 3, i * 3 + 3), w * 3); if (!fl[i]) wt[w] = Math.max(wt[w], band(W[i * 3], W[i * 3 + 1], W[i * 3 + 2])); }
+      if (!wt.some(x => x > 0)) return;
+      const tri = ix ? ix.count : n, at = t => wid[ix ? ix.getX(t) : t];
+      for (let t = 0; t < tri; t += 3) { const a = at(t), b = at(t + 1), c = at(t + 2); nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
+      for (let it = 0; it < iters; it++) { const nxt = pos.slice(); for (let w = 0; w < nw; w++) { if (!wt[w] || !nb[w].size) continue; let sx = 0, sy = 0, sz = 0; nb[w].forEach(q => { sx += pos[q * 3]; sy += pos[q * 3 + 1]; sz += pos[q * 3 + 2]; }); const k = nb[w].size, f = (it % 2 ? -.58 : .55) * wt[w]; /* Taubin λ|μ: smooths without shrinking the neck inward */ nxt[w * 3] += (sx / k - pos[w * 3]) * f; nxt[w * 3 + 1] += (sy / k - pos[w * 3 + 1]) * f; nxt[w * 3 + 2] += (sz / k - pos[w * 3 + 2]) * f; } pos.set(nxt); }
+      const moved = []; for (let i = 0; i < n; i++) { const w = wid[i]; if (!wt[w]) continue; v.set(pos[w * 3], pos[w * 3 + 1], pos[w * 3 + 2]); W[i * 3] = v.x; W[i * 3 + 1] = v.y; W[i * 3 + 2] = v.z; v.applyMatrix4(inv); P.setXYZ(i, v.x, v.y, v.z); moved.push(i); }
+      S.W[mi] = W; P.needsUpdate = true;
+      if (geo.attributes.normal && moved.length) { const old = geo.attributes.normal.array.slice(); geo.computeVertexNormals(); const nn = geo.attributes.normal, acc = new Float32Array(nw * 3);
+        for (let i = 0; i < n; i++) { const w = wid[i]; acc[w * 3] += nn.getX(i); acc[w * 3 + 1] += nn.getY(i); acc[w * 3 + 2] += nn.getZ(i); }
+        const out = old; moved.forEach(i => { const w = wid[i], l = Math.hypot(acc[w * 3], acc[w * 3 + 1], acc[w * 3 + 2]) || 1, b = wt[w]; for (let c = 0; c < 3; c++) out[i * 3 + c] = lerp(old[i * 3 + c], acc[w * 3 + c] / l, b); });
+        nn.array.set(out); nn.needsUpdate = true; }
+      geo.computeBoundingBox(); geo.computeBoundingSphere();
+    });
+  },
+  // A collar leaf hung from its fold: a chain of links that falls beside the stand and swings out, link by link, only
+  // as far as it must to clear the body. Each link may bend back toward vertical (it hugs a falling shoulder) but never
+  // into the body. Returns the link angles, 0 = straight down, π/2 = straight out along the bearing.
+  // `p0`: the first link opens at least this far (the fold's set); later links still fall back toward the body.
+  drapeChain(B, n, o0, u0, lens, gap, p0 = 0) {
+    const C = this._bc, phis = []; let o = o0, u = u0, ph = 0;
+    const hit = (oo, uu) => C.dist(B.x + n.x * oo, B.y + uu, B.z + n.z * oo, gap) < gap;
+    lens.forEach((l, k) => { let p = k ? Math.max(0, ph - .3) : p0; while (p < 2.3 && (hit(o + Math.sin(p) * l, u - Math.cos(p) * l) || hit(o + Math.sin(p) * l * .5, u - Math.cos(p) * l * .5))) p += .03; ph = p; phis.push(p); o += Math.sin(p) * l; u -= Math.cos(p) * l; });
+    return phis;
+  },
+  // A collar leaf's outer edge is cut longer than the neckline, so it opens at the fold until its edge reaches a wider
+  // circle (`need`, out along the bearing), then lies on the body. Smallest fold opening that reaches, then gravity.
+  drapeLeaf(B, n, o0, u0, lens, gap, need) {
+    const reach = ph => ph.reduce((s, p, k) => s + Math.sin(p) * lens[k], 0);
+    let ph = this.drapeChain(B, n, o0, u0, lens, gap, 0); if (reach(ph) >= need) return ph;
+    let lo = 0, hi = 1.45, best = this.drapeChain(B, n, o0, u0, lens, gap, hi); // reach grows with the fold opening: bisect
+    for (let it = 0; it < 5; it++) { const mid = (lo + hi) / 2, m = this.drapeChain(B, n, o0, u0, lens, gap, mid); if (reach(m) >= need) { hi = mid; best = m; } else lo = mid; }
+    return best;
+  },
+  // Per-bearing values made smooth and symmetric: rows[i] is mirrored by rows[n-1-i] (the bearings run a0 … 2π-a0),
+  // `merge` decides the mirrored value (max = clear on both sides), then a triangle-weighted average along the neck.
+  smoothRows(R, merge = Math.max, wrap = false, win = 4, passes = 3) {
+    const n = R.length; R = R.map((r, i) => r.map((v, k) => merge(v, R[n - 1 - i][k])));
+    for (let p = 0; p < passes; p++) R = R.map((r, i) => r.map((_, k) => { let s = 0, w = 0; for (let j = -win; j <= win; j++) { const ii = wrap ? (i + j + n) % n : clamp(i + j, 0, n - 1), ww = win + 1 - Math.abs(j); s += R[ii][k] * ww; w += ww; } return s / w; }));
+    return R;
+  },
   // Collars built in geometry on the smoothed neckline (L.P): each is one closed shell swept from a cross-section
   // profile, so there are no stacked surfaces to flicker. Profiles are (out, up) offsets from the neck edge.
   // Mock neck and quarter-zip stand follow the neckline curve; polo / rugby stand, fold, then drape a leaf onto the
   // shoulders (leaf points pushed up out of the body using the top-down heightfield); plackets are thick panels.
   buildCollar(d) {
     const L = this.neck, T = topSpec(d), g = d.garment; if (!L || ['crew', 'vinsert', 'hood'].includes(T.collar)) return;
+    if (T.collar === 'mock' || T.collar === 'qzip') { this.smoothNeckBand(); this.surfGrids(this.slv); } // the chest lookups (zip, plackets) must see the smoothed body
+    this._bc = null; const C = this.bodyCloud();
+    // Seat line: the collar sits on the neck edge, and on some meshes the real edge across the back is on the inside and
+    // higher than the outer neckline (L): use the higher of the two per bearing, mirrored and smoothed, or every collar scoops.
+    const seatY = (() => { const N = 72, mx = new Array(N).fill(-9), mr = new Array(N).fill(0), S = this.slv;
+      S.W.forEach((wp, mi) => { const fl = S.flag[mi]; for (let i = 0; i < wp.length / 3; i++) { if (fl[i]) continue; const x = wp[i * 3], y = wp[i * 3 + 1], z = wp[i * 3 + 2], b = ((Math.round(Math.atan2(x, z - L.zc) / (2 * Math.PI) * N) % N) + N) % N, P = L.P(b / N * 2 * Math.PI), lr = Math.hypot(P.x, P.z - L.zc), r = Math.hypot(x, z - L.zc); if (r > lr - .08 && r < lr + .01 && y < P.y + .2 && y > mx[b]) { mx[b] = y; mr[b] = r; } } });
+      // the seat is the rim's own top: height AND radius (the neck edge often rolls inward, so the rim sits higher and further in)
+      // (radius stays on the outer neckline: the stand then covers the rim, and its lap bridges down onto the outside)
+      let R = mx.map((y, b) => { const P = L.P(b / N * 2 * Math.PI), lr = Math.hypot(P.x, P.z - L.zc); return [Math.max(y, P.y), lr + .004]; });
+      R = R.map((r, b) => { const m = R[(N - b) % N]; return [Math.max(r[0], m[0]), (r[1] + m[1]) / 2]; }); // mirror (bin b ↔ -b)
+      R = this.smoothRows(R, p => p, true, 4, 3); // already mirrored: identity merge, circular smoothing
+      // a collar is stiffer than a scooped back neckline: centre back sits at most ~0.6" below the side neck points
+      const side = (R[N / 4][0] + R[3 * N / 4][0]) / 2;
+      R = R.map((r, b) => { const a = b / N * 2 * Math.PI; return Math.cos(a) < 0 ? [Math.max(r[0], side - .06 * (1 - Math.abs(Math.sin(a)))), r[1]] : r; });
+      R = this.smoothRows(R, p => p, true, 3, 2);
+      return a => { const f = ((a / (2 * Math.PI) * N) % N + N) % N, i = Math.floor(f), t = f - i, A = R[i % N], B = R[(i + 1) % N]; return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)]; }; })();
+    const Lp = L.P; L.P = a => { const [y, r] = seatY(a); return new THREE.Vector3(Math.sin(a) * r, y, L.zc + Math.cos(a) * r); }; // collars below read the seat line through L.P
+    this.collarSeatBack = seatY(Math.PI)[0]; // the neck label goes under the collar seam, not through the collar
+    try { this.buildCollarParts(d, L, T, g, C); } finally { L.P = Lp; }
+  },
+  buildCollarParts(d, L, T, g, C) {
     const V = THREE.Vector3, Z = this.zfx || {}, out = a => new V(Math.sin(a), 0, Math.cos(a)), TAU = Math.PI * 2;
     const mat = (hex, fab, rx = 5, ry = 1.2) => {
       const tf = TRIM_FABS[fab], f = fab === 'twill' ? 'twill' : fab === 'self' ? g.fabric : FABRICS[fab] ? fab : 'jersey';
       const m = this.fabricMat(hex, f, !!tf?.rib, rx, ry); fabricFX(m, { ...(Z.fx || {}), woven: !!FABRICS[f]?.weave, uv: true, tile: 5 });
       m.polygonOffset = true; m.polygonOffsetFactor = -1; m.polygonOffsetUnits = -2; return m;
     };
-    const bodyTop = (x, z) => this.grids ? this.gridAt(this.grids.Tg, x, z) : null;
     // sweep a 2D profile along the neckline angles `as` into a closed shell of thickness th
-    const sweep = (as, prof, th, m, leafFrom = 99) => {
-      const rows = as.map(a => {
-        const B = L.P(a), n = out(a), P = prof(a);
-        const pts = P.map(([o, u]) => B.clone().addScaledVector(n, o).add(new V(0, u, 0)));
-        for (let j = leafFrom; j < pts.length; j++) { const y = bodyTop(pts[j].x, pts[j].z); if (y !== null && pts[j].y < y + .007) pts[j].y = y + .007; } // drape: never inside the body
+    // `shear`: collars lean forward with the neck (a neck isn't vertical): every point above the seat moves forward by
+    // shear × its height, so the back of a stand leans in and the front leans out, as on a real wearer
+    const sweep = (as, prof, th, m, shear = 0) => {
+      const rows = as.map((a, ai) => {
+        const B = L.P(a), n = out(a), P = prof(a, ai), side = new V(Math.cos(a), 0, -Math.sin(a)).multiplyScalar(Math.sin(a) >= 0 ? 1 : -1); // away from centre front
+        const pts = P.map(([o, u, , lat = 0]) => B.clone().addScaledVector(n, o).add(new V(0, u, shear * Math.max(0, u))).addScaledVector(side, lat)); // 4th value: sideways (collar points flare out toward the shoulder)
         // 2D normal of the profile (pointing to the inside of the fold / neck side), for the shell thickness
         const inn = pts.map((p, j) => { const A = pts[Math.max(0, j - 1)], C = pts[Math.min(pts.length - 1, j + 1)], tg = C.clone().sub(A); const side = tg.clone().cross(new V(Math.cos(a), 0, -Math.sin(a))).normalize(); return side; });
-        return { pts, inn };
+        return { pts, inn, tk: P.map(q => q[2]) };
       });
       const nA = rows.length, nP = rows[0].pts.length, pos = [], uv = [], idx = [];
       let acc = 0; const us = rows.map((r, i) => (i ? (acc += r.pts[0].distanceTo(rows[i - 1].pts[0])) : 0));
       const vs = rows[0].pts.map((p, j, A) => j ? A.slice(1, j + 1).reduce((s, q, k) => s + q.distanceTo(A[k]), 0) : 0);
-      [0, 1].forEach(side => rows.forEach((r, i) => r.pts.forEach((p, j) => { const q = side ? p.clone().addScaledVector(r.inn[j], th) : p; pos.push(q.x, q.y, q.z); uv.push(us[i] * 4, vs[j] * 4); })));
+      // a profile point's 3rd value thins the shell there (feathered skirt edge)
+      [0, 1].forEach(side => rows.forEach((r, i) => r.pts.forEach((p, j) => { const q = side ? p.clone().addScaledVector(r.inn[j], th * (r.tk[j] ?? 1)) : p; pos.push(q.x, q.y, q.z); uv.push(us[i] * 4, vs[j] * 4); })));
       const id = (side, i, j) => side * nA * nP + i * nP + j;
       for (let i = 0; i < nA - 1; i++) for (let j = 0; j < nP - 1; j++) {
         idx.push(id(0, i, j), id(0, i + 1, j), id(0, i, j + 1), id(0, i, j + 1), id(0, i + 1, j), id(0, i + 1, j + 1));
@@ -1993,19 +2128,37 @@ const Studio = {
       for (let i = 0; i < nA - 1; i++) [0, nP - 1].forEach(j => idx.push(id(0, i, j), id(1, i, j), id(0, i + 1, j), id(0, i + 1, j), id(1, i, j), id(1, i + 1, j))); // profile edges
       [0, nA - 1].forEach(i => { for (let j = 0; j < nP - 1; j++) idx.push(id(0, i, j), id(0, i, j + 1), id(1, i, j), id(1, i, j), id(0, i, j + 1), id(1, i, j + 1)); }); // ends
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
-      return this.add(geo, m);
+      return this.add(geo, m, false); // no shadow-map shadow: at this scale it aliases into jagged marks; the AO pass gives the soft contact shade
     };
     const range = (a0, a1, n) => Array.from({ length: n + 1 }, (_, k) => a0 + (a1 - a0) * k / n);
     const halfOpen = w => { let a = .02; while (a < Math.PI / 2 && Math.abs(L.P(a).x) < w) a += .005; return a; }; // angle where the collar meets the placket / zip
     if (T.collar === 'mock' || T.collar === 'qzip') {
-      const h = T.standH / 10, zip = T.collar === 'qzip', a0 = zip ? halfOpen(.007) : 0, as = zip ? range(a0, TAU - a0, 120) : range(0, TAU, 120);
-      // top edge: level round the back, dropping toward the front (never lower than half the stand height above the neck)
-      const yMax = Math.max(...range(0, Math.PI, 36).map(a => L.P(a).y)), fall = (yMax - L.front.y) * .55;
-      const uTop = a => { const fr = Math.max(0, Math.cos(a)); return Math.max(h * .5, yMax + h * .8 - fr * fr * fall - L.P(a).y); };
-      // the stand starts over the body's own neck rib (so no crew rib shows under it), rises leaning in a little at the back,
-      // straight at the front where it meets the zip, and finishes in a rolled double edge
-      sweep(as, a => { const fr = Math.max(0, Math.cos(a)), lean = -.012 * (1 - fr), u = uTop(a); return [[.03, -.11], [.02, -.045], [.012, 0], [lean * .35 + .004, u * .35], [lean * .75, u * .72], [lean, u], [lean + .006, u + .004]]; }, .012, mat(T.collarCol, T.collarFab, 18, 1.5));
-      if (zip) this.buildZip(d, L.P(a0).clone().lerp(L.P(-a0), .5).add(new V(0, uTop(a0), 0)), L.front.y);
+      const h = T.standH / 10, zip = T.collar === 'qzip', a0 = zip ? halfOpen(.008) : 0, as = zip ? range(a0, TAU - a0, 120) : range(Math.PI, Math.PI + TAU, 120); // a mock's one seam sits at centre back, like the real thing
+      // a cut stand collar: its own height on every bearing (a little lower at the front), tapered in toward the neck,
+      // softly rippled round the back, finished in a rolled double edge. Below the neck edge a skirt laps over the
+      // body's neck rib and is laid on the body, so the crew rib never shows under the stand.
+      // top edge: one smooth line tilting down from the back to the front (a neckline's own dips must not show through)
+      const yB = L.P(Math.PI).y + h, yF = L.P(0).y + h * .78, hA = a => Math.max(h * .6, lerp(yB, yF, (1 + Math.cos(a)) / 2) - L.P(a).y);
+      const base = a => { const fr = Math.max(0, Math.cos(a)), lean = -.006 * (1 - fr * (zip ? 1 : .35)), H = hA(a); // most of the lean now comes from the forward tilt (STAND_SHEAR)
+        const crease = u => .0026 * Math.sin(11 * a + 1.3 * Math.sin(3 * a)) * (1 - fr * .7) * THREE.MathUtils.smoothstep(u, H * .2, H); // soft vertical creases, stronger up top and round the back
+        // the stand grows out of the (smoothed) body: its base runs down to just under the surface (however far below the
+        // seat that is on this bearing), so the seam reads as one clean line with no gap
+        const ub = skirtEnd(a)[1]; // a soft flare into the seam covers the body's flat neck rim
+        return [[.05, ub - .012, .4], [.032, ub * .6 - .006, .7], [.018, -.006], [.011, 0], [.005 + lean * .25 + crease(H * .3), H * .3], [lean * .65 + crease(H * .66), H * .66], [lean * .95 + crease(H * .93), H * .93], [lean + .004 + crease(H), H + .005], [lean + .011 + crease(H), H + .001]]; };
+      // where the skirt meets the body: just past the cut-away rib, found by dropping onto the body surface from above
+      // (the first surface met from above is the outside). Smoothed and mirrored like everything else round the neck.
+      // how far below the seat the body surface is on each bearing: march straight down from the seam until it meets the body
+      let ends = as.map(a => { const B = L.P(a), n = out(a); let u = .02; if (C) while (u > -.12 && C.dist(B.x + n.x * .05, B.y + u, B.z + n.z * .05, .004) >= .004) u -= .002; return [.05, u > -.12 ? u : -.03]; }); // depth of the body where the flare lands
+      ends = this.smoothRows(ends, (p, q) => Math.min(p, q), !zip, 4, 3); // mirrored: the deeper of the two sides, so neither shows a gap
+      const iOf = new Map(as.map((a, i) => [a, i])), skirtEnd = a => { const e = ends[iOf.get(a)] || [.011, -.03]; return [e[0], clamp(e[1], -.12, -.006)]; };
+      const prof = (a, i) => base(a);
+      const cm = mat(T.collarCol, T.collarFab, 18, 1.5); if (cm.bumpMap) cm.bumpScale *= 1.5;
+      const SH = STAND_SHEAR; sweep(as, prof, .011, cm, SH);
+      if (zip) { // the zip runs down the stand's own front edge, over the skirt, then on down the chest: one continuous line
+        const i0 = 0, i1 = as.length - 1, pr0 = prof(as[i0], i0), pr1 = prof(as[i1], i1), B0 = L.P(as[i0]), B1 = L.P(as[i1]), n0 = out(as[i0]), n1 = out(as[i1]);
+        const line = pr0.slice(0, -1).map(([o, u], j) => { const p = B0.clone().addScaledVector(n0, o).add(new V(0, u, SH * Math.max(0, u))), q = B1.clone().addScaledVector(n1, pr1[j][0]).add(new V(0, pr1[j][1], SH * Math.max(0, pr1[j][1]))); return p.lerp(q, .5); }).reverse();
+        this.buildZip(d, line);
+      }
       return;
     }
     // polo / rugby / henley: the placket, a thick panel down the centre front
@@ -2033,22 +2186,41 @@ const Studio = {
       }
     }
     if (T.collar === 'henley') return;
-    // polo / rugby collar: stand, a rounded fold, then the leaf running out and down over the shoulders
-    const hs = T.standH / 10, lw0 = (T.collar === 'rugby' ? 2.5 : 2.25) / 10, pt = (T.collar === 'rugby' ? 3 : 2.75) / 10, a0 = halfOpen(pw / 2 + .002);
-    const prof = a => {
-      const fr = Math.max(0, Math.cos(a)), tip = Math.pow(clamp((Math.cos(a) - Math.cos(a0 + .5)) / (Math.cos(a0) - Math.cos(a0 + .5)), 0, 1), 2); // 0 round the back → 1 at the collar points
-      const lw = lerp(lw0, pt, tip), F = [.012, hs + .009], drop = .55 + tip * .45 + fr * .1;
-      const leaf = [.25, .5, .75, 1].map(s => [F[0] + lw * s * (1 - tip * .35) * .82, F[1] - lw * s * drop]);
-      return [[.028, -.1], [.019, -.042], [.01, 0], [.002, hs * .5], [-.001, hs], [.004, hs + .008], F, ...leaf];
-    };
-    sweep(range(a0, TAU - a0, 140), prof, .0055, mat(T.collarCol, T.collarFab, T.collar === 'rugby' ? 10 : 16, 2), 7);
+    // polo / rugby collar: stand → rounded fold → leaf. The leaf is hung from the fold and draped onto the body (a
+    // gravity chain against the body's own surface), so it lies on the shoulders and back and down along the chest at
+    // the points. Link angles are mirrored and smoothed round the neck: both sides match and the edge runs clean.
+    const hs = T.standH / 10, lw0 = (T.collar === 'rugby' ? 2.4 : 2) / 10, pt = (T.collar === 'rugby' ? 2.9 : 2.6) / 10, a0 = halfOpen(pw / 2 + .002);
+    const as = range(a0, TAU - a0, 140), rf = .011, gap = .013, NS = 8;
+    const tipOf = a => Math.pow(clamp((Math.cos(a) - Math.cos(a0 + .6)) / (Math.cos(a0) - Math.cos(a0 + .6)), 0, 1), 2); // 0 round the back → 1 at the collar points
+    const stand = a => { const fr = Math.max(0, Math.cos(a)); return [[.03, -.1], [.018, -.04], [.008, 0], [.002, hs * .5], [-.003 * (1 - fr), hs]]; };
+    const fold = a => { const s = stand(a), [o, u] = s[s.length - 1]; return [1, 2, 3, 4].map(k => { const t = Math.PI * (1 - k / 4); return [o + rf + rf * Math.cos(t), u + rf * Math.sin(t)]; }); };
+    const lenOf = a => lerp(lw0, pt, tipOf(a));
+    // The leaf's outer edge is cut longer than the neckline, so it can't hang straight down: it has to open out until
+    // its edge reaches a wider circle. `need` is how far out (along the bearing) the edge must sit, as a share of the
+    // leaf: least at the back, more over the shoulders, most at the points, which flare.
+    const need = a => (.5 + .24 * Math.abs(Math.sin(a)) + .2 * tipOf(a)) * lenOf(a); // a knit collar lies open over the shoulder, not down the stand
+    // solved on every other bearing (the drape is smooth round the neck), the rest interpolated
+    let PH = as.map((a, i) => { if (i % 2 && i < as.length - 1) return null; const f = fold(a).at(-1), lens = Array(NS).fill(lenOf(a) / NS); return C ? this.drapeLeaf(L.P(a), out(a), f[0], f[1], lens, gap, need(a)) : Array(NS).fill(.9); });
+    PH = PH.map((r, i) => r || PH[i - 1].map((p, k) => (p + PH[i + 1][k]) / 2));
+    PH = this.smoothRows(PH, Math.max, false, 5, 3);
+    PH = PH.map(r => { const o = [r[0]]; for (let k = 1; k < r.length; k++) o.push(clamp(r[k], o[k - 1] - .3, o[k - 1] + .45)); return o; }); // a knit leaf bends, it doesn't kink
+    // collar points: toward the front the leaf also runs sideways, out toward the shoulder, so the points spread in a V
+    const prof = (a, i) => { const s = stand(a), f = fold(a), l = lenOf(a) / NS, lat = .42 * lenOf(a) * Math.pow(tipOf(a), 1.3); let [o, u] = f.at(-1);
+      const leaf = PH[i].map((p, k) => { o += Math.sin(p) * l; u -= Math.cos(p) * l; return [o, u, undefined, lat * Math.pow((k + 1) / NS, 1.4)]; }); return [...s, ...f, ...leaf]; };
+    sweep(as, prof, .0065, mat(T.collarCol, T.collarFab, T.collar === 'rugby' ? 10 : 16, 2), FOLD_SHEAR);
   },
   // Quarter-zip: tapes, interlocking teeth, slider and pull, from the top of the stand down the chest
-  buildZip(d, topPt, neckY) {
-    const T = topSpec(d), Zp = ZIPS[T.zip], V = THREE.Vector3, len = T.zipLen / 10, P = [], zN = this.surfZ(0, neckY) ?? topPt.z;
-    for (let y = topPt.y; y > neckY; y -= .01) P.push(new V(0, y, lerp(topPt.z, zN, (topPt.y - y) / Math.max(.01, topPt.y - neckY)) + .009));
-    const zf = this.frontFit([-.02, 0, .02], neckY, neckY - len);
-    for (let y = neckY; y >= neckY - len; y -= .01) { const z = zf ? zf(y) : this.surfZ(0, y); if (z !== null) P.push(new V(0, y, z + .007)); }
+  // `line`: the stand's centre-front edge, top to bottom (stand, then the skirt over the neck rib). The chest run below
+  // it follows the chest (frontFit) and eases in from the skirt's height, so the chain never steps or kinks.
+  buildZip(d, line) {
+    const T = topSpec(d), Zp = ZIPS[T.zip], V = THREE.Vector3, len = T.zipLen / 10;
+    const P = line.map(p => new V(0, p.y, p.z + .006)), last = P.at(-1), yS = last.y, yE = (this.neck?.front.y ?? yS) - len;
+    const zf = this.frontFit([-.02, 0, .02], yS, yE), cz = y => zf ? zf(y) : this.surfZ(0, y);
+    const z0 = cz(yS) ?? last.z - .007;
+    for (let y = yS - .01; y >= yE; y -= .01) { const z = cz(y); if (z === null) continue; const t = THREE.MathUtils.smoothstep(yS - y, 0, .07); P.push(new V(0, y, z + .007 + (last.z - z0 - .007) * (1 - t))); }
+    // never under the body: find the outermost surface in front of each point (march in from the front) and sit on it
+    const C = this._bc; if (C) P.forEach(p => { let z = p.z + .12; while (z > p.z - .01 && C.dist(p.x, p.y, z, .004) >= .004) z -= .002; if (z > p.z - .01) p.z = Math.max(p.z, z + .004 + .007); });
+    for (let pass = 0; pass < 3; pass++) for (let k = 1; k < P.length - 1; k++) P[k].z = Math.max(P[k].z, (P[k - 1].z + P[k + 1].z) / 2 - .001); // no dips between samples
     if (P.length < 4) return;
     const metal = new THREE.MeshStandardMaterial({ color: Zp.c, metalness: 1, roughness: Zp.r }), tapeM = new THREE.MeshStandardMaterial({ color: shade(d.garment.color, lum(d.garment.color) > .5 ? -.22 : .14), roughness: .92 });
     tapeM.polygonOffset = true; tapeM.polygonOffsetFactor = -1;
@@ -2296,7 +2468,9 @@ const Studio = {
     const backZ = (x, y) => { const h = new THREE.Raycaster(new V(x, y, 20), new V(0, 0, -1)).intersectObjects(this.modelMeshes, false).filter(h => h.point.z < cz).sort((a, b) => b.point.z - a.point.z)[0]; return h ? h.point.z : null; };
     const texOf = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.userData.own = true; return t; };
     if (tag !== 'none') {
-      const woven = tag === 'woven', w = woven ? .25 : .3, h = woven ? .125 : .3, yc = !top && this.wb2 ? this.wb2.labelY : (top ? this.P.h / 2 - .1 : box.max.y - (d.category === 'shorts' ? .19 : .06)) - h / 2 - (woven ? 0 : .02); // double waist: label sits on the inner yoke; shorts: sewn under the elastic casing, not across its gathers
+      let yc = !top && this.wb2 ? this.wb2.labelY : (top ? this.P.h / 2 - .1 : box.max.y - (d.category === 'shorts' ? .19 : .06)) - (tag === 'woven' ? .125 : .3) / 2 - (tag === 'woven' ? 0 : .02); // double waist: label sits on the inner yoke; shorts: sewn under the elastic casing, not across its gathers
+      const woven = tag === 'woven', w = woven ? .25 : .3, h = woven ? .125 : .3;
+      if (top && this.collarSeatBack != null) yc = Math.min(yc, this.collarSeatBack - .17 - h / 2); // built collars: under the collar seam on the back panel itself (above it the neck facing is cut away)
       const geo = new THREE.PlaneGeometry(w, h, 6, 1), p = geo.attributes.position; let ok = true;
       if (top || this.wb2) for (let i = 0; i < p.count; i++) { const z = backZ(p.getX(i), yc + p.getY(i)); if (z === null) { ok = false; break; } p.setZ(i, z + (woven ? .009 : .004)); }
       else { // waistbands are lumpy (gathers, belt loops): the label lies as one smooth panel over the highest point of each column
@@ -3367,16 +3541,25 @@ const Studio = {
     const now = performance.now() / 1000; (this.wheels || []).forEach(w => { w.m.rotation.y = w.esc ? -Math.floor(now * 8) * Math.PI / 15 : now * w.spin; }); // escape wheel steps half a tooth per beat
   },
   /* ---------- output ---------- */
-  snap(view, size = 1200) {
-    const r = this.renderer, cam = this.camera, prev = { v: this.lastView, p: cam.position.clone(), a: cam.aspect, w: r.domElement.width / r.getPixelRatio(), h: r.domElement.height / r.getPixelRatio(), pr: r.getPixelRatio() };
-    const SS = 2; r.setPixelRatio(1); r.setSize(size * SS, size * SS, false); cam.aspect = 1; cam.updateProjectionMatrix();
-    this.sizeComposer(); if (view) this.view(view);
+  // `shot`: optional { p, t } camera position + target (world) for a close-up; otherwise a named view
+  snap(view, size = 1200, shot = null) {
+    const r = this.renderer, cam = this.camera, prev = { v: this.lastView, p: cam.position.clone(), t: this.controls.target.clone(), a: cam.aspect, w: r.domElement.width / r.getPixelRatio(), h: r.domElement.height / r.getPixelRatio(), pr: r.getPixelRatio() };
+    const SS = size > 1600 ? 1.5 : 2; r.setPixelRatio(1); r.setSize(Math.round(size * SS), Math.round(size * SS), false); cam.aspect = 1; cam.updateProjectionMatrix();
+    this.sizeComposer(); if (shot) { cam.position.copy(shot.p); this.controls.target.copy(shot.t); this.controls.update(); } else if (view) this.view(view);
     this.draw();
-    const out = TEX.canvas(size, size, (x) => { x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(r.domElement, 0, 0, size, size); }); // 2x supersample
+    const out = TEX.canvas(size, size, (x) => { x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(r.domElement, 0, 0, size, size); }); // supersampled
     const url = out.toDataURL('image/jpeg', .93);
     r.setPixelRatio(prev.pr); r.setSize(prev.w, prev.h, false); this.sizeComposer(); cam.aspect = prev.a; cam.updateProjectionMatrix();
-    if (view) { this.view(prev.v); cam.position.copy(prev.p); this.controls.update(); }
+    if (view || shot) { this.view(prev.v); cam.position.copy(prev.p); this.controls.target.copy(prev.t); this.controls.update(); }
     return url;
+  },
+  // The close-up a supplier needs: the neckline / collar on tops, the dial on a watch, the waistband on bottoms.
+  detailShot() {
+    const d = S.current; if (!d || !this.center) return null; const V = THREE.Vector3;
+    if (isTop(d.category) && this.neck) { const L = this.neck, t = this.root.localToWorld(L.front.clone().lerp(L.back, .5).setY(L.front.y - .08)), dir = new V(.55, .32, .78).normalize(); return { p: t.clone().addScaledVector(dir, 2.1), t, label: 'Detail · neckline' }; }
+    if (d.category === 'watch') { const t = this.center.clone(), dir = new V(.25, .55, .8).normalize(); return { p: t.clone().addScaledVector(dir, (this.fit || 2) * 1.25), t, label: 'Detail · dial' }; }
+    if (isBottom(d.category)) { const box = new THREE.Box3(); this.root.traverse(o => { if (o.isMesh && !o.userData.noFit) box.expandByObject(o); }); const t = new V(this.center.x, box.max.y - (box.max.y - box.min.y) * .08, this.center.z), dir = new V(.5, .3, .81).normalize(); return { p: t.clone().addScaledVector(dir, (this.fit || 2) * 1.1), t, label: 'Detail · waistband' }; }
+    return null;
   },
   async captureRenders(silent) {
     const d = S.current; if (!d) return;
@@ -3514,6 +3697,7 @@ const Panels = {
     }
     R.innerHTML = `<div class="sec notes" id="noteSec"></div><div class="sec"><h4><em>E</em>Output</h4>
         <button class="btn primary block" id="sRenders">Save renders to tech pack</button>
+        <button class="btn block send-btn" id="sSend" style="margin-top:8px">Send to supplier →</button>
         <div class="grid2" style="margin-top:8px"><button class="btn" id="sPng">Export PNG</button><button class="btn" id="sGlb">Export GLB</button></div>
         <p class="hint" style="margin-top:10px">GLB opens in Blender, CLO, Keyshot and most factory 3D viewers. Renders feed the tech pack cover.</p></div>
       <div class="sec"><h4><em>F</em>Image prompt</h4><button class="btn block" id="sPrompt">Build ChatGPT image prompt</button><p class="hint" style="margin-top:8px">Turns this spec into a photo-real draft prompt. Paste the result back into Capture to build the next blank.</p></div>
@@ -3524,6 +3708,7 @@ const Panels = {
       <div class="sec"><h4><em>I</em>Design notes</h4><textarea class="in" data-bind="notes" rows="5" placeholder="Intent, references, what the sample needs to prove">${esc(d.notes)}</textarea></div>`;
     if (d.refs.length) Promise.all(d.refs.map(id => Assets.get(id))).then(srcs => { const g = $('#refGrid'); if (g) g.innerHTML = srcs.filter(Boolean).map(s => `<img src="${s}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:3px;border:1px solid var(--line)">`).join(''); });
     $('#sRenders').onclick = () => Studio.captureRenders();
+    $('#sSend').onclick = () => Send.open();
     Notes.renderPanel();
     $('#sPrompt').onclick = () => promptModal(d);
     const up = $('#mdlUp');
@@ -3554,6 +3739,7 @@ const Panels = {
       const [name, set, cat] = TOP_PRESETS[b.dataset.tpre], g = d.garment;
       if (cat !== d.category) setCategory(d, cat);
       [...CONSTRUCTION_KEYS, 'sleeveColor', 'sleeveColorR'].forEach(k => { if (!(k in set)) g[k] = { collar: 'crew', sleeveStyle: 'setin', slvStripes: 0, slvStripeCol: '#B98A4A', slvStripePos: 'elbow', hoopCol: '#14172B', hoopW: 3, zipFinish: 'nickel' }[k] ?? ''; });
+      if (!('fabric' in set)) g.fabric = newDesign(d.category).garment.fabric; // a preset is a whole look: a fabric it doesn't name goes back to the category's own (no piqué left over on a ringer)
       Object.entries(set).forEach(([k, v]) => { if (k === 'fit') { applyFitPOM(d, d.pom.fit || 'boxy', v, true); } g[k] = v; });
       syncSpec(d); touch(); Studio.build(); this.studio(); toast(`${name} applied · collar, sleeves and trim set`);
     });
@@ -4296,6 +4482,33 @@ const TechPack = {
     $('#tpScroll').innerHTML = pages.map((p, i) => `<div class="tp-page">${this.head(d, p.title, i + 1, pages.length)}${p.body}${this.foot(d)}</div>`).join('') + Sup.datalist();
     Mark.paint($('#tpScroll')); this.calc(); this.fitCells();
     if (changed) touch();
+  },
+  // A static copy of the tech pack for a supplier. Drawn into the live container (so grading and totals compute), copied,
+  // then made read-only. Stripped, because a supplier must never see them: retail price, the costing page, BOM unit / ext
+  // costs and supplier names, and the sourcing page (other suppliers, vetting). The factory reads as the recipient.
+  snapshot(recipient) {
+    const d = S.current; if (!d) return '';
+    syncSpec(d);
+    const f0 = d.factory, fid = d.factoryId; d.factory = recipient || ''; d.factoryId = null;
+    let root;
+    try {
+      const pages = [this.cover(d), this.materials(d), this.measure(d), d.category === 'watch' ? null : this.art(d), this.build(d)].filter(Boolean);
+      const box = $('#tpScroll'), prev = box.innerHTML;
+      box.innerHTML = pages.map((p, i) => `<div class="tp-page">${this.head(d, p.title, i + 1, pages.length)}${p.body}${this.foot(d)}</div>`).join('');
+      Mark.paint(box); this.calc();
+      root = box.cloneNode(true); box.innerHTML = prev;
+    } finally { d.factory = f0; d.factoryId = fid; }
+    if (S.view === 'techpack') this.render();
+    // BOM: drop the supplier and cost columns (and the cost total) before inputs turn into text
+    const bom = $('[data-tbl="bom"]', root)?.closest('table');
+    if (bom) { const heads = $$('thead th', bom).map(th => th.textContent.trim()), drop = heads.map((h, i) => ['Supplier', 'Unit $', 'Ext $'].includes(h) ? i : -1).filter(i => i >= 0).reverse();
+      $$('tr', bom).forEach(tr => drop.forEach(i => tr.children[i]?.remove())); bom.querySelector('tfoot')?.remove(); }
+    $$('.tp-meta > div', root).forEach(c => { if (/Retail/i.test(c.querySelector('label')?.textContent || '')) c.remove(); });
+    $$('input, textarea', root).forEach(i => { const s = document.createElement('span'); s.className = 'tp-v'; s.textContent = i.value; i.replaceWith(s); });
+    $$('select', root).forEach(i => { const s = document.createElement('span'); s.className = 'tp-v'; s.textContent = i.options[i.selectedIndex]?.text || ''; i.replaceWith(s); });
+    $$('[contenteditable]', root).forEach(e => e.removeAttribute('contenteditable'));
+    $$('.tp-add, td.x, th.x, datalist, .sup-dot, [data-supgo], button', root).forEach(e => e.remove());
+    return root.innerHTML;
   },
   // wrapped table cells grow to their text (browsers without field-sizing)
   fitCells(root = $('#tpScroll')) { if (CSS.supports('field-sizing', 'content')) return; $$('textarea.tp-in', root).forEach(t => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }); },
@@ -5413,6 +5626,9 @@ const Sup = {
       <div class="sec"><h4><em>L</em>Samples<span class="r"><button class="btn sm" id="supSmp">+ Log</button></span></h4>
         ${(s.samples || []).map(m => `<div class="sup-smp" data-mid="${m.id}"><input class="in mono" type="date" data-mf="date" value="${esc(m.date || '')}"><select class="in" data-mf="design"><option value="">Design…</option>${S.designs.map(x => `<option value="${x.id}" ${x.id === m.design ? 'selected' : ''}>${esc(x.styleNo)}</option>`).join('')}</select><select class="in" data-mf="result">${['Pending', 'Pass', 'Revise', 'Fail'].map(r => `<option ${r === m.result ? 'selected' : ''}>${r}</option>`).join('')}</select><button class="x" data-mx="${m.id}">×</button><input class="in" data-mf="notes" placeholder="What was off / what to fix" value="${esc(m.notes || '')}"></div>`).join('') || '<p class="hint">No samples yet.</p>'}</div>
       <div class="sec"><h4><em>M</em>Used in<span class="r cap">${used.length}</span></h4>${used.length ? used.map(u => `<button class="layer" data-open="${u.id}"><span class="ty">${esc(CATS[u.category]?.code || '')}</span><span class="nm">${esc(u.styleNo)} · ${esc(u.name)}</span></button>`).join('') : '<p class="hint">Not linked yet. Pick it in a tech pack: Factory on the Overview, or the Supplier column of the BOM.</p>'}</div>
+      <div class="sec"><h4><em>O</em>Sent<span class="r cap">${(s.sent || []).length}</span></h4>
+        <div class="grid2"><select class="in" id="supSendD">${S.designs.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0)).map(x => `<option value="${x.id}" ${x.id === S.current?.id ? 'selected' : ''}>${esc(x.styleNo)} · ${esc(x.name)}</option>`).join('')}</select><button class="btn primary sm" id="supSend">Send a design →</button></div>
+        ${(s.sent || []).length ? `<div class="sup-sent">${s.sent.map(x => `<div class="row-s" data-tok="${esc(x.token || '')}"><span class="mono">${new Date(x.at).toLocaleDateString()}</span><span><b>${esc(x.styleNo)}</b> · ${esc(x.channel)}${x.by ? ' · ' + esc(x.by) : ''}</span><span class="vw">${x.link ? '…' : 'files only'}</span>${x.link ? `<a class="hint" href="${esc(x.link)}" target="_blank" rel="noopener">Open ↗</a><button class="btn sm" data-rev="${esc(x.token)}">Revoke</button>` : '<span></span><span></span>'}</div>`).join('')}</div>` : '<p class="hint" style="margin-top:8px">Nothing sent yet. Renders + a supplier-safe tech pack go out from here or from 3D Studio → Send to supplier.</p>'}</div>
       <div class="sec"><h4><em>N</em>Source &amp; notes</h4><div class="fld"><label>Found via</label><input class="in" data-sup="source" value="${esc(s.source)}" placeholder="Referral, directory, trade show…"></div><div class="fld" style="margin-top:10px"><label>Notes</label><textarea class="in" data-sup="notes" rows="5">${esc(s.notes)}</textarea></div>
         <p class="hint" style="margin-top:8px">Last edit ${s.updated ? ago(s.updated) : '—'}${s.by ? ' by ' + esc(s.by) : ''}.</p></div>`;
   },
@@ -5451,6 +5667,12 @@ const Sup = {
     $$('.sup-smp', R).forEach(row => { const m = s.samples.find(x => x.id === row.dataset.mid); $$('[data-mf]', row).forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { m[el.dataset.mf] = el.value; changed(false); })); });
     $$('[data-mx]', R).forEach(b => b.onclick = () => { s.samples = s.samples.filter(m => m.id !== b.dataset.mx); changed(true); });
     $$('[data-open]', R).forEach(b => b.onclick = () => openDesign(b.dataset.open, 'techpack'));
+    $('#supSend').onclick = async () => { const id = $('#supSendD').value; if (!id) return; if (S.current?.id !== id) await openDesign(id, 'studio'); else go('studio'); Send.open(s.id); };
+    $$('[data-rev]', R).forEach(b => b.onclick = async () => { if (!await confirmBox('Revoke this link?', 'The supplier page stops working right away. Files they already downloaded stay with them.', 'Revoke')) return; await Send.revoke(b.dataset.rev); this.render(); });
+    // live status of each link: views, expired / revoked
+    $$('.sup-sent [data-tok]', R).forEach(async el => { const t = el.dataset.tok; if (!t) return; const h = await Send.views(t), v = el.querySelector('.vw'); if (!v) return;
+      if (!h) { v.textContent = Cloud.on ? 'not found' : 'sign in to see views'; return; }
+      const exp = h.exp?.toMillis?.() || 0; v.textContent = h.revoked ? 'revoked' : exp && exp < Date.now() ? 'expired' : `${h.views || 0} view${h.views === 1 ? '' : 's'}`; if (h.revoked) el.querySelector('[data-rev]')?.remove(); });
   },
   csv() {
     const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`, rows = [['Name', 'Status', 'Types', 'City', 'Lat', 'Lng', 'Miles to Danville', 'Miles to Greensboro', 'Miles to Raleigh', 'MOQ', 'Sample days', 'Bulk days', 'Deposit %', 'Contact', 'Phone', 'Email', 'Website', 'Listing', 'Vetting', 'Score', 'Red flags', 'Verified certs', 'Source', 'Notes'].map(q).join(',')];
@@ -5481,7 +5703,193 @@ const Sup = {
 document.addEventListener('click', e => { if (e.target.closest('[data-supgo]') && S.current) { Sup.forId = S.current.id; go('suppliers'); } });
 addEventListener('beforeunload', () => Sup.flush());
 
-window.DPP = { Studio, S, Models, Cloud, Notes, Places, Sup }; // console debug handle (internal tool)
+/* =========================================================================
+   17. Send to supplier — a supplier packet straight from the studio.
+   Renders at supplier resolution (front, back, 3/4, side and a close-up of the neckline / dial / waistband), the
+   tech pack as a static copy with what a supplier must not see stripped (TechPack.snapshot), the artwork files and,
+   optionally, the 3D model. Delivered as a private link (team cloud: shares/{token}, read-only, expires, revocable,
+   counts views; share.html renders it), through Gmail / the mail app / WhatsApp / the device share sheet (real files),
+   or as plain downloads. Every send is logged on the supplier record (a Lead becomes Contacted) and in the design's
+   revision log.
+   ========================================================================= */
+const SHARE_DAYS = 30;
+const RENDER_PX = 2000;
+const shareToken = () => { const b = crypto.getRandomValues(new Uint8Array(18)); return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const dataURLtoFile = (u, name) => { const [h, b] = u.split(','), mime = (h.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream', bin = atob(b), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new File([a], name, { type: mime }); };
+const phoneDigits = p => { let d = String(p || '').replace(/\D/g, ''); if (d.length === 10) d = '1' + d; return d.length >= 11 ? d : ''; };
+const Send = {
+  pkt: null, sup: null, busy: false,
+  // what goes out (keys are stable: they name the files and the share blobs)
+  items(d) {
+    const top = isTop(d.category), w = d.category === 'watch', det = Studio.detailShot();
+    return [
+      { key: 'three', label: '3/4 view', kind: 'render', on: true },
+      { key: 'front', label: 'Front', kind: 'render', on: true },
+      { key: 'back', label: w ? 'Back' : 'Back', kind: 'render', on: true },
+      { key: 'side', label: 'Side', kind: 'render', on: !w },
+      ...(det ? [{ key: 'detail', label: det.label, kind: 'render', on: true }] : []),
+      { key: 'techpack', label: 'Tech pack (measurements, BOM, construction, artwork)', kind: 'tp', on: true },
+      ...['front', 'back'].filter(s => d.artwork?.[s]?.some(l => !l.hidden)).map(s => ({ key: 'art_' + s, label: `Artwork file · ${s} (4096 px PNG)`, kind: 'art', on: true })),
+      { key: 'glb', label: '3D model (.glb) for CLO / Browzwear', kind: 'glb', on: false },
+    ].map(x => ({ ...x, top }));
+  },
+  message(d, s, link) {
+    const g = d.garment || {}, F = FABRICS[g.fabric], N = Sup.needs(d), P = d.pom, run = Sup.run;
+    const first = String(s?.contact || '').trim().split(/\s+/)[0];
+    const T = isTop(d.category) ? topSpec(d) : null;
+    const lines = [
+      `${d.name} · ${CATS[d.category].label} · style ${d.styleNo}`,
+      ...(d.category === 'watch' ? [`Case ${d.watch.dia} mm · ${d.watch.movement || ''}`] : [F ? `Fabric: ${F.label}${F.comp ? ' (' + F.comp + ')' : ''}` : '', `Colour: ${colorName(g.color)} ${String(g.color).toUpperCase()}`]),
+      ...(T ? [`Construction: ${COLLARS[T.collar]?.label || 'Hood'} · ${T.raglan ? 'raglan' : 'set-in'} sleeves${T.hoops ? ' · rugby hoops' : ''}${T.stripes ? ` · ${T.stripes} sleeve stripes` : ''}`] : []),
+      ...(N.techs.length ? [`Decoration: ${N.techs.join(', ')}`] : []),
+      P?.sizes?.length ? `Sizes: ${P.sizes[0]}–${P.sizes.at(-1)} · run of ${run} units per style` : `Run: ${run} units`,
+    ].filter(Boolean);
+    const subject = `DPP · ${d.styleNo} ${d.name}: quote + sample request`;
+    const body = `Hi ${first || (s ? s.name + ' team' : 'there')},
+
+I'm ${Settings.get().designer} with DPP (Don't Postpone Passion). We'd like a quote and a sample for this piece:
+
+${lines.join('\n')}
+
+${link ? `Renders and the full tech pack (measurements, BOM, construction, artwork) are here, no login needed:\n${link}` : 'Renders and the tech pack are attached.'}
+
+Could you send:
+1. Unit price at ${run} and ${run * 2} units
+2. Minimum order per style / colour
+3. Sample cost and lead time
+4. Bulk lead time after sample approval
+
+Thanks,
+${Settings.get().designer}
+DPP — Don't Postpone Passion`;
+    return { subject, body };
+  },
+  async open(supId) {
+    const d = S.current; if (!d) return toast('Open a design first', true);
+    if (S.view !== 'studio') { go('studio'); }
+    for (let i = 0; i < 120 && !(Studio.ok && Studio.root?.children.length); i++) await new Promise(r => setTimeout(r, 150));
+    if (!Studio.root?.children.length) return toast('The 3D view is still loading. Try again in a moment.', true);
+    this.pkt = null; this.items_ = this.items(d);
+    const ranked = Sup.list.filter(s => s.status !== 'Rejected').map(s => ({ s, f: Sup.fit(s, d) })).sort((a, b) => (b.s.id === supId) - (a.s.id === supId) || b.f.pts - a.f.pts || a.s.name.localeCompare(b.s.name));
+    this.sup = supId ? Sup.get(supId) : (Sup.get(d.factoryId) || ranked[0]?.s || null);
+    const cloud = Cloud.on;
+    this.close = modal(`<div class="snd">
+      <h2>Send to supplier</h2><p class="sub">${esc(d.styleNo)} · ${esc(d.name)}. Renders and a supplier-safe tech pack: no retail price, costing, BOM costs or other suppliers.</p>
+      <div class="fld"><label>Supplier</label><select class="in" id="sndSup">${ranked.map(({ s, f }) => `<option value="${s.id}" ${s.id === this.sup?.id ? 'selected' : ''}>${esc(s.name)} · ${esc(s.status)}${f.pts ? ' · fit ' + f.pts : ''}${s.email ? '' : ' · no email'}</option>`).join('')}</select></div>
+      <div class="snd-to" id="sndTo"></div>
+      <label class="lbl" style="margin-top:14px">Include</label>
+      <div class="snd-items">${this.items_.map(x => `<label class="ck"><input type="checkbox" data-it="${x.key}" ${x.on ? 'checked' : ''}><span>${esc(x.label)}</span></label>`).join('')}</div>
+      <div class="snd-shots" id="sndShots"></div>
+      <div class="fld" style="margin-top:14px"><label>Subject</label><input class="in" id="sndSubj"></div>
+      <div class="fld" style="margin-top:8px"><label>Message<b>edit freely</b></label><textarea class="in" id="sndBody" rows="12"></textarea></div>
+      <div class="snd-link" id="sndLink">${cloud ? `<button class="btn primary" id="sndMake">Build packet + private link</button><span class="hint">Read-only page, no login, expires in ${SHARE_DAYS} days, revocable from the supplier record.</span>` : `<button class="btn primary" id="sndMake">Build packet</button><span class="hint">Private links need the team cloud (sign in). Attach the files instead: share sheet or downloads.</span>`}</div>
+      <div class="snd-prog" id="sndProg"></div>
+      <div class="snd-acts" id="sndActs"></div>
+      <div class="acts"><button class="btn" data-x>Close</button></div></div>`, (m, close) => { $('[data-x]', m).onclick = close; this.wire(m); });
+  },
+  wire(m) {
+    const d = S.current, msg = () => { const s = this.sup, mm = this.message(d, s, this.pkt?.link); $('#sndSubj', m).value = mm.subject; $('#sndBody', m).value = mm.body; };
+    const to = () => { const s = this.sup; $('#sndTo', m).innerHTML = s ? `<span>${s.email ? esc(s.email) : '<em>No email on file</em>'}</span><span>${s.phone ? esc(s.phone) : '<em>No phone</em>'}</span>${s.ig ? `<span>${esc(s.ig)}</span>` : ''}` : '<em>Add suppliers in 06 Suppliers first.</em>'; };
+    $('#sndSup', m).onchange = e => { this.sup = Sup.get(e.target.value); to(); msg(); this.actions(m); };
+    to(); msg();
+    $('#sndMake', m).onclick = () => this.build(m);
+  },
+  async build(m) {
+    if (this.busy) return; this.busy = true; const d = S.current, prog = $('#sndProg', m), btn = $('#sndMake', m); btn.disabled = true;
+    const sel = new Set($$('[data-it]', m).filter(i => i.checked).map(i => i.dataset.it)), step = t => { prog.textContent = t; };
+    try {
+      const files = [], st = d.styleNo.replace(/[^\w-]+/g, '_');
+      // renders on the light studio background, same as the tech pack's own
+      const bg = Studio.scene.background.clone(); Studio.scene.background.set('#efebe3'); Studio.tickHands();
+      for (const x of this.items_.filter(x => x.kind === 'render' && sel.has(x.key))) {
+        step(`Rendering ${x.label.toLowerCase()} at ${RENDER_PX} px…`); await new Promise(r => setTimeout(r, 30));
+        const det = x.key === 'detail' ? Studio.detailShot() : null;
+        files.push({ key: x.key, kind: 'render', label: x.label, name: `${st}_${x.key}.jpg`, mime: 'image/jpeg', data: Studio.snap(det ? null : x.key, RENDER_PX, det) });
+      }
+      Studio.scene.background.copy(bg);
+      if (sel.has('techpack')) { step('Updating tech pack renders…'); Studio.captureRenders(true); step('Writing the supplier tech pack…'); await new Promise(r => setTimeout(r, 30));
+        const html = this.tpDoc(TechPack.snapshot(this.sup?.name || '')); files.push({ key: 'techpack', kind: 'tp', label: 'Tech pack', name: `${st}_tech-pack.html`, mime: 'text/html', data: html }); }
+      for (const side of ['front', 'back']) if (sel.has('art_' + side)) { step(`Exporting ${side} artwork…`); await Assets.ready((d.artwork[side] || []).filter(l => l.asset).map(l => l.asset)); files.push({ key: 'art_' + side, kind: 'art', label: `Artwork · ${side}`, name: `${st}_${side}_art.png`, mime: 'image/png', data: Art.composite(d, side, 4096).toDataURL('image/png') }); }
+      if (sel.has('glb')) { step('Exporting 3D model…'); const buf = await new Promise((res, rej) => new GLTFExporter().parse(Studio.root, res, rej, { binary: true })); const u = await fileToDataURL(new Blob([buf], { type: 'model/gltf-binary' })); files.push({ key: 'glb', kind: 'glb', label: '3D model', name: `${st}.glb`, mime: 'model/gltf-binary', data: u }); }
+      this.pkt = { files, link: null, token: null };
+      if (Cloud.on) { this.pkt.token = await this.publish(d, files, step); this.pkt.link = new URL('share.html#' + this.pkt.token, location.href).href; }
+      const mm = this.message(d, this.sup, this.pkt.link); $('#sndSubj', m).value = mm.subject; $('#sndBody', m).value = mm.body; // the body now carries the link
+      step(`${files.length} file${files.length === 1 ? '' : 's'} ready${this.pkt.link ? ' · link live' : ''}.`);
+      $('#sndLink', m).innerHTML = this.pkt.link ? `<input class="in mono" readonly value="${esc(this.pkt.link)}"><button class="btn sm" id="sndCopy">Copy link</button><a class="btn sm" href="${esc(this.pkt.link)}" target="_blank" rel="noopener">Preview ↗</a>` : '';
+      const c = $('#sndCopy', m); if (c) c.onclick = () => { navigator.clipboard.writeText(this.pkt.link).then(() => toast('Link copied')); this.log('link'); };
+      this.actions(m);
+    } catch (e) { console.error('[send]', e); step(''); toast('Packet failed: ' + (e.message || e), true); btn.disabled = false; }
+    this.busy = false;
+  },
+  // shares/{t}: head (written last, so a supplier never opens a half-written packet) + shares/{t}/b/{key}/c/{i} chunks
+  async publish(d, files, step) {
+    const F = Cloud.F, t = shareToken(), head = [];
+    let done = 0; const total = files.reduce((s, f) => s + Math.ceil(f.data.length / CHUNK), 0);
+    for (const f of files) {
+      const n = Math.ceil(f.data.length / CHUNK), ws = [];
+      for (let i = 0; i < n; i++) ws.push(F.setDoc(Cloud.ref('shares', t, 'b', f.key, 'c', String(i).padStart(3, '0')), { d: f.data.slice(i * CHUNK, (i + 1) * CHUNK) }).then(() => step(`Uploading… ${Math.round(++done / total * 100)}%`)));
+      await Promise.all(ws);
+      await F.setDoc(Cloud.ref('shares', t, 'b', f.key), { n, len: f.data.length });
+      head.push({ key: f.key, kind: f.kind, label: f.label, name: f.name, mime: f.mime, n, len: f.data.length });
+    }
+    await F.setDoc(Cloud.ref('shares', t), { v: 1, created: F.serverTimestamp(), exp: F.Timestamp.fromMillis(Date.now() + SHARE_DAYS * 864e5), revoked: false, views: 0,
+      from: Settings.get().designer, to: this.sup?.name || '', supplierId: this.sup?.id || '', designId: d.id, styleNo: d.styleNo, name: d.name, category: CATS[d.category].label, files: head });
+    return t;
+  },
+  actions(m) {
+    const box = $('#sndActs', m); if (!this.pkt) { box.innerHTML = ''; return; }
+    const s = this.sup, subj = () => $('#sndSubj', m).value, body = () => $('#sndBody', m).value, wa = phoneDigits(s?.phone);
+    const imgs = () => this.pkt.files.filter(f => f.kind === 'render').map(f => dataURLtoFile(f.data, f.name));
+    const canFiles = !!navigator.canShare && (() => { try { return navigator.canShare({ files: imgs().slice(0, 1) }); } catch { return false; } })();
+    box.innerHTML = `<label class="lbl">Send it</label><div class="snd-grid">
+      <button class="btn" data-ch="gmail" ${s?.email ? '' : 'disabled title="No email on file"'}>Gmail</button>
+      <button class="btn" data-ch="mail" ${s?.email ? '' : 'disabled title="No email on file"'}>Mail app</button>
+      <button class="btn" data-ch="whatsapp">WhatsApp${wa ? '' : ' (pick contact)'}</button>
+      <button class="btn" data-ch="share" ${canFiles ? '' : 'disabled title="This browser can\'t share files. Use downloads."'}>Share sheet + files</button>
+      <button class="btn" data-ch="copy">Copy message</button>
+      <button class="btn" data-ch="files">Download files</button></div>
+      <button class="btn sm" data-preview style="margin-top:8px">Preview what the supplier sees ↗</button>
+      ${this.pkt.link ? '' : '<p class="hint" style="margin-top:6px">Email links can\'t carry attachments: download the files and attach them, or use the share sheet.</p>'}`;
+    // preview: the supplier page, fed this packet directly (works without the cloud too)
+    $('[data-preview]', box).onclick = () => {
+      const d = S.current, w = window.open('share.html#preview', '_blank'); if (!w) return toast('Allow pop-ups to preview', true);
+      const head = { styleNo: d.styleNo, name: d.name, category: CATS[d.category].label, from: Settings.get().designer, to: this.sup?.name || '', exp: Date.now() + SHARE_DAYS * 864e5 };
+      const files = this.pkt.files.map(f => ({ key: f.key, kind: f.kind, label: f.label, name: f.name, mime: f.mime, data: f.data }));
+      const on = e => { if (e.source === w && e.data?.type === 'dpp-packet-ready') { w.postMessage({ type: 'dpp-packet', head, files }, location.origin); removeEventListener('message', on); } };
+      addEventListener('message', on);
+    };
+    $$('[data-ch]', box).forEach(b => b.onclick = async () => {
+      const ch = b.dataset.ch, e = encodeURIComponent;
+      if (ch === 'gmail') window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${e(s.email)}&su=${e(subj())}&body=${e(body())}`, '_blank', 'noopener');
+      if (ch === 'mail') location.href = `mailto:${e(s.email)}?subject=${e(subj())}&body=${e(body())}`;
+      if (ch === 'whatsapp') window.open(`https://wa.me/${wa}?text=${e(body())}`, '_blank', 'noopener');
+      if (ch === 'share') { try { await navigator.share({ title: subj(), text: body(), files: imgs() }); } catch (err) { if (err.name === 'AbortError') return; toast('Share failed: ' + err.message, true); return; } }
+      if (ch === 'copy') { await navigator.clipboard.writeText(subj() + '\n\n' + body()); toast('Message copied'); }
+      if (ch === 'files') { for (const f of this.pkt.files) { download(f.name, f.kind === 'tp' ? new Blob([f.data], { type: 'text/html' }) : f.data); await new Promise(r => setTimeout(r, 350)); } } // one file each, never a zip
+      this.log(ch);
+    });
+  },
+  // a downloaded tech pack opens on its own: the studio's stylesheet inlined from this page's sheet rules
+  tpDoc(html) {
+    let css = ''; try { for (const sh of document.styleSheets) { if (!/style\.css/.test(sh.href || '')) continue; for (const r of sh.cssRules) if (/^:root|tp-|@media print|@page/.test(r.cssText)) css += r.cssText + '\n'; } } catch { /* cross-origin sheet */ }
+    const logo = Mark.img ? (() => { try { const c = document.createElement('canvas'), h = 160, w = Math.round(h * Mark.aspect); c.width = w; c.height = h; Mark.draw(c.getContext('2d'), w / 2, h / 2, w, h, '#14172B'); return c.toDataURL('image/png'); } catch { return ''; } })() : '';
+    const doc = document.createElement('div'); doc.innerHTML = html; if (logo) $$('[data-mark]', doc).forEach(m => { m.innerHTML = `<img src="${logo}" alt="DPP" style="width:100%;display:block">`; }); // the mask points at assets/: inline the mark so the file stands alone
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(S.current?.styleNo || '')} tech pack · DPP</title><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}${css}html,body{margin:0;background:#e9e5dc;font:13px/1.45 Inter,Arial,sans-serif;color:#14172B}#tpScroll{padding:24px 0}.tp-v{white-space:pre-wrap}.tp-head h2{font-family:'Archivo Black',Arial Black,sans-serif;font-weight:400}@media print{html,body{background:#fff}#tpScroll{padding:0}}</style></head><body><div id="tpScroll">${doc.innerHTML}</div></body></html>`;
+  },
+  // every send is on the record: the supplier (Lead → Contacted) and the design's revision log
+  log(channel) {
+    const d = S.current, s = this.sup; if (!d || !this.pkt) return;
+    if (this.pkt.logged?.[channel]) return; (this.pkt.logged ||= {})[channel] = 1;
+    const by = Settings.get().designer, items = this.pkt.files.map(f => f.key);
+    if (s) { (s.sent ||= []).unshift({ id: uid('snd'), at: Date.now(), by, designId: d.id, styleNo: d.styleNo, name: d.name, channel, token: this.pkt.token, link: this.pkt.link, items }); if (s.status === 'Lead') s.status = 'Contacted'; Sup.save(s); }
+    d.revisions.push(row({ date: today(), author: by, note: `Sent to ${s ? s.name : 'supplier'} (${channel}): ${items.join(', ')}` })); touch();
+  },
+  // supplier record: what went out, live view counts from the share docs, revoke
+  async views(token) { if (!Cloud.on || !token) return null; try { const h = await Cloud.F.getDoc(Cloud.ref('shares', token)); return h.exists() ? h.data() : null; } catch { return null; } },
+  async revoke(token) { if (!Cloud.on) return; await Cloud.F.updateDoc(Cloud.ref('shares', token), { revoked: true }); toast('Link revoked: the supplier page now shows as expired'); },
+};
+
+window.DPP = { Studio, S, Models, Cloud, Notes, Places, Sup, Send, TechPack }; // console debug handle (internal tool)
 (async function boot() {
   await Mark.init();
   const cfg = await Cloud.config();
